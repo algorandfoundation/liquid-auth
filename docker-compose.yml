@@ -1,0 +1,15 @@
+version: '3.4'
+
+services:
+  mongo:
+    container_name: mongo
+    image: mongo:7.0
+    restart: always
+    environment:
+      - MONGO_INITDB_DATABASE=${DB_NAME:-fido}
+      - MONGO_INITDB_ROOT_USERNAME=${DB_USERNAME:-algorand}
+      - MONGO_INITDB_ROOT_PASSWORD=${DB_PASSWORD:-algorand}
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./.data:/data/db

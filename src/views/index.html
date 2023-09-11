@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Algorand Foundation | FIDO2 Demo</title>
+    <meta name="description" content="FIDO2 on Algorand">
+    <link id="favicon" rel="icon" href="/foundation_favicon.png" type="image/x-icon">
+    <!-- Fluid viewport -->
+    <!-- Centered viewport -->
+    <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/@picocss/pico@next/css/pico.classless.min.css"
+    />
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        html, body {
+            /*max-height: 100vh;*/
+            min-height: 100vh;
+            /*overflow: hidden;*/
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+<script>
+    function isWebAuthnSupported() {
+        return !(window.PublicKeyCredential === undefined ||
+                typeof window.PublicKeyCredential !== "function");
+    }
+    console.log(isWebAuthnSupported())
+</script>
+<header>
+    <hgroup>
+        <h1>
+            FIDO2 Demo
+        </h1>
+        <h2>
+            Algorand Foundation
+        </h2>
+    </hgroup>
+
+</header>
+<main>
+    <article>
+        <header>
+            <hgroup>
+                <h2>
+                    Login
+                </h2>
+                <h3>{{user}}</h3>
+            </hgroup>
+        </header>
+        <form id="form" method="POST" action="/auth/session">
+            <fieldset>
+                <label>
+                    Wallet
+                    <input
+                            name="wallet"
+                    />
+                </label>
+            </fieldset>
+            <input
+                    type="submit"
+                    value="Sign In"
+            />
+        </form>
+    </article>
+</main>
+<footer>
+    Built with Nest, Pico and Vite
+</footer>
+<script>
+    window.onload = () => {
+        const form = document.getElementById('form')
+        form.addEventListener('submit', (e) => {
+            e.preventDefault()
+            const formData = new FormData(form)
+            const data = Object.fromEntries(formData)
+            console.log(data)
+            fetch('/auth/session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            }).then((res) => {
+                console.log(res)
+                window.location.href = '/dashboard'
+            })
+        })
+    }
+</script>
+</body>
+</html>

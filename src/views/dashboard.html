@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Algorand Foundation | FIDO2 Demo</title>
+    <meta name="description" content="FIDO2 on Algorand">
+    <link id="favicon" rel="icon" href="/foundation_favicon.png" type="image/x-icon">
+    <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/@picocss/pico@next/css/pico.fluid.classless.min.css"
+    />
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        html, body {
+            /*max-height: 100vh;*/
+            min-height: 100vh;
+            /*overflow: hidden;*/
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <hgroup>
+        <h1>
+            FIDO2 Demo
+        </h1>
+        <h2>
+            Algorand Foundation
+        </h2>
+    </hgroup>
+</header>
+<main>
+    <article>
+        <header>
+            <hgroup>
+                <h1>Welcome</h1>
+                <h2>
+                    Wallet: {{wallet}}
+                </h2>
+            </hgroup>
+        </header>
+        <section>
+            Loading..
+        </section>
+<!--        <p id="uvpa_unavailable" class="hidden">-->
+<!--            This device does not support User Verifying Platform Authenticator. You can't register a credential.-->
+<!--        </p>-->
+<!--        <h3 class="mdc-typography mdc-typography--headline6">-->
+<!--            Your registered credentials:-->
+<!--        </h3>-->
+<!--        <section>-->
+<!--            <div id="list"></div>-->
+<!--        </section>-->
+        <button id="register" class="hidden">Add a credential</button>
+            <a href="/auth/logout" role="button">Sign out</a>
+    </article>
+</main>
+<footer>
+    Built with Nest, Pico and Vite
+</footer>
+<script>
+    function isWebAuthnSupported() {
+        return !(window.PublicKeyCredential === undefined ||
+                typeof window.PublicKeyCredential !== "function");
+    }
+    console.log(isWebAuthnSupported())
+</script>
+<script type="module">
+    console.log(window.PublicKeyCredential)
+    function showResults(){
+        document
+                .querySelector('section')
+                .innerText = "You are logged in";
+    }
+    function showUnsupported() {
+        document
+                .querySelector('section')
+                .innerText = "Device does not support User Verifying Platform Authenticator";
+
+    }
+    if(!window.PublicKeyCredential){
+        showUnsupported()
+    }
+    if(window.PublicKeyCredential){
+        console.log(window.PublicKeyCredential)
+        PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+                .then(uvpaa => {
+                    console.log(uvpaa)
+                    if (!uvpaa) {
+                        showUnsupported()
+                    } else {
+                        showResults()
+                    }
+                });
+    }
+</script>
+</body>
+</html>
