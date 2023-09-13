@@ -1,9 +1,10 @@
-import { Model } from 'mongoose';
+import * as crypto from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { User } from './auth.schema.js';
+import { Model } from 'mongoose';
 import base64url from 'base64url';
-import * as crypto from 'node:crypto';
+
+import { Credential, User } from './auth.schema.js';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +27,12 @@ export class AuthService {
     }
     return user;
   }
+
+  /**
+   * Create a New User
+   *
+   * @param wallet
+   */
   async create(wallet: string): Promise<User> {
     const createdUser = new this.userModel({
       id: base64url.encode(crypto.randomBytes(32)),
@@ -34,10 +41,43 @@ export class AuthService {
     });
     return createdUser.save();
   }
+
+  /**
+   * Find a User
+   *
+   * @param wallet
+   */
   async find(wallet: string): Promise<User> {
     return this.userModel.findOne({ wallet }).exec();
   }
-  async findAll(): Promise<User[]> {
-    return this.userModel.find().exec();
+
+  /**
+   * Update a User
+   *
+   * @param user
+   */
+  async update(user: User): Promise<User> {
+    return this.userModel.findOneAndUpdate({ id: user.id }, user).exec();
+  }
+
+  async addCredential(id: string, credential: Credential) {
+    const user = await this.find(id);
+
+    const existingCred = user.credentials.find(
+      (cred) => cred.credId === credential.credId,
+    );
+
+    if (!existingCred) {
+      user.credentials.push(credential);
+      await this.update(user);
+    }
+
+    return user;
+  }
+  async removeCredential(user: User, credId: string) {
+    user.credentials = user.credentials.filter(
+      (cred) => cred.credId !== credId,
+    );
+    return this.update(user);
   }
 }

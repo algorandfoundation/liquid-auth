@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Algorand Foundation | FIDO2 Demo</title>
+    <title>FIDO2 Demo</title>
     <meta name="description" content="FIDO2 on Algorand">
     <link id="favicon" rel="icon" href="/foundation_favicon.png" type="image/x-icon">
-    <!-- Fluid viewport -->
-    <!-- Centered viewport -->
     <link
             rel="stylesheet"
             href="https://cdn.jsdelivr.net/npm/@picocss/pico@next/css/pico.classless.min.css"
@@ -15,32 +13,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         html, body {
-            /*max-height: 100vh;*/
             min-height: 100vh;
-            /*overflow: hidden;*/
         }
 
         body {
             display: flex;
             flex-direction: column;
         }
+        main {
+            flex: 1;
+        }
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
-<script>
-    function isWebAuthnSupported() {
-        return !(window.PublicKeyCredential === undefined ||
-                typeof window.PublicKeyCredential !== "function");
-    }
-    console.log(isWebAuthnSupported())
-</script>
 <header>
     <hgroup>
         <h1>
             FIDO2 Demo
         </h1>
         <h2>
-            Algorand Foundation
+            @Algorand
         </h2>
     </hgroup>
 
@@ -55,11 +50,14 @@
                 <h3>{{user}}</h3>
             </hgroup>
         </header>
-        <form id="form" method="POST" action="/auth/session">
+        <p id="not-supported">Sorry, your device is not supported</p>
+        <form id="form" class="hidden" method="POST" action="/auth/session">
             <fieldset>
                 <label>
                     Wallet
                     <input
+                            id="wallet-input"
+                            type="text"
                             name="wallet"
                     />
                 </label>
@@ -74,26 +72,9 @@
 <footer>
     Built with Nest, Pico and Vite
 </footer>
-<script>
-    window.onload = () => {
-        const form = document.getElementById('form')
-        form.addEventListener('submit', (e) => {
-            e.preventDefault()
-            const formData = new FormData(form)
-            const data = Object.fromEntries(formData)
-            console.log(data)
-            fetch('/auth/session', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            }).then((res) => {
-                console.log(res)
-                window.location.href = '/dashboard'
-            })
-        })
-    }
+<script type="module">
+    import {render} from './login.js'
+    window.onload = render
 </script>
 </body>
 </html>

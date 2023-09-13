@@ -6,21 +6,31 @@
     <link id="favicon" rel="icon" href="/foundation_favicon.png" type="image/x-icon">
     <link
             rel="stylesheet"
-            href="https://cdn.jsdelivr.net/npm/@picocss/pico@next/css/pico.fluid.classless.min.css"
+            href="https://cdn.jsdelivr.net/npm/@picocss/pico@next/css/pico.classless.min.css"
     />
+    <script src="https://cdn.jsdelivr.net/gh/herrjemand/Base64URL-ArrayBuffer@latest/lib/base64url-arraybuffer.js"></script>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         html, body {
-            /*max-height: 100vh;*/
             min-height: 100vh;
-            /*overflow: hidden;*/
         }
 
         body {
             display: flex;
             flex-direction: column;
+        }
+        main {
+            flex: 1;
+        }
+        .hidden {
+            display: none;
+        }
+        .error {
+            margin-top: var(--pico-spacing);
+            color: var(--pico-contrast-inverse);
+            background: var(--pico-del-color);
         }
     </style>
 </head>
@@ -46,59 +56,22 @@
             </hgroup>
         </header>
         <section>
-            Loading..
+            <p id="content"></p>
+            <div id="list"></div>
+            <p id="error"></p>
         </section>
-<!--        <p id="uvpa_unavailable" class="hidden">-->
-<!--            This device does not support User Verifying Platform Authenticator. You can't register a credential.-->
-<!--        </p>-->
-<!--        <h3 class="mdc-typography mdc-typography--headline6">-->
-<!--            Your registered credentials:-->
-<!--        </h3>-->
-<!--        <section>-->
-<!--            <div id="list"></div>-->
-<!--        </section>-->
+        <footer>
         <button id="register" class="hidden">Add a credential</button>
-            <a href="/auth/logout" role="button">Sign out</a>
+        <a id="logout" href="/auth/logout" role="button">Sign out</a>
+        </footer>
     </article>
 </main>
 <footer>
     Built with Nest, Pico and Vite
 </footer>
-<script>
-    function isWebAuthnSupported() {
-        return !(window.PublicKeyCredential === undefined ||
-                typeof window.PublicKeyCredential !== "function");
-    }
-    console.log(isWebAuthnSupported())
-</script>
 <script type="module">
-    console.log(window.PublicKeyCredential)
-    function showResults(){
-        document
-                .querySelector('section')
-                .innerText = "You are logged in";
-    }
-    function showUnsupported() {
-        document
-                .querySelector('section')
-                .innerText = "Device does not support User Verifying Platform Authenticator";
-
-    }
-    if(!window.PublicKeyCredential){
-        showUnsupported()
-    }
-    if(window.PublicKeyCredential){
-        console.log(window.PublicKeyCredential)
-        PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
-                .then(uvpaa => {
-                    console.log(uvpaa)
-                    if (!uvpaa) {
-                        showUnsupported()
-                    } else {
-                        showResults()
-                    }
-                });
-    }
+    import {render} from './dashboard.js'
+    window.onload = render
 </script>
 </body>
 </html>

@@ -1,19 +1,17 @@
-import { Controller, Get, Logger, Res, Session } from '@nestjs/common';
+import { Controller, Get, Res, Session } from '@nestjs/common';
 import type { Response } from 'express';
 
 @Controller()
 export class AppController {
-  private readonly logger = new Logger(AppController.name);
-
   @Get('/test')
   getHello(@Res() res) {
     res.render('index');
   }
   /**
-   * Android Asset Links
+   * Well-Known Asset Links
    *
-   * Redirect to the Android app if installed
    *
+   * @see https://developer.android.com/training/app-links/verify-android-applinks
    * @param res
    */
   @Get('/.well-known/assetlinks.json')
@@ -42,25 +40,34 @@ export class AppController {
     }
     res.json(assetlinks);
   }
+
+  /**
+   * Index View
+   *
+   * @param session - Express Session
+   * @param res - Express Response
+   */
   @Get('/')
   root(@Session() session: Record<string, any>, @Res() res: Response) {
-    if (session?.wallet) {
-      this.logger.log('No Wallet for Index, Redirecting');
+    if (session?.wallet && session?.cid) {
       res.redirect(307, '/dashboard');
     } else {
       res.render('index');
     }
   }
+
+  /**
+   * Dashboard View
+   *
+   * @param session - Express Session
+   * @param res - Express Response
+   */
   @Get('/dashboard')
   home(@Session() session: Record<string, any>, @Res() res: Response) {
     if (!session?.wallet) {
-      this.logger.log(
-        'No Wallet for Dashboard, Redirecting',
-        JSON.stringify(session),
-      );
       res.redirect(307, '/');
     } else {
-      return res.render('dashboard', {
+      res.render('dashboard', {
         wallet: session.wallet,
       });
     }
