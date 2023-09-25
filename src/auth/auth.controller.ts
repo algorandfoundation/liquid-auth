@@ -18,15 +18,15 @@ type LoginRequestDTO = {
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
+  @Get('/all')
+  async all(@Res() res: Response) {
+    res.json(await this.authService.all());
+  }
   @Get('/keys')
   async keys(@Session() session: Record<string, any>, @Res() res: Response) {
     const wallet = session.wallet;
-    if (wallet) {
-      const user = await this.authService.find(wallet);
-      res.json({ credentials: user.credentials });
-    } else {
-      res.json({});
-    }
+    const user = await this.authService.find(wallet);
+    res.json(user || {});
   }
   /**
    * Delete Credential
