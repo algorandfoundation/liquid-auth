@@ -109,7 +109,9 @@ export async function assertion(credId) {
   });
 }
 
-export const unregisterCredential = async (credId) => {
+export const removeCredential = async (credId) => {
   localStorage.removeItem('credId');
-  return _fetch(`/auth/removeKey?credId=${encodeURIComponent(credId)}`);
+  return fetch(`/auth/keys/${encodeURIComponent(credId)}`, {
+    method: 'DELETE',
+  });
 };

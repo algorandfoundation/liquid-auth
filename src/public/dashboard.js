@@ -1,4 +1,4 @@
-import { attestation } from './api.js';
+import { attestation, removeCredential } from './api.js';
 
 async function getCredentials() {
   const credentials = await fetch('/auth/keys').then((r) => r.json());
@@ -9,7 +9,7 @@ async function getCredentials() {
               <th scope="row">${cred.credId}</th>
               <td>${cred.prevCounter}</td>
               <td>${cred.publicKey}</td>
-              <td><button>X</button></td>
+              <td><button class="remove-credential" id="${cred.credId}">X</button></td>
             </tr>
             `;
   });
@@ -34,6 +34,14 @@ async function renderCredentials(element) {
                   </tbody>
                   </table>
                   </figure>`;
+  const removeButtons = document.getElementsByClassName('remove-credential');
+  for (let button of removeButtons) {
+    button.addEventListener('click', () => {
+      removeCredential(button.id).then(() => {
+        renderCredentials(element);
+      });
+    });
+  }
 }
 /**
  *  Dashboard Page
