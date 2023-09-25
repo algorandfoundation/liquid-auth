@@ -12,28 +12,14 @@ export class AttestationService {
     private configService: ConfigService,
   ) {}
   request(user: User, options: AttestationSelectorDto) {
-    const excludeCredentials = [];
-
-    if (user.credentials.length > 0) {
-      for (const cred of user.credentials) {
-        excludeCredentials.push({
-          id: cred.credId,
-          type: 'public-key',
-          transports: ['internal'],
-        });
-      }
-    }
-
     //https://www.iana.org/assignments/cose/cose.xhtml#algorithms
     // EdDSA is -8
     const pubKeyCredParams = [];
     // const params = [-7, -35, -36, -257, -258, -259, -37, -38, -39, -8];
-    const params = [-7, -257, -8];
+    const params = [-7, -257];
     for (const param of params) {
       pubKeyCredParams.push({ type: 'public-key', alg: param });
     }
-
-    console.log(JSON.stringify(excludeCredentials));
     // TOOD: Investigate fido2 simple server to breakdown what it is doing
     const attestationOptions = fido2.generateAttestationOptions({
       rpName: this.configService.get('rpName'),
@@ -51,7 +37,7 @@ export class AttestationService {
           transports: ['internal'],
         };
       }),
-      authenticatorSelection: options.authenticatorSelection,
+      // authenticatorSelection: options.authenticatorSelection,
     });
 
     // Temporary hack until SimpleWebAuthn supports `pubKeyCredParams`
