@@ -1,10 +1,10 @@
 import { attestation, removeCredential } from './api.js';
 
 async function getCredentials() {
-  const credentials = await fetch('/auth/keys').then((r) => r.json());
-  console.log(credentials);
-  return credentials.map((cred) => {
-    return `
+  const user = await fetch('/auth/keys').then((r) => r.json());
+  return typeof user.credentials !== 'undefined'
+    ? user.credentials.map((cred) => {
+        return `
             <tr>
               <th scope="row">${cred.credId}</th>
               <td>${cred.prevCounter}</td>
@@ -12,7 +12,8 @@ async function getCredentials() {
               <td><button class="remove-credential" id="${cred.credId}">X</button></td>
             </tr>
             `;
-  });
+      })
+    : [];
 }
 
 async function renderCredentials(element) {

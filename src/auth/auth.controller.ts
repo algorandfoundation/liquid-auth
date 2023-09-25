@@ -23,9 +23,9 @@ export class AuthController {
     const wallet = session.wallet;
     if (wallet) {
       const user = await this.authService.find(wallet);
-      res.json(user.credentials);
+      res.json({ credentials: user.credentials });
     } else {
-      res.redirect(307, '/');
+      res.json({});
     }
   }
   /**
