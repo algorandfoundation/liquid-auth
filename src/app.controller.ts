@@ -49,7 +49,7 @@ export class AppController {
    */
   @Get('/')
   root(@Session() session: Record<string, any>, @Res() res: Response) {
-    if (session?.wallet && session?.cid) {
+    if (session?.wallet) {
       res.redirect(307, '/dashboard');
     } else {
       res.render('index');

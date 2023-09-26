@@ -35,14 +35,13 @@ export async function getUserSession(wallet) {
   if (typeof wallet !== 'string') {
     throw new TypeError('Wallet must be a string');
   }
-  return fetch(`/auth/users/${wallet}`)
-    .then((res) => res.json())
-    .then((res) => {
-      // Create a session using the wallet
-      if (res.status !== 404) {
-        return createSession(res);
-      }
-    });
+  return fetch(`/auth/session`).then((res) => res.json());
+  // .then((res) => {
+  // Create a session using the wallet
+  // if (res.status !== 404) {
+  //   return createSession(res);
+  // }
+  // });
 }
 
 /**
