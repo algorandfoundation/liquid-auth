@@ -1,80 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>FIDO2 Demo</title>
-    <meta name="description" content="FIDO2 on Algorand">
-    <link id="favicon" rel="icon" href="/foundation_favicon.png" type="image/x-icon">
-    <link
-            rel="stylesheet"
-            href="https://cdn.jsdelivr.net/npm/@picocss/pico@next/css/pico.classless.min.css"
-    />
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        html, body {
-            min-height: 100vh;
-        }
+  <title>FIDO2 Demo</title>
+  <meta name="description" content="FIDO2 on Algorand">
+  <link id="favicon" rel="icon" href="/foundation_favicon.png" type="image/x-icon">
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@picocss/pico@next/css/pico.min.css"
+  />
+  <script
+    src="https://cdn.jsdelivr.net/gh/herrjemand/Base64URL-ArrayBuffer@latest/lib/base64url-arraybuffer.js"></script>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+      html, body {
+          min-height: 100vh;
+      }
 
-        body {
-            display: flex;
-            flex-direction: column;
-        }
-        main {
-            flex: 1;
-        }
-        .hidden {
-            display: none;
-        }
-    </style>
+      body {
+          display: flex;
+          flex-direction: column;
+      }
+
+      main {
+          flex: 1;
+      }
+
+      .hidden {
+          display: none;
+      }
+  </style>
 </head>
-<body>
+<body class="container">
 <header>
-    <hgroup>
-        <h1>
-            FIDO2 Demo
-        </h1>
-        <h2>
-            @Algorand
-        </h2>
-    </hgroup>
+  <hgroup>
+    <h1>
+      FIDO2 Demo
+    </h1>
+    <h2>
+      @Algorand
+    </h2>
+  </hgroup>
 
 </header>
 <main>
-    <article>
-        <header>
-            <hgroup>
-                <h2>
-                    Login
-                </h2>
-                <h3>{{user}}</h3>
-            </hgroup>
-        </header>
-        <p id="not-supported">Sorry, your device is not supported</p>
-        <form id="form" class="hidden" method="POST" action="/auth/session">
-            <fieldset>
-                <label>
-                    Wallet
-                    <input
-                            id="wallet-input"
-                            type="text"
-                            name="wallet"
-                    />
-                </label>
-            </fieldset>
-            <input
-                    type="submit"
-                    value="Sign In"
-            />
-        </form>
-    </article>
+  <article>
+    <header>
+      <hgroup>
+        <h2>
+          Login
+        </h2>
+        <h3>{{user}}</h3>
+      </hgroup>
+    </header>
+    <p id="not-supported">Sorry, your device is not supported</p>
+    <form id="form" class="hidden" method="POST" action="/auth/session">
+      <fieldset id="wallet-fieldset">
+        <label>
+          Wallet
+          <input
+            id="wallet-input"
+            type="text"
+            name="wallet"
+          />
+        </label>
+      </fieldset>
+
+    </form>
+    <footer>
+      <button
+        id="submit-button"
+        type="submit"
+        form="form"
+      >Sign In
+      </button>
+      <button
+        id="clear-all-button"
+        class="secondary hidden"
+      >Clear Cache
+      </button>
+    </footer>
+  </article>
 </main>
 <footer>
-    Built with Nest, Pico and Vite
+  Built with Nest, Pico and Vite
 </footer>
 <script type="module">
-    import {render} from './login.js'
-    window.onload = render
+  import { render } from "./login.js";
+
+  window.onload = render;
 </script>
 </body>
 </html>

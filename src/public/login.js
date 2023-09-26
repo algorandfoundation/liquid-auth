@@ -4,6 +4,8 @@
  * Create a Session if the Client Supports FIDO2/WebAuthn
  */
 
+import { assertion } from './api.js';
+
 /**
  *
  * @param {object} user - User Data
@@ -36,12 +38,6 @@ export async function getUserSession(wallet) {
     throw new TypeError('Wallet must be a string');
   }
   return fetch(`/auth/session`).then((res) => res.json());
-  // .then((res) => {
-  // Create a session using the wallet
-  // if (res.status !== 404) {
-  //   return createSession(res);
-  // }
-  // });
 }
 
 /**
@@ -49,23 +45,38 @@ export async function getUserSession(wallet) {
  */
 export async function render() {
   const form = document.getElementById('form');
+  const submitButton = document.getElementById('submit-button');
+  const clearButton = document.getElementById('clear-all-button');
   const notSupported = document.getElementById('not-supported');
+  const walletFieldSet = document.getElementById('wallet-fieldset');
   const walletInput = document.getElementById('wallet-input');
 
-  /*
-   * Keep track of the wallet to avoid re-entering it
-   * every time the session is expired, it will check if
-   * the user exists and create a new session if it does.
-   *
-   * This is just for demo purposes,
-   *
+  /**
+   * Wallet Address
+   * @type {string | null}
    */
   const wallet = localStorage.getItem('wallet');
+  /**
+   * Credential ID
+   * @type {string | null}
+   */
+  const credId = localStorage.getItem('credId');
+
   if (wallet) {
     walletInput.value = wallet;
     await getUserSession(wallet);
   }
+  if (credId) {
+    submitButton.innerText = 'Assert';
+  }
 
+  if (credId && !wallet) {
+    walletFieldSet.classList.add('hidden');
+  }
+
+  if (credId || wallet) {
+    clearButton.classList.remove('hidden');
+  }
   /*
    * Check for WebAuthn support
    *
@@ -92,7 +103,8 @@ export async function render() {
     const formData = new FormData(form);
     const { wallet } = Object.fromEntries(formData);
     if (typeof wallet === 'string') {
-      await createSession({ wallet });
+      console.log(credId);
+      credId ? await assertion(credId) : await createSession({ wallet });
     }
   });
 }

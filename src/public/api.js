@@ -67,8 +67,8 @@ export async function attestation(
 export async function assertion(credId) {
   const options = await fetch('/assertion/request', {
     ...DEFAULTS,
-    body: JSON.stringify({ id: credId }),
-  });
+    body: JSON.stringify({ credId }),
+  }).then((r) => r.json());
 
   if (options.allowCredentials.length === 0) {
     console.info('No registered credentials found.');

@@ -5,13 +5,13 @@ const hostname = isVercel
   ? isProduction
     ? 'nest-fido2.vercel.app'
     : process.env.VERCEL_URL.replace('https://', '')
-  : 'localhost';
+  : process.env.HOSTNAME || 'localhost';
 
 const origin = isProduction
   ? 'https://' + hostname
   : isVercel
   ? process.env.VERCEL_URL
-  : 'http://localhost';
+  : process.env.ORIGIN || 'http://localhost';
 
 export default () => ({
   env: process.env.NODE_ENV || 'development',

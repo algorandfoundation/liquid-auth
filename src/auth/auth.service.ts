@@ -4,6 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import base64url from 'base64url';
 
+import type { FilterQuery } from 'mongoose';
 import { Credential, User } from './auth.schema.js';
 
 @Injectable()
@@ -50,7 +51,9 @@ export class AuthService {
   async find(wallet: string): Promise<User> {
     return this.userModel.findOne({ wallet }).exec();
   }
-
+  async search(lookup: FilterQuery<User>) {
+    return this.userModel.findOne(lookup).exec();
+  }
   /**
    * Update a User
    *

@@ -1,9 +1,10 @@
 import { Body, Controller, Post, Req, Res, Session } from '@nestjs/common';
-import {
+import type { Request, Response } from 'express';
+import type {
   AssertionCredentialJSON,
   PublicKeyCredentialRequestOptions,
 } from '@simplewebauthn/typescript-types';
-import { Request, Response } from 'express';
+
 import { AuthService } from '../auth/auth.service.js';
 import { AssertionService } from './assertion.service.js';
 
@@ -13,61 +14,88 @@ export class AssertionController {
     private assertionService: AssertionService,
     private authService: AuthService,
   ) {}
-  @Post('/request')
+
+  /**
+   * Request Assertion
+   *
+   * @remarks
+   * This method is part of the {@link AssertionController}. It forms a valid
+   * assertion request and returns it to the client. The client is responsible
+   * for signing the assertion and returning it to the assertion response
+   * route.
+   *
+   * @param session - Express Session
+   * @param req - Express Request
+   * @param res - Express Response
+   * @param [body] - Standard Public Key Request Options
+   */
+  @Post('/request/:credId')
   async assertionRequest(
     @Session() session: Record<string, any>,
-    @Body() body: PublicKeyCredentialRequestOptions,
     @Req() req: Request,
     @Res() res: Response,
+    @Body() body?: PublicKeyCredentialRequestOptions,
   ) {
-    const username = session.wallet;
-    const user = await this.authService.find(username);
-
+    const user = await this.authService.search({
+      'credentials.credId': req.params.id,
+    });
     if (!user) {
-      res.status(404).json({ error: 'User not found.' });
+      res.status(404).json({ reason: 'not_found', error: 'User not found.' });
       return;
     }
 
-    const options = this.assertionService.request(
-      user,
-      req.query?.credId as string,
-      body,
-    );
-
+    // Get options, save challenge and respond
+    const options = this.assertionService.request(user, req.params.id, body);
     session.challenge = options.challenge;
-
     res.json(options);
   }
 
+  /**
+   * Respond to Assertion
+   *
+   * @remarks
+   * This method is part of the {@link AssertionController}. It verifies the
+   * assertion from the client and updates the user's credentials. The client
+   * must have a valid challenge in the session.
+   *
+   * @param session - Express Session
+   * @param req - Express Request
+   * @param res - Express Response
+   * @param body - Assertion Credential JSON
+   */
   @Post('/response')
   async assertionResponse(
     @Session() session: Record<string, any>,
-    @Body() body: AssertionCredentialJSON,
     @Req() req: Request,
     @Res() res: Response,
+    @Body() body: AssertionCredentialJSON,
   ) {
     const expectedChallenge = session.challenge;
     if (!expectedChallenge) {
-      res.status(404).json({ error: 'Challenge not found.' });
+      res
+        .status(404)
+        .json({ reason: 'not_found', error: 'Challenge not found.' });
       return;
     }
-    const user = await this.authService.find(session.wallet);
-    if (!user) {
-      res.status(404).json({ error: 'User not found.' });
+    const savedUser = await this.authService.search({
+      'credentials.credId': body.id,
+    });
+    if (!savedUser) {
+      res.status(404).json({ reason: 'not_found', error: 'User not found.' });
       return;
     }
 
-    const _user = this.assertionService.response(
-      user,
+    const user = this.assertionService.response(
+      savedUser,
       body,
       expectedChallenge,
       req.get('User-Agent'),
     );
 
-    await this.authService.update(_user);
+    await this.authService.update(user);
 
     delete session.challenge;
-
+    session.wallet = user.wallet;
     res.json(user);
   }
 }
