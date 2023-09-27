@@ -65,9 +65,8 @@ export async function attestation(
 }
 
 export async function assertion(credId) {
-  const options = await fetch('/assertion/request', {
+  const options = await fetch(`/assertion/request/${credId}`, {
     ...DEFAULTS,
-    body: JSON.stringify({ credId }),
   }).then((r) => r.json());
 
   if (options.allowCredentials.length === 0) {

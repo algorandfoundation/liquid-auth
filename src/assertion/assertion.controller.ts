@@ -37,15 +37,21 @@ export class AssertionController {
     @Body() body?: PublicKeyCredentialRequestOptions,
   ) {
     const user = await this.authService.search({
-      'credentials.credId': req.params.id,
+      'credentials.credId': req.params.credId,
     });
+    console.log({ user, credId: req.params.credId });
     if (!user) {
       res.status(404).json({ reason: 'not_found', error: 'User not found.' });
       return;
     }
 
     // Get options, save challenge and respond
-    const options = this.assertionService.request(user, req.params.id, body);
+    const options = this.assertionService.request(
+      user,
+      req.params.credId,
+      body,
+    );
+    console.log(options);
     session.challenge = options.challenge;
     res.json(options);
   }

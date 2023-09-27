@@ -44,6 +44,7 @@ export async function getUserSession(wallet) {
  * Render Page
  */
 export async function render() {
+  console.log('rendering Login');
   const form = document.getElementById('form');
   const submitButton = document.getElementById('submit-button');
   const clearButton = document.getElementById('clear-all-button');
@@ -92,6 +93,10 @@ export async function render() {
       },
     );
   }
+  clearButton.addEventListener('click', () => {
+    localStorage.clear();
+    window.location.reload();
+  });
 
   /*
    * Listen to Form Submission
@@ -103,8 +108,8 @@ export async function render() {
     const formData = new FormData(form);
     const { wallet } = Object.fromEntries(formData);
     if (typeof wallet === 'string') {
-      console.log(credId);
       credId ? await assertion(credId) : await createSession({ wallet });
+      window.location.reload();
     }
   });
 }

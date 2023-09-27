@@ -21,12 +21,15 @@
             display: flex;
             flex-direction: column;
         }
+
         main {
             flex: 1;
         }
+
         .hidden {
             display: none;
         }
+
         .error {
             margin-top: var(--pico-spacing);
             color: var(--pico-contrast-inverse);
@@ -61,16 +64,74 @@
             <p id="error"></p>
         </section>
         <footer>
-        <button id="register" class="hidden">Add a credential</button>
-        <a id="logout" href="/auth/logout" role="button">Sign out</a>
+            <button id="transaction-button" data-target="modal" onclick="toggleModal(event)">Show Modal</button>
+            <button id="register" class="hidden secondary">Add a credential</button>
+            <a id="logout" href="/auth/logout" class="contrast" role="button">Sign out</a>
         </footer>
     </article>
+    <dialog id="modal" open>
+        <article>
+            <header>
+                <a
+                        href="#close"
+                        aria-label="Close"
+                        class="close"
+                        data-target="modal"
+                        onclick="toggleModal(event)"
+                >
+
+                </a>
+                Wallet Transaction
+            </header>
+            <section>
+                <form id="transaction-form">
+                    <!-- Grid -->
+                    <div class="grid">
+
+                        <!-- Markup example 1: input is inside label -->
+                        <label for="from">
+                            From
+                            <input type="text" id="from" name="from" value="{{wallet}}" placeholder="AAAAAAAAAA" required>
+                        </label>
+
+                        <label for="to">
+                            To
+                            <input type="text" id="to" name="to" value="{{wallet}}"  placeholder="AAAAAAA" required>
+                        </label>
+
+                    </div>
+
+                    <!-- Markup example 2: input is after label -->
+                    <label for="amount">Amount - 50 microAlgos</label>
+                    <input type="range" id="amount" name="amount" min="0" max="100" value="50" required>
+
+                    <!-- Button -->
+                    <button type="submit">Create QR</button>
+                </form>
+
+            </section>
+            <footer>
+                <canvas id="qrcode" class="hidden"></canvas>
+            </footer>
+        </article>
+    </dialog>
 </main>
 <footer>
     Built with Nest, Pico and Vite
 </footer>
+<script src="/modal.js"></script>
 <script type="module">
+
+
+    // const canvas = document.getElementById('canvas')
+    //
+    // QRCode.toCanvas(canvas, {data: cbor.encode('Hello World'), mode: 'byte'}, function (error) {
+    //     if (error) console.error(error)
+    //     console.log('success!');
+    // })
+    // console.log(QRCode)
     import {render} from './dashboard.js'
+
     window.onload = render
 </script>
 </body>
