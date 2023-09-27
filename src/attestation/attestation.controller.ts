@@ -1,13 +1,23 @@
-import { Body, Controller, Post, Req, Res, Session } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Req,
+  Res,
+  Session,
+  UseGuards,
+} from '@nestjs/common';
 import type { AttestationCredentialJSON } from '@simplewebauthn/typescript-types';
 import type { Request, Response } from 'express';
 
 import { AuthService } from '../auth/auth.service.js';
 
 import { AttestationService } from './attestation.service.js';
-import type { AttestationSelectorDto } from './attestation.dto';
+import type { AttestationSelectorDto } from './attestation.dto.js';
+import { AuthGuard } from '../auth/auth.guard.js';
 
 @Controller('attestation')
+@UseGuards(AuthGuard)
 export class AttestationController {
   constructor(
     private attestationService: AttestationService,
@@ -32,10 +42,6 @@ export class AttestationController {
   ) {
     try {
       const wallet = session.wallet;
-      if (typeof wallet !== 'string')
-        res
-          .status(401)
-          .json({ reason: 'unauthorized', error: 'User is not logged in' });
 
       const user = await this.authService.find(wallet);
       if (!user) res.redirect(307, '/');
@@ -63,13 +69,11 @@ export class AttestationController {
     try {
       const username = session.wallet;
       const expectedChallenge = session.challenge;
-      if (
-        typeof username !== 'string' ||
-        typeof expectedChallenge !== 'string'
-      ) {
+      if (typeof expectedChallenge !== 'string') {
         res
-          .status(401)
-          .json({ reason: 'unauthorized', error: 'User is not logged in' });
+          .status(404)
+          .json({ reason: 'not_found', error: 'Challenge not found.' });
+        return;
       }
       const credential = await this.attestationService.response(
         expectedChallenge,

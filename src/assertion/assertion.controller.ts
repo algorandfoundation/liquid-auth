@@ -77,7 +77,7 @@ export class AssertionController {
     @Body() body: AssertionCredentialJSON,
   ) {
     const expectedChallenge = session.challenge;
-    if (!expectedChallenge) {
+    if (typeof expectedChallenge !== 'string') {
       res
         .status(404)
         .json({ reason: 'not_found', error: 'Challenge not found.' });

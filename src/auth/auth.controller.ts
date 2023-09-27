@@ -7,9 +7,11 @@ import {
   Req,
   Res,
   Session,
+  UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
+import { AuthGuard } from './auth.guard.js';
 
 type LoginRequestDTO = {
   wallet: string;
@@ -23,6 +25,7 @@ export class AuthController {
     res.json(await this.authService.all());
   }
   @Get('/keys')
+  @UseGuards(AuthGuard)
   async keys(@Session() session: Record<string, any>, @Res() res: Response) {
     const wallet = session.wallet;
     const user = await this.authService.find(wallet);
@@ -36,6 +39,7 @@ export class AuthController {
    * @param res - Express Response
    */
   @Delete('/keys/:id')
+  @UseGuards(AuthGuard)
   async remove(
     @Session() session: Record<string, any>,
     @Req() req: Request,
