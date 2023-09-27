@@ -11,14 +11,18 @@ const isAndroid = navigator.userAgent.match(/Android/i);
 console.log(isAndroid);
 async function getCredentials() {
   const user = await fetch('/auth/keys').then((r) => r.json());
+  const credId = localStorage.getItem('credId');
   return typeof user.credentials !== 'undefined'
     ? user.credentials.map((cred) => {
         return `
             <tr>
-              <th scope="row">${cred.credId}</th>
+              <th scope="row">${cred.credId === credId}</th>
+              <th>${cred.credId}</th>
               <td>${cred.prevCounter}</td>
               <td>${cred.publicKey}</td>
-              <td><button class="remove-credential" id="${cred.credId}">X</button></td>
+              <td><button class="remove-credential" id="${
+                cred.credId
+              }">X</button></td>
             </tr>
             `;
       })
@@ -26,13 +30,20 @@ async function getCredentials() {
 }
 
 async function renderCredentials(element) {
+  const transactionButton = document.getElementById('transaction-button');
   const creds = await getCredentials();
+  if (creds.length > 0) {
+    transactionButton.classList.remove('hidden');
+  } else {
+    transactionButton.classList.add('hidden');
+  }
   element.innerHTML = `
 <h3>Credentials</h3>
              <figure>
                 <table>
                   <thead>
                     <tr>
+                      <th scope="col">Active</th>
                       <th scope="col">ID</th>
                       <th scope="col">Counter</th>
                       <th scope="col">Public Key</th>

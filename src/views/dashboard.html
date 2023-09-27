@@ -64,12 +64,12 @@
             <p id="error"></p>
         </section>
         <footer>
-            <button id="transaction-button" data-target="modal" onclick="toggleModal(event)">Show Modal</button>
+            <button id="transaction-button" data-target="modal" class="hidden" onclick="toggleModal(event)">Show Modal</button>
             <button id="register" class="hidden secondary">Add a credential</button>
             <a id="logout" href="/auth/logout" class="contrast" role="button">Sign out</a>
         </footer>
     </article>
-    <dialog id="modal" open>
+    <dialog id="modal">
         <article>
             <header>
                 <a

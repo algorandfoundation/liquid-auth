@@ -109,7 +109,10 @@ export async function assertion(credId) {
 }
 
 export const removeCredential = async (credId) => {
-  localStorage.removeItem('credId');
+  const isCred = localStorage.getItem('credId');
+  if (isCred === credId) {
+    localStorage.removeItem('credId');
+  }
   return fetch(`/auth/keys/${encodeURIComponent(credId)}`, {
     method: 'DELETE',
   });
