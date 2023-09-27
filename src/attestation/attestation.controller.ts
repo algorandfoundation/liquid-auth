@@ -32,7 +32,10 @@ export class AttestationController {
   ) {
     try {
       const wallet = session.wallet;
-      if (typeof wallet !== 'string') res.redirect(307, '/');
+      if (typeof wallet !== 'string')
+        res
+          .status(401)
+          .json({ reason: 'unauthorized', error: 'User is not logged in' });
 
       const user = await this.authService.find(wallet);
       if (!user) res.redirect(307, '/');
@@ -60,7 +63,14 @@ export class AttestationController {
     try {
       const username = session.wallet;
       const expectedChallenge = session.challenge;
-
+      if (
+        typeof username !== 'string' ||
+        typeof expectedChallenge !== 'string'
+      ) {
+        res
+          .status(401)
+          .json({ reason: 'unauthorized', error: 'User is not logged in' });
+      }
       const credential = await this.attestationService.response(
         expectedChallenge,
         req.get('User-Agent'),
