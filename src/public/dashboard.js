@@ -98,29 +98,22 @@ export function render() {
       .getTransactionParams()
       .do()
       .then((params) => {
-        const txn = makePaymentTxnWithSuggestedParams(
-          fromInput.value,
-          toInput.value,
-          parseInt(amountInput.value, 10),
-          undefined,
-          undefined,
-          params,
-        );
+        // const txn = makePaymentTxnWithSuggestedParams(
+        //   fromInput.value,
+        //   toInput.value,
+        //   parseInt(amountInput.value, 10),
+        //   undefined,
+        //   undefined,
+        //   params,
+        // );
+        // TODO: CBOR encode the transaction
+        const txn = {
+          from: fromInput.value,
+          to: toInput.value,
+          amount: parseInt(amountInput.value, 10),
+        };
         console.log(txn);
-        QRCode.toDataURL('I am a pony!')
-          .then((url) => {
-            console.log(url);
-          })
-          .catch((err) => {
-            console.error(err);
-          });
-        QRCode.toCanvas(canvas, [
-          {
-            data: cbor.encode(txn),
-            mode: 'byte',
-          },
-        ]);
-        return txn;
+        QRCode.toCanvas(canvas, JSON.stringify(txn));
       });
   });
 
