@@ -9,9 +9,11 @@ export class AppService {
   getOrigin(ua: string): string {
     let origin: string;
     const parser = new UAParser(ua);
-    // Android origin
-    if (parser.getOS().name.includes('Android')) {
-      // TODO: Ensure we are encoding properly for android
+    // Android APK origin
+    if (
+      parser.getOS().name.includes('Android') &&
+      typeof parser.getBrowser().name !== 'string'
+    ) {
       const octArray: unknown = this.configService
         .get<{ hash: string }>('android')
         .hash.split(':')
