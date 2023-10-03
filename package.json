@@ -28,6 +28,7 @@
     "@nestjs/platform-express": "^10.2.6",
     "@simplewebauthn/server": "^0.10.3",
     "base64url": "^3.0.1",
+    "connect-mongo": "^5.0.0",
     "express-session": "^1.17.3",
     "hbs": "^4.2.0",
     "reflect-metadata": "^0.1.13",
