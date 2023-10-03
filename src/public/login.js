@@ -69,7 +69,6 @@ export async function render() {
   }
   if (credId) {
     submitButton.innerText = 'Assert';
-    walletInput.required = false;
   } else {
     walletInput.required = true;
   }
