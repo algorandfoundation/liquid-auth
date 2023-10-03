@@ -69,6 +69,9 @@ export async function render() {
   }
   if (credId) {
     submitButton.innerText = 'Assert';
+    walletInput.required = false;
+  } else {
+    walletInput.required = true;
   }
 
   if (credId && !wallet) {
@@ -109,7 +112,7 @@ export async function render() {
     const { wallet } = Object.fromEntries(formData);
     if (typeof wallet === 'string') {
       credId ? await assertion(credId) : await createSession({ wallet });
-      window.location.reload();
+      if (credId) window.location.reload();
     }
   });
 }

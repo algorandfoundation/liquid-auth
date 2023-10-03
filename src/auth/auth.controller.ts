@@ -84,12 +84,21 @@ export class AuthController {
     @Body() userLoginDto: LoginRequestDTO,
     @Res() res: Response,
   ) {
-    try {
-      const user = await this.authService.init(userLoginDto.wallet);
-      session.wallet = user.wallet;
-      res.json(user);
-    } catch (e) {
-      res.status(500).json({ error: e.message });
+    if (
+      typeof userLoginDto.wallet !== 'string' ||
+      userLoginDto.wallet.length !== 58
+    ) {
+      res
+        .status(400)
+        .json({ reason: 'invalid_input', error: 'Invalid wallet' });
+    } else {
+      try {
+        const user = await this.authService.init(userLoginDto.wallet);
+        session.wallet = user.wallet;
+        res.json(user);
+      } catch (e) {
+        res.status(500).json({ error: e.message });
+      }
     }
   }
 
