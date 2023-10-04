@@ -1,14 +1,6 @@
-import { attestation, removeCredential } from './api.js';
+import { attestation, removeCredential } from '/shared/api.js';
 import QRCode from 'https://esm.sh/qrcode';
-import cbor from 'https://esm.sh/cbor';
 
-import {
-  makePaymentTxnWithSuggestedParams,
-  Algodv2,
-} from 'https://esm.sh/algosdk';
-
-const isAndroid = navigator.userAgent.match(/Android/i);
-console.log(isAndroid);
 async function getCredentials() {
   const user = await fetch('/auth/keys').then((r) => r.json());
   const credId = localStorage.getItem('credId');
@@ -30,7 +22,9 @@ async function getCredentials() {
 }
 
 async function renderCredentials(element) {
-  const transactionButton = document.getElementById('transaction-button');
+  const transactionButton = document.getElementById(
+    'create-transaction-button',
+  );
   const creds = await getCredentials();
   if (creds.length > 0) {
     transactionButton.classList.remove('hidden');
@@ -82,39 +76,24 @@ export function render() {
   const toInput = document.getElementById('to');
   const fromInput = document.getElementById('from');
   const amountInput = document.getElementById('amount');
-  const transactionForm = document.getElementById('transaction-form');
-  const canvas = document.getElementById('qrcode');
+  const canvas = document.getElementById('transaction-qr-code-canvas');
+  const qrCreateButton = document.getElementById(
+    'create-transaction-qr-code-button',
+  );
 
-  transactionForm.addEventListener('submit', (e) => {
+  /**
+   * Create Transaction QR Code Button
+   */
+  qrCreateButton.addEventListener('click', (e) => {
     e.preventDefault();
-    canvas.classList.remove('hidden');
-    console.log({ cbor: cbor.encode('hello world') });
-    const algodClient = new Algodv2(
-      '',
-      'https://testnet-api.algonode.cloud/',
-      443,
-    );
-    algodClient
-      .getTransactionParams()
-      .do()
-      .then((params) => {
-        // const txn = makePaymentTxnWithSuggestedParams(
-        //   fromInput.value,
-        //   toInput.value,
-        //   parseInt(amountInput.value, 10),
-        //   undefined,
-        //   undefined,
-        //   params,
-        // );
-        // TODO: CBOR encode the transaction
-        const txn = {
-          from: fromInput.value,
-          to: toInput.value,
-          amount: parseInt(amountInput.value, 10),
-        };
-        console.log(txn);
-        QRCode.toCanvas(canvas, JSON.stringify(txn));
-      });
+    console.log('submitting transaction');
+    // TODO encode payload and support multiple types
+    const txn = {
+      from: fromInput.value,
+      to: toInput.value,
+      amount: parseInt(amountInput.value, 10),
+    };
+    QRCode.toCanvas(canvas, JSON.stringify(txn));
   });
 
   /**

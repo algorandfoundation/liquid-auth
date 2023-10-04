@@ -1,3 +1,5 @@
+import QRCode from 'https://esm.sh/qrcode';
+
 /*
  * Modal
  *
@@ -13,7 +15,7 @@ const animationDuration = 400; // ms
 let visibleModal = null;
 
 // Toggle modal
-const toggleModal = (event) => {
+export const toggleModal = (event) => {
   event.preventDefault();
   const modal = document.getElementById(
     event.currentTarget.getAttribute('data-target'),
@@ -24,14 +26,14 @@ const toggleModal = (event) => {
 };
 
 // Is modal open
-const isModalOpen = (modal) => {
+export const isModalOpen = (modal) => {
   return modal.hasAttribute('open') && modal.getAttribute('open') != 'false'
     ? true
     : false;
 };
 
 // Open modal
-const openModal = (modal) => {
+export const openModal = (modal) => {
   if (isScrollbarVisible()) {
     document.documentElement.style.setProperty(
       '--scrollbar-width',
@@ -47,7 +49,7 @@ const openModal = (modal) => {
 };
 
 // Close modal
-const closeModal = (modal) => {
+export const closeModal = (modal) => {
   visibleModal = null;
   document.documentElement.classList.add(closingClass);
   setTimeout(() => {
@@ -74,7 +76,7 @@ document.addEventListener('keydown', (event) => {
 });
 
 // Get scrollbar width
-const getScrollbarWidth = () => {
+export const getScrollbarWidth = () => {
   // Creating invisible container
   const outer = document.createElement('div');
   outer.style.visibility = 'hidden';
@@ -99,3 +101,22 @@ const getScrollbarWidth = () => {
 const isScrollbarVisible = () => {
   return document.body.scrollHeight > screen.height;
 };
+
+export function init(closeId, openId, onOpen, onClose) {
+  // Handle Close
+  document.getElementById(closeId).addEventListener('click', (e) => {
+    if (typeof onClose === 'function') onClose(e);
+    toggleModal(e);
+  });
+
+  // Handle Open
+  document.getElementById(openId).addEventListener('click', (e) => {
+    if (typeof onOpen === 'function') onOpen(e);
+    toggleModal(e);
+  });
+}
+export function initQrCode(closeId, openId, canvasId) {
+  init(closeId, openId, () => {
+    QRCode.toCanvas(document.getElementById(canvasId), window.location.origin);
+  });
+}

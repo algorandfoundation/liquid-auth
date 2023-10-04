@@ -4,7 +4,7 @@
  * Create a Session if the Client Supports FIDO2/WebAuthn
  */
 
-import { assertion } from './api.js';
+import { assertion } from '/shared/api.js';
 
 /**
  *

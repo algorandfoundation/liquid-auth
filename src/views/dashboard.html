@@ -3,43 +3,23 @@
 <head>
     <title>Algorand Foundation | FIDO2 Demo</title>
     <meta name="description" content="FIDO2 on Algorand">
-    <link id="favicon" rel="icon" href="/foundation_favicon.png" type="image/x-icon">
+    <link id="favicon" rel="icon" href="/img/foundation_favicon.png" type="image/x-icon">
     <link
             rel="stylesheet"
             href="https://cdn.jsdelivr.net/npm/@picocss/pico@next/css/pico.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="/css/styles.css"
     />
     <script src="https://cdn.jsdelivr.net/gh/herrjemand/Base64URL-ArrayBuffer@latest/lib/base64url-arraybuffer.js"></script>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        html, body {
-            min-height: 100vh;
-        }
-
-        body {
-            display: flex;
-            flex-direction: column;
-        }
-
-        main {
-            flex: 1;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .error {
-            margin-top: var(--pico-spacing);
-            color: var(--pico-contrast-inverse);
-            background: var(--pico-del-color);
-        }
-    </style>
 </head>
 <body class="container">
-<header>
-    <hgroup>
+<header style="display:flex;">
+    <hgroup style="flex:1">
         <h1>
             FIDO2 Demo
         </h1>
@@ -47,6 +27,10 @@
             Algorand Foundation
         </h2>
     </hgroup>
+    <button data-target='connect-qr-code-modal' id='open-connect-qr-code-modal-button' style="display: flex;">
+        Mobile Connect
+        <svg style="color:white;" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M9.5 6.5v3h-3v-3h3M11 5H5v6h6V5zm-1.5 9.5v3h-3v-3h3M11 13H5v6h6v-6zm6.5-6.5v3h-3v-3h3M19 5h-6v6h6V5zm-6 8h1.5v1.5H13V13zm1.5 1.5H16V16h-1.5v-1.5zM16 13h1.5v1.5H16V13zm-3 3h1.5v1.5H13V16zm1.5 1.5H16V19h-1.5v-1.5zM16 16h1.5v1.5H16V16zm1.5-1.5H19V16h-1.5v-1.5zm0 3H19V19h-1.5v-1.5zM22 7h-2V4h-3V2h5v5zm0 15v-5h-2v3h-3v2h5zM2 22h5v-2H4v-3H2v5zM2 2v5h2V4h3V2H2z"></path></svg>
+    </button>
 </header>
 <main>
     <article>
@@ -64,23 +48,22 @@
             <p id="error"></p>
         </section>
         <footer>
-            <button id="transaction-button" data-target="modal" class="hidden" onclick="toggleModal(event)">Show Modal</button>
+            <button id="create-transaction-button" data-target="create-transaction-modal" class="hidden">Show Modal</button>
             <button id="register" class="hidden secondary">Add a credential</button>
             <a id="logout" href="/auth/logout" class="contrast" role="button">Sign out</a>
         </footer>
     </article>
-    <dialog id="modal">
+    <dialog id="create-transaction-modal">
         <article>
             <header>
-                <a
-                        href="#close"
+                <button
+                  id="close-create-transaction-modal-button"
                         aria-label="Close"
-                        class="close"
-                        data-target="modal"
-                        onclick="toggleModal(event)"
+                        class="close secondary"
+                        data-target="create-transaction-modal"
                 >
 
-                </a>
+                </button>
                 Wallet Transaction
             </header>
             <section>
@@ -101,38 +84,65 @@
 
                     </div>
 
-                    <!-- Markup example 2: input is after label -->
                     <label for="amount">Amount - 50 microAlgos</label>
                     <input type="range" id="amount" name="amount" min="0" max="100" value="50" required>
 
-                    <!-- Button -->
-                    <button type="submit">Create QR</button>
+                    <button id="create-transaction-qr-code-button" type="submit" data-target='transaction-qr-code-modal'>Create QR</button>
                 </form>
-
             </section>
-            <footer>
-                <canvas id="qrcode" class="hidden"></canvas>
-            </footer>
+        </article>
+    </dialog>
+    <dialog id="transaction-qr-code-modal">
+        <article>
+            <header>
+                <button
+                  id="close-transaction-qr-code-modal-button"
+                  aria-label="Close"
+                  class="close secondary"
+                  data-target='transaction-qr-code-modal'
+                ></button>
+                Wallet Transaction
+            </header>
+            <canvas style="margin: auto; min-height: 65vh; min-width: 65vw;"  id="transaction-qr-code-canvas"></canvas>
+        </article>
+    </dialog>
+    <dialog id="connect-qr-code-modal" >
+        <article style="min-height: 80vh;">
+            <header>
+                <button
+                  id="close-connect-qr-code-modal-button"
+                  aria-label="Close"
+                  class="close secondary"
+                  data-target='connect-qr-code-modal'
+                ></button>
+                Scan to connect Mobile Wallet
+            </header>
+            <canvas style="margin: auto; min-height: 65vh; min-width: 65vw;" id="connect-qr-code-canvas"></canvas>
         </article>
     </dialog>
 </main>
 <footer>
     Built with Nest, Pico and Vite
 </footer>
-<script src="/modal.js"></script>
 <script type="module">
-
-
-    // const canvas = document.getElementById('canvas')
-    //
-    // QRCode.toCanvas(canvas, {data: cbor.encode('Hello World'), mode: 'byte'}, function (error) {
-    //     if (error) console.error(error)
-    //     console.log('success!');
-    // })
-    // console.log(QRCode)
-    import {render} from './dashboard.js'
-
-    window.onload = render
+    import {render} from '/dashboard.js'
+    import {init, initQrCode} from '/shared/modal-controls.js'
+    window.onload = () => {
+        render();
+        init(
+          'close-create-transaction-modal-button',
+          'create-transaction-button'
+        )
+        init(
+          'close-transaction-qr-code-modal-button',
+          'create-transaction-qr-code-button'
+        );
+        initQrCode(
+          'close-connect-qr-code-modal-button',
+          'open-connect-qr-code-modal-button',
+          'connect-qr-code-canvas'
+        );
+    }
 </script>
 </body>
 </html>

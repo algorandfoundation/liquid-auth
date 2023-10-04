@@ -6,9 +6,17 @@ body {
     display: flex;
     flex-direction: column;
 }
+
 main {
     flex: 1;
 }
+
 .hidden {
     display: none;
+}
+
+.error {
+    margin-top: var(--pico-spacing);
+    color: var(--pico-contrast-inverse);
+    background: var(--pico-del-color);
 }
