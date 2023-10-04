@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, Res, Session } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res, Session } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import type {
   AssertionCredentialJSON,
@@ -15,6 +15,33 @@ export class AssertionController {
     private authService: AuthService,
   ) {}
 
+  /**
+   * Hard Coded Request Assertion Options for demo
+   */
+  @Get('/request/:credId')
+  async assertionDemoRequest(
+    @Session() session: Record<string, any>,
+    @Req() req: Request,
+    @Res() res: Response,
+    @Body() body?: PublicKeyCredentialRequestOptions,
+  ) {
+    const user = await this.authService.search({
+      'credentials.credId': req.params.credId,
+    });
+
+    if (!user) {
+      res.status(404).json({ reason: 'not_found', error: 'User not found.' });
+      return;
+    }
+
+    // Get options, save challenge and respond
+    const options = this.assertionService.request(
+      user,
+      req.params.credId,
+      body,
+    );
+    res.json(options);
+  }
   /**
    * Request Assertion
    *

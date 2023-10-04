@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Post,
   Req,
   Res,
@@ -23,7 +24,37 @@ export class AttestationController {
     private attestationService: AttestationService,
     private authService: AuthService,
   ) {}
+  /**
+   * Hard Coded Request Attestation Options
+   */
+  @Get('/request/:walletId')
+  async demoRequest(
+    @Session() session: Record<string, any>,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    try {
+      const wallet = req.params.walletId;
 
+      const user = await this.authService.find(wallet);
+      if (!user) {
+        res.redirect(307, '/');
+      } else {
+        const attestationOptions = this.attestationService.request(user, {
+          attestationType: 'none',
+          authenticatorSelection: {
+            authenticatorAttachment: 'platform',
+            userVerification: 'required',
+            requireResidentKey: false,
+          },
+        });
+
+        res.json(attestationOptions);
+      }
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  }
   /**
    * Request Attestation Options
    *
