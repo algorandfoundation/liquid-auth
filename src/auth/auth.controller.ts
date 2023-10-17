@@ -16,14 +16,24 @@ import { AuthGuard } from './auth.guard.js';
 type LoginRequestDTO = {
   wallet: string;
 };
-
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
+  /**
+   * Debugging Route that shows all Users
+   * @param res
+   */
   @Get('/all')
   async all(@Res() res: Response) {
     res.json(await this.authService.all());
   }
+
+  /**
+   * Display user keys
+   *
+   * @param session
+   * @param res
+   */
   @Get('/keys')
   @UseGuards(AuthGuard)
   async keys(@Session() session: Record<string, any>, @Res() res: Response) {

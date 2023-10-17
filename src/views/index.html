@@ -1,107 +1,183 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>FIDO2 Demo</title>
-  <meta name="description" content="FIDO2 on Algorand">
-  <link id="favicon" rel="icon" href="/img/foundation_favicon.png" type="image/x-icon">
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/@picocss/pico@next/css/pico.min.css"
-  />
-  <link
-    rel="stylesheet"
-    href="/css/styles.css"
-  />
-  <script
-    src="https://cdn.jsdelivr.net/gh/herrjemand/Base64URL-ArrayBuffer@latest/lib/base64url-arraybuffer.js"></script>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FIDO2 Demo</title>
+    <meta name="description" content="FIDO2 on Algorand">
+    <link id="favicon" rel="icon" href="/img/foundation_favicon.png" type="image/x-icon">
+    <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/@picocss/pico@next/css/pico.min.css"
+    />
+    <link
+            rel="stylesheet"
+            href="/css/styles.css"
+    />
+    <script
+            src="https://cdn.jsdelivr.net/gh/herrjemand/Base64URL-ArrayBuffer@latest/lib/base64url-arraybuffer.js"></script>
+    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js" integrity="sha384-KAZ4DtjNhLChOB/hxXuKqhMLYvx3b5MlT55xPEiNmREKRzeEm+RVPlTnAn0ajQNs" crossorigin="anonymous"></script>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body class="container">
-<header style="display:flex;">
-  <hgroup style="flex:1">
-    <h1>
-      FIDO2 Demo
-    </h1>
-    <h2>
-      @Algorand
-    </h2>
-  </hgroup>
-  <button data-target='connect-qr-code-modal' id='open-connect-qr-code-modal-button' style="display: flex;">
-    Mobile Connect
-    <svg style="color:white;" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M9.5 6.5v3h-3v-3h3M11 5H5v6h6V5zm-1.5 9.5v3h-3v-3h3M11 13H5v6h6v-6zm6.5-6.5v3h-3v-3h3M19 5h-6v6h6V5zm-6 8h1.5v1.5H13V13zm1.5 1.5H16V16h-1.5v-1.5zM16 13h1.5v1.5H16V13zm-3 3h1.5v1.5H13V16zm1.5 1.5H16V19h-1.5v-1.5zM16 16h1.5v1.5H16V16zm1.5-1.5H19V16h-1.5v-1.5zm0 3H19V19h-1.5v-1.5zM22 7h-2V4h-3V2h5v5zm0 15v-5h-2v3h-3v2h5zM2 22h5v-2H4v-3H2v5zM2 2v5h2V4h3V2H2z"></path></svg>
-  </button>
+<header style="display:flex; ">
+    <hgroup style="flex:1">
+        <h1>
+            FIDO2 Demo
+        </h1>
+        <h2>
+            @Algorand
+        </h2>
+    </hgroup>
+    <div role="group">
+    <button data-target='connect-qr-code-modal' id='open-connect-qr-code-modal-button' style="display: flex;">
+        Mobile Connect
+        <svg style="color:white;" focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M9.5 6.5v3h-3v-3h3M11 5H5v6h6V5zm-1.5 9.5v3h-3v-3h3M11 13H5v6h6v-6zm6.5-6.5v3h-3v-3h3M19 5h-6v6h6V5zm-6 8h1.5v1.5H13V13zm1.5 1.5H16V16h-1.5v-1.5zM16 13h1.5v1.5H16V13zm-3 3h1.5v1.5H13V16zm1.5 1.5H16V19h-1.5v-1.5zM16 16h1.5v1.5H16V16zm1.5-1.5H19V16h-1.5v-1.5zm0 3H19V19h-1.5v-1.5zM22 7h-2V4h-3V2h5v5zm0 15v-5h-2v3h-3v2h5zM2 22h5v-2H4v-3H2v5zM2 2v5h2V4h3V2H2z"></path>
+        </svg>
+    </button>
+    <button data-target='connect-qr-code-modal' id='open-connect-qr-code-credential-modal-button' class="secondary" style="display: flex;">
+        Advanced Connect
+        <svg style="color:white;" focusable="false" aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M9.5 6.5v3h-3v-3h3M11 5H5v6h6V5zm-1.5 9.5v3h-3v-3h3M11 13H5v6h6v-6zm6.5-6.5v3h-3v-3h3M19 5h-6v6h6V5zm-6 8h1.5v1.5H13V13zm1.5 1.5H16V16h-1.5v-1.5zM16 13h1.5v1.5H16V13zm-3 3h1.5v1.5H13V16zm1.5 1.5H16V19h-1.5v-1.5zM16 16h1.5v1.5H16V16zm1.5-1.5H19V16h-1.5v-1.5zm0 3H19V19h-1.5v-1.5zM22 7h-2V4h-3V2h5v5zm0 15v-5h-2v3h-3v2h5zM2 22h5v-2H4v-3H2v5zM2 2v5h2V4h3V2H2z"></path>
+        </svg>
+    </button>
+    </div>
 </header>
 <main>
-  <article>
-    <header>
-      <hgroup>
-        <h2>
-          Login
-        </h2>
-        <h3>{{user}}</h3>
-      </hgroup>
-    </header>
-    <p id="not-supported">Sorry, your device is not supported</p>
-    <form id="form" class="hidden" autocomplete='off'>
-      <fieldset id="wallet-fieldset">
-        <label>
-          Wallet
-          <input
-            id="wallet-input"
-            type="text"
-            name="wallet"
-            minlength="58"
-            maxlength="58"
-          />
-        </label>
-      </fieldset>
-
-    </form>
-    <footer>
-      <button
-        id="submit-button"
-        type="submit"
-        form="form"
-      >Sign In
-      </button>
-      <button
-        id="clear-all-button"
-        class="secondary hidden"
-      >Clear Cache
-      </button>
-    </footer>
-  </article>
-  <dialog id="connect-qr-code-modal" >
-    <article style="min-height: 80vh; min-width: 80vh;">
-      <header>
-        <button
-          id="close-connect-qr-code-modal-button"
-          aria-label="Close"
-          class="close secondary"
-          data-target='connect-qr-code-modal'
-        ></button>
-        Scan to connect Mobile Wallet
-      </header>
-      <canvas style="margin: auto; min-height: 65vh; min-width: 65vh;" id="connect-qr-code-canvas"></canvas>
+    <article>
+        <header>
+            <hgroup>
+                <h2>
+                    Welcome
+                </h2>
+            </hgroup>
+        </header>
+        <p id="not-supported">Sorry, your device is not supported</p>
+        <p id="welcome-text">Connect a wallet to begin</p>
+        <footer>
+            <button
+                    id="submit-button"
+                    class="hidden"
+            >Assert
+            </button>
+            <button
+                    id="clear-all-button"
+                    class="secondary hidden"
+            >Clear Cache
+            </button>
+        </footer>
     </article>
-  </dialog>
+    <dialog id="connect-qr-code-modal">
+        <article style="min-height: 80vh; min-width: 80vh;">
+            <header>
+                <button
+                        id="close-connect-qr-code-modal-button"
+                        aria-label="Close"
+                        class="close secondary"
+                        data-target='connect-qr-code-modal'
+                ></button>
+                Scan to connect Mobile Wallet
+            </header>
+            <canvas style="margin: auto; min-height: 65vh; min-width: 65vh;" id="connect-qr-code-canvas"></canvas>
+            <footer>
+                <button id="fake-scan">FakeScan</button>
+            </footer>
+        </article>
+    </dialog>
+    <dialog id="connect-qr-code-credential-modal">
+        <article style="min-height: 80vh; min-width: 80vh;">
+            <header>
+                <button
+                        id="close-connect-qr-code-credential-modal-button"
+                        aria-label="Close"
+                        class="close secondary"
+                        data-target='connect-qr-code-modal'
+                ></button>
+                Scan to connect Mobile Wallet
+            </header>
+            <canvas style="margin: auto; min-height: 65vh; min-width: 65vh;" id="connect-qr-code-credential-canvas"></canvas>
+            <footer>
+                <button id="fake-scan-credential">FakeScan</button>
+            </footer>
+        </article>
+    </dialog>
 </main>
 <footer>
-  Built with Nest, Pico and Vite
+    Built with Nest, Pico and Vite
 </footer>
 <script type="module">
-  import { render as loginRender} from "/login.js";
-  import {initQrCode} from "/shared/modal-controls.js"
-  window.onload = () => {
-    loginRender();
-    initQrCode(
-      'close-connect-qr-code-modal-button',
-      'open-connect-qr-code-modal-button',
-      'connect-qr-code-canvas'
-    );
-  }
+    import {render as loginRender} from "/login.js";
+    import {initQrOriginCode, closeModal} from "/shared/modal-controls.js"
+    import {linkRequest} from '/shared/api.js'
+    let requestId = Math.random()
+    const socket = io('http://localhost/');
+    socket.on('connect', function() {
+        console.log('Connected');
+
+    });
+    socket.on('events', function(data) {
+        console.log('event', data);
+    });
+    socket.on('link', function(data){
+        console.log('link', data)
+    })
+    socket.on('exception', function(data) {
+        console.log('event', data);
+    });
+    socket.on('disconnect', function() {
+        console.log('Disconnected');
+    });
+    socket.on('auth', function(data) {
+        console.log('auth', data);
+    });
+
+    let eventSource
+    window.onload = () => {
+        document.getElementById("fake-scan").onclick = ()=>{
+            fetch('/connect/response', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({requestId, wallet: 'IKMUKRWTOEJMMJD4MUAQWWB4C473DEHXLCYHJ4R3RZWZKPNE7E2ZTQ7VD4'})
+            })
+        }
+        loginRender();
+        initQrOriginCode(
+            'close-connect-qr-code-modal-button',
+            'open-connect-qr-code-modal-button',
+            'connect-qr-code-canvas',
+            requestId,
+            // On Open
+            async () => {
+                console.log(socket)
+                if(socket.disconnected){
+                    await socket.connect()
+                }
+                // await linkRequest(requestId)
+                socket.emit('link', { requestId }, (res)=>{
+                    console.log('On Link response')
+                    closeModal(document.getElementById('connect-qr-code-modal'))
+                    socket.close()
+                    window.location.reload()
+                });
+                // eventSource = new EventSource('/connect/foo');
+                // eventSource.onmessage = ({data}) => {
+                //     console.log('New message', JSON.parse(data));
+                //     eventSource.close()
+                //     closeModal(document.getElementById('connect-qr-code-modal'))
+                //     window.location.reload()
+                //     // requestId = Math.random()
+                // };
+            },
+            () => {
+                if (eventSource instanceof EventSource) {
+                    eventSource.close()
+                }
+            }
+        );
+    }
 </script>
 </body>
 </html>

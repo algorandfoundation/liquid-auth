@@ -45,12 +45,13 @@ export async function getUserSession(wallet) {
  */
 export async function render() {
   console.log('rendering Login');
-  const form = document.getElementById('form');
+  // const form = document.getElementById('form');
   const submitButton = document.getElementById('submit-button');
   const clearButton = document.getElementById('clear-all-button');
   const notSupported = document.getElementById('not-supported');
-  const walletFieldSet = document.getElementById('wallet-fieldset');
-  const walletInput = document.getElementById('wallet-input');
+  // const walletFieldSet = document.getElementById('wallet-fieldset');
+  // const walletInput = document.getElementById('wallet-input');
+  // const welcomeText = document.getElementById('welcome-text');
 
   /**
    * Wallet Address
@@ -63,18 +64,11 @@ export async function render() {
    */
   const credId = localStorage.getItem('credId');
 
-  if (wallet) {
-    walletInput.value = wallet;
-    await getUserSession(wallet);
-  }
   if (credId) {
     submitButton.innerText = 'Assert';
+    submitButton.classList.remove('hidden');
   } else {
-    walletInput.required = true;
-  }
-
-  if (credId && !wallet) {
-    walletFieldSet.classList.add('hidden');
+    // walletInput.required = true;
   }
 
   if (credId || wallet) {
@@ -89,7 +83,6 @@ export async function render() {
     PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(
       (uvpaa) => {
         if (uvpaa) {
-          form.classList.remove('hidden');
           notSupported.classList.add('hidden');
         }
       },
@@ -100,18 +93,8 @@ export async function render() {
     window.location.reload();
   });
 
-  /*
-   * Listen to Form Submission
-   *
-   * If the wallet is a string, create a session
-   */
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(form);
-    const { wallet } = Object.fromEntries(formData);
-    if (typeof wallet === 'string') {
-      credId ? await assertion(credId) : await createSession({ wallet });
-      if (credId) window.location.reload();
-    }
+  submitButton.addEventListener('click', async () => {
+    await assertion(credId);
+    window.location.reload();
   });
 }

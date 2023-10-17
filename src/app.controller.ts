@@ -49,6 +49,7 @@ export class AppController {
    */
   @Get('/')
   root(@Session() session: Record<string, any>, @Res() res: Response) {
+    session.active = true;
     if (session?.wallet) {
       res.redirect(307, '/dashboard');
     } else {

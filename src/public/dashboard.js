@@ -1,11 +1,26 @@
 import { attestation, removeCredential } from '/shared/api.js';
 import QRCode from 'https://esm.sh/qrcode';
 
+let isCredentialActive = false;
+
+function showHideRegisterButton() {
+  const registerButton = document.getElementById('register');
+  if (!isCredentialActive) {
+    registerButton.classList.remove('hidden');
+  } else {
+    registerButton.classList.add('hidden');
+  }
+}
 async function getCredentials() {
   const user = await fetch('/auth/keys').then((r) => r.json());
   const credId = localStorage.getItem('credId');
+  if (!Array.isArray(user.credentials) || user.credentials.length === 0)
+    isCredentialActive = false;
   return typeof user.credentials !== 'undefined'
     ? user.credentials.map((cred) => {
+        if (cred.credId === credId) {
+          isCredentialActive = true;
+        }
         return `
             <tr>
               <th scope="row">${cred.credId === credId}</th>
@@ -25,7 +40,9 @@ async function renderCredentials(element) {
   const transactionButton = document.getElementById(
     'create-transaction-button',
   );
+
   const creds = await getCredentials();
+  showHideRegisterButton();
   if (creds.length > 0) {
     transactionButton.classList.remove('hidden');
   } else {
@@ -80,7 +97,8 @@ export function render() {
   const qrCreateButton = document.getElementById(
     'create-transaction-qr-code-button',
   );
-
+  const credId = localStorage.getItem('credId');
+  console.log(credId);
   /**
    * Create Transaction QR Code Button
    */
@@ -143,7 +161,7 @@ export function render() {
           content.innerText = UNSUPPORTED;
         } else {
           renderCredentials(list).then(() => {
-            registerButton.classList.remove('hidden');
+            showHideRegisterButton();
             content.innerText =
               'You have a session and your device supports PublicKeyCredential';
           });

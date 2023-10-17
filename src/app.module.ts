@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AttestationModule } from './attestation/attestation.module.js';
 import { AssertionModule } from './assertion/assertion.module.js';
 import { AppService } from './app.service.js';
+import { ConnectModule } from './connect/connect.module.js';
 import configuration from './config/configuration.js';
 
 @Module({
@@ -29,6 +30,7 @@ import configuration from './config/configuration.js';
     AuthModule,
     AttestationModule,
     AssertionModule,
+    ConnectModule,
   ],
   controllers: [AppController],
   providers: [AppService],

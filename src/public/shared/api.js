@@ -117,3 +117,11 @@ export const removeCredential = async (credId) => {
     method: 'DELETE',
   });
 };
+
+export const linkRequest = async (requestId) => {
+  console.log(JSON.stringify({ requestId }));
+  return fetch('/connect/request', {
+    ...DEFAULTS,
+    body: JSON.stringify({ requestId }),
+  });
+};

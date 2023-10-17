@@ -115,8 +115,24 @@ export function init(closeId, openId, onOpen, onClose) {
     toggleModal(e);
   });
 }
-export function initQrCode(closeId, openId, canvasId) {
-  init(closeId, openId, () => {
-    QRCode.toCanvas(document.getElementById(canvasId), window.location.origin);
-  });
+export function initQrOriginCode(
+  closeId,
+  openId,
+  canvasId,
+  requestId,
+  onOpen,
+  onClose,
+) {
+  init(
+    closeId,
+    openId,
+    () => {
+      if (typeof onOpen === 'function') onOpen();
+      QRCode.toCanvas(
+        document.getElementById(canvasId),
+        JSON.stringify({ origin: window.location.origin, requestId }),
+      );
+    },
+    onClose,
+  );
 }
