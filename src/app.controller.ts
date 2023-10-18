@@ -56,7 +56,10 @@ export class AppController {
       res.render('index');
     }
   }
-
+  @Get('/debug-sentry')
+  testSentry() {
+    throw new Error('My first Sentry error!');
+  }
   /**
    * Dashboard View
    *
