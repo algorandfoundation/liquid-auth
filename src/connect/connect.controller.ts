@@ -5,11 +5,12 @@ import {
   Session,
   Inject,
   Logger,
+  Res,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
-
+import { Response } from 'express';
 type LinkResponseDTO = {
   requestId: string | number;
   wallet: string;
@@ -26,21 +27,27 @@ export class ConnectController {
    * Submit a response from a ConnectQR Scan
    * and login to service
    *
+   * @param res
    * @param session
    * @param requestId
    * @param wallet
    */
   @Post('response')
   async linkWalletResponse(
+    @Res() res: Response,
     @Session() session: Record<string, any>,
     @Body() { requestId, wallet }: LinkResponseDTO,
   ) {
-    console.log(`Wallet Response ${requestId} ${wallet}`);
-    requestId =
-      typeof requestId === 'string' ? parseInt(requestId, 10) : requestId;
-    // TODO: Have wallet challenge
-    this.client.emit<string>('auth', { requestId, wallet });
-    session.wallet = wallet;
-    return { ok: true };
+    try {
+      console.log(`Wallet Response ${requestId} ${wallet}`);
+      requestId =
+        typeof requestId === 'string' ? parseFloat(requestId) : requestId;
+      // TODO: Have wallet challenge
+      this.client.emit<string>('auth', { requestId, wallet });
+      session.wallet = wallet;
+      return { ok: true };
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
   }
 }
