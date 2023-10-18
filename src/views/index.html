@@ -111,6 +111,7 @@
     import {initQrOriginCode, closeModal} from "/shared/modal-controls.js"
     import {linkRequest} from '/shared/api.js'
     let requestId = Math.random()
+    console.log({requestId})
     const socket = io('/');
     socket.on('connect', function() {
         console.log('Connected');
@@ -160,7 +161,7 @@
                     console.log('On Link response')
                     closeModal(document.getElementById('connect-qr-code-modal'))
                     socket.close()
-                    window.location.reload()
+                    // window.location.reload()
                 });
                 // eventSource = new EventSource('/connect/foo');
                 // eventSource.onmessage = ({data}) => {
