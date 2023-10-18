@@ -36,7 +36,7 @@ export class RedisIoAdapter extends IoAdapter {
   createIOServer(port: number, options?: ServerOptions): any {
     const server = super.createIOServer(port, options);
     const wrap =
-      (middleware: Function) =>
+      (middleware: (request: any, options: any, next: any) => any) =>
       (socket: Socket, next: (err?: Error) => void) => {
         return middleware(socket.request, {}, next);
       };
