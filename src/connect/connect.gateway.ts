@@ -11,19 +11,36 @@ import {
 } from '@nestjs/websockets';
 
 import { SessionService } from './session.service.js';
+import { Logger, Session } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
-//TODO: find better way to access the redis adapter
-const subClient = new Redis({ lazyConnect: true });
 @WebSocketGateway({
   cors: {
     origin: '*',
   },
 })
 export class ConnectGateway {
-  constructor(private sessionService: SessionService) {}
+  private subClient: Redis;
+  private readonly logger = new Logger(ConnectGateway.name);
+
+  constructor(
+    private configService: ConfigService,
+    private sessionService: SessionService,
+  ) {
+    this.subClient = new Redis({
+      host: configService.get('socket.host'),
+      port: configService.get('socket.port'),
+      username: configService.get('socket.username'),
+      password: configService.get('socket.password'),
+      lazyConnect: true,
+    });
+  }
   @WebSocketServer()
   server: Server;
 
+  handleConnection(@Session() session: Record<any, any>) {
+    this.logger.debug(`WSS / Client Connected with Session: ${session.id}`);
+  }
   /**
    * On Link Connection, wait for the wallet to connect
    * @param client
@@ -36,27 +53,30 @@ export class ConnectGateway {
   ): Promise<
     Observable<{ data: { requestId: string | number; wallet: string } }>
   > {
+    const handshake = client.handshake as Handshake;
+    this.logger.debug(
+      `WSS / Event: link for Session: ${handshake.sessionID} with RequestId: ${body.requestId}`,
+    );
     console.log(`Message Recieved to Link ${body.requestId}`);
     // Recast the handshake
-    const handshake = client.handshake as Handshake;
 
     // Find the stored session
     const session = await this.sessionService.find(handshake.sessionID);
     console.log(`Session found ${session}`);
     // Connect to the redis feed
-    if (subClient.status !== 'ready') {
-      await subClient.connect();
+    if (this.subClient.status !== 'ready') {
+      await this.subClient.connect();
     }
-    subClient.subscribe('auth');
+    this.subClient.subscribe('auth');
 
     // Handle messages
     const obs$: Observable<any> = new Observable((observer) => {
-      subClient.on('message', async (channel, eventMessage) => {
+      this.subClient.on('message', async (channel, eventMessage) => {
         const { data } = JSON.parse(eventMessage);
         if (body.requestId === data.requestId) {
           await this.sessionService.updateWallet(session, data.wallet);
           observer.next(data);
-          subClient.disconnect();
+          this.subClient.disconnect();
           observer.complete();
         }
       });
