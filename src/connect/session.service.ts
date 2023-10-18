@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
@@ -11,6 +11,7 @@ import { Session } from './session.schema.js';
  */
 @Injectable()
 export class SessionService {
+  private readonly logger = new Logger(SessionService.name);
   /**
    * Construct SessionService
    * @param sessionModel - Session Mongoose Model
@@ -25,7 +26,7 @@ export class SessionService {
    * @param sid - Session ID
    */
   async find(sid: string): Promise<Session> {
-    console.log(`Finding session ${sid}`);
+    this.logger.log(`Finding session ${sid}`);
     return this.sessionModel.findOne({ _id: sid }).exec();
   }
 

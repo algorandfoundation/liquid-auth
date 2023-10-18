@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import base64url from 'base64url';
 import UAParser from 'ua-parser-js';
 
 @Injectable()
 export class AppService {
+  private readonly logger = new Logger(AppService.name);
   constructor(private configService: ConfigService) {}
   getOrigin(ua: string): string {
     let origin: string;

@@ -1,8 +1,14 @@
-import { Body, Controller, Post, Session, Inject } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Session,
+  Inject,
+  Logger,
+} from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
-import { SessionService } from './session.service.js';
 
 type LinkResponseDTO = {
   requestId: string | number;
@@ -11,6 +17,8 @@ type LinkResponseDTO = {
 
 @Controller('connect')
 export class ConnectController {
+  private readonly logger = new Logger(ConnectController.name);
+
   @WebSocketServer()
   server: Server;
   constructor(@Inject('ACCOUNT_LINK_SERVICE') private client: ClientProxy) {}
