@@ -40,12 +40,12 @@ export class ConnectController {
   ) {
     try {
       console.log(`Wallet Response ${requestId} ${wallet}`);
-      requestId =
+      const parsedRequest =
         typeof requestId === 'string' ? parseFloat(requestId) : requestId;
+      console.log('req', { requestId, parsedRequest });
       // TODO: Have wallet challenge
-      this.client.emit<string>('auth', { requestId, wallet });
+      this.client.emit<string>('auth', { requestId: parsedRequest, wallet });
       session.wallet = wallet;
-      return { ok: true };
     } catch (e) {
       res.status(500).json({ error: e.message });
     }
