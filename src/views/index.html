@@ -111,7 +111,7 @@
     import {initQrOriginCode, closeModal} from "/shared/modal-controls.js"
     import {linkRequest} from '/shared/api.js'
     let requestId = Math.random()
-    const socket = io('http://localhost/');
+    const socket = io('/');
     socket.on('connect', function() {
         console.log('Connected');
 
