@@ -36,8 +36,11 @@ export class ConnectController {
     @Body() { requestId, wallet }: LinkResponseDTO,
   ) {
     console.log(`Wallet Response ${requestId} ${wallet}`);
+    requestId =
+      typeof requestId === 'string' ? parseInt(requestId, 10) : requestId;
     // TODO: Have wallet challenge
     this.client.emit<string>('auth', { requestId, wallet });
     session.wallet = wallet;
+    return { ok: true };
   }
 }
