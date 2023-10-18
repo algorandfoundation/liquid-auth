@@ -12,7 +12,7 @@
     "start": "nest start",
     "dev": "cross-env PORT=80 nest start --watch",
     "start:debug": "cross-env NODE_ENV=development nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node dist/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -74,6 +74,9 @@
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0 <21.0.0"
   },
   "jest": {
     "moduleFileExtensions": [
