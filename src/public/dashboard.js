@@ -28,10 +28,15 @@ async function getCredentials() {
               <th scope="row">${cred.credId === credId}</th>
               <th>${cred.credId}</th>
               <td>${cred.prevCounter}</td>
-              <td>${cred.publicKey}</td>
-              <td><button class="remove-credential" id="${
+              <td>
+              <div role="group">
+              <button class="set-active-credential" data-id="${
                 cred.credId
-              }">X</button></td>
+              }">Set Active</button>
+              <button class="remove-credential secondary" data-id="${
+                cred.credId
+              }">X</button>
+              </div></td>
             </tr>
             `;
       })
@@ -59,8 +64,7 @@ async function renderCredentials(element) {
                       <th scope="col">Active</th>
                       <th scope="col">ID</th>
                       <th scope="col">Counter</th>
-                      <th scope="col">Public Key</th>
-                      <th scope="col">Remove</th>
+                      <th scope="col">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -68,10 +72,22 @@ async function renderCredentials(element) {
                   </tbody>
                   </table>
                   </figure>`;
+  const setActiveButtons = document.getElementsByClassName(
+    'set-active-credential',
+  );
+  for (let button of setActiveButtons) {
+    if (button.dataset.id === localStorage.getItem('credId')) {
+      button.setAttribute('disabled', '');
+    }
+    button.addEventListener('click', () => {
+      localStorage.setItem('credId', button.dataset.id);
+      renderCredentials(element);
+    });
+  }
   const removeButtons = document.getElementsByClassName('remove-credential');
   for (let button of removeButtons) {
     button.addEventListener('click', () => {
-      removeCredential(button.id).then(() => {
+      removeCredential(button.dataset.id).then(() => {
         renderCredentials(element);
       });
     });
