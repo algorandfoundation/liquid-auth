@@ -1,5 +1,7 @@
 import { attestation, removeCredential } from '/shared/api.js';
+import { initAll } from '/shared/modal-controls.js';
 import QRCode from 'https://esm.sh/qrcode';
+import { handleModalOpen } from './shared/qr-connect-modal.js';
 
 let isCredentialActive = false;
 
@@ -83,6 +85,43 @@ async function renderCredentials(element) {
  *
  */
 export function render() {
+  let requestId = Math.random();
+  let socket;
+  initAll([
+    {
+      closeEl: 'close-create-transaction-modal-button',
+      openEl: 'create-transaction-button',
+    },
+    {
+      closeEl: 'close-transaction-qr-code-modal-button',
+      openEl: 'create-transaction-qr-code-button',
+    },
+    {
+      closeEl: document.getElementById('close-connect-qr-code-modal-button'),
+      openEl: document.getElementById('open-connect-qr-code-modal-button'),
+      async onOpen() {
+        socket = await handleModalOpen(requestId);
+      },
+      onClose() {
+        if (typeof socket !== 'undefined') {
+          console.log(socket);
+          socket.close();
+        }
+      },
+    },
+  ]);
+  document.getElementById('fake-scan').onclick = () => {
+    fetch('/connect/response', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        requestId,
+        wallet: 'IKMUKRWTOEJMMJD4MUAQWWB4C473DEHXLCYHJ4R3RZWZKPNE7E2ZTQ7VD4',
+      }),
+    });
+  };
   /**
    * Content Section
    * @type {HTMLElement}
@@ -98,7 +137,10 @@ export function render() {
     'create-transaction-qr-code-button',
   );
   const credId = localStorage.getItem('credId');
-  console.log(credId);
+
+  console.log('%cLOADING: %c/dashboard', 'color: yellow', 'color: cyan', {
+    credId,
+  });
   /**
    * Create Transaction QR Code Button
    */
@@ -120,6 +162,12 @@ export function render() {
    */
   const logoutButton = document.getElementById('logout');
   logoutButton.addEventListener('click', () => {
+    console.log(
+      '%CLICK: %c/dashboard/#logout',
+      'color: yellow',
+      'color: cyan',
+      credId,
+    );
     localStorage.removeItem('wallet');
   });
 
@@ -129,6 +177,12 @@ export function render() {
    */
   const registerButton = document.getElementById('register');
   registerButton.addEventListener('click', () => {
+    console.log(
+      '%cCLICK: %c/dashboard/#register',
+      'color: yellow',
+      'color: cyan',
+      credId,
+    );
     attestation()
       .then(() => {
         error.classList.add('hidden');
@@ -153,17 +207,18 @@ export function render() {
     content.classList.add('error');
   }
   if (window.PublicKeyCredential) {
-    console.log(window.PublicKeyCredential);
     PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(
       (uvpaa) => {
-        console.log(uvpaa);
         if (!uvpaa) {
           content.innerText = UNSUPPORTED;
         } else {
           renderCredentials(list).then(() => {
             showHideRegisterButton();
-            content.innerText =
-              'You have a session and your device supports PublicKeyCredential';
+            content.innerText = `You have a session and your device supports PublicKeyCredential. 
+              
+              Add a credential
+              
+              `;
           });
         }
       },

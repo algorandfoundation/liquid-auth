@@ -1,12 +1,3 @@
-import QRCode from 'https://esm.sh/qrcode';
-
-/*
- * Modal
- *
- * Pico.css - https://picocss.com
- * Copyright 2019-2023 - Licensed under MIT
- */
-
 // Config
 const isOpenClass = 'modal-is-open';
 const openingClass = 'modal-is-opening';
@@ -27,9 +18,7 @@ export const toggleModal = (event) => {
 
 // Is modal open
 export const isModalOpen = (modal) => {
-  return modal.hasAttribute('open') && modal.getAttribute('open') != 'false'
-    ? true
-    : false;
+  return modal.hasAttribute('open') && modal.getAttribute('open') !== 'false';
 };
 
 // Open modal
@@ -102,37 +91,29 @@ const isScrollbarVisible = () => {
   return document.body.scrollHeight > screen.height;
 };
 
-export function init(closeId, openId, onOpen, onClose) {
-  // Handle Close
-  document.getElementById(closeId).addEventListener('click', (e) => {
-    if (typeof onClose === 'function') onClose(e);
-    toggleModal(e);
-  });
+export function init({ openEl, closeEl, onOpen, onClose }) {
+  let open =
+    typeof openEl === 'string' ? document.getElementById(openEl) : openEl;
+  let close =
+    typeof closeEl === 'string' ? document.getElementById(closeEl) : closeEl;
 
   // Handle Open
-  document.getElementById(openId).addEventListener('click', (e) => {
+  open.addEventListener('click', (e) => {
     if (typeof onOpen === 'function') onOpen(e);
     toggleModal(e);
   });
+
+  // Handle Close
+  close.addEventListener('click', (e) => {
+    if (typeof onClose === 'function') onClose(e);
+    toggleModal(e);
+  });
 }
-export function initQrOriginCode(
-  closeId,
-  openId,
-  canvasId,
-  requestId,
-  onOpen,
-  onClose,
-) {
-  init(
-    closeId,
-    openId,
-    () => {
-      if (typeof onOpen === 'function') onOpen();
-      QRCode.toCanvas(
-        document.getElementById(canvasId),
-        JSON.stringify({ origin: window.location.origin, requestId }),
-      );
-    },
-    onClose,
-  );
+
+export function initAll(modals) {
+  if (Array.isArray(modals) && modals.length > 0) {
+    modals.forEach((modal) => {
+      init(modal);
+    });
+  }
 }

@@ -4,96 +4,73 @@
  * Create a Session if the Client Supports FIDO2/WebAuthn
  */
 
-import { assertion } from '/shared/api.js';
-
-/**
- *
- * @param {object} user - User Data
- * @param {string} user.wallet - Algorand Wallet Address
- */
-export async function createSession(user) {
-  if (typeof user.wallet !== 'string') {
-    throw new TypeError('Wallet must be a string');
-  }
-
-  return fetch('/auth/session', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(user),
-  }).then(() => {
-    localStorage.setItem('wallet', user.wallet);
-    window.location.href = '/dashboard';
-  });
-}
-
-/**
- * Get User Session
- * @param wallet
- * @return {Promise<any>}
- */
-export async function getUserSession(wallet) {
-  if (typeof wallet !== 'string') {
-    throw new TypeError('Wallet must be a string');
-  }
-  return fetch(`/auth/session`).then((res) => res.json());
-}
+import { assertion, logOut, removeCredential } from '/shared/api.js';
+import { init } from '/shared/modal-controls.js';
+import { handleModalOpen } from '/shared/qr-connect-modal.js';
 
 /**
  * Render Page
  */
 export async function render() {
-  console.log('rendering Login');
-  // const form = document.getElementById('form');
-  const submitButton = document.getElementById('submit-button');
-  const clearButton = document.getElementById('clear-all-button');
-  const notSupported = document.getElementById('not-supported');
-  // const walletFieldSet = document.getElementById('wallet-fieldset');
-  // const walletInput = document.getElementById('wallet-input');
-  // const welcomeText = document.getElementById('welcome-text');
+  let requestId = Math.random();
+  let socket;
+  init({
+    closeEl: document.getElementById('close-connect-qr-code-modal-button'),
+    openEl: document.getElementById('open-connect-qr-code-modal-button'),
+    async onOpen() {
+      socket = await handleModalOpen(requestId);
+    },
+    onClose() {
+      if (typeof socket !== 'undefined') {
+        socket.close();
+      }
+    },
+  });
+  // initAll();
+  document.getElementById('fake-scan').onclick = () => {
+    fetch('/connect/response', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        requestId,
+        wallet: 'IKMUKRWTOEJMMJD4MUAQWWB4C473DEHXLCYHJ4R3RZWZKPNE7E2ZTQ7VD4',
+      }),
+    });
+  };
 
-  /**
-   * Wallet Address
-   * @type {string | null}
-   */
-  const wallet = localStorage.getItem('wallet');
   /**
    * Credential ID
    * @type {string | null}
    */
   const credId = localStorage.getItem('credId');
 
-  if (credId) {
-    submitButton.innerText = 'Assert';
-    submitButton.classList.remove('hidden');
-  } else {
-    // walletInput.required = true;
-  }
+  console.log('%cLOADING: %c/', 'color: yellow', 'color: cyan', { credId });
+  const assertButton = document.getElementById('assert-button');
+  const clearButton = document.getElementById('clear-all-button');
 
-  if (credId || wallet) {
+  if (credId) {
+    assertButton.classList.remove('hidden');
     clearButton.classList.remove('hidden');
   }
-  /*
-   * Check for WebAuthn support
-   *
-   * If the device can use PublicKeyCredentials, the login form will be visible
-   */
-  if (window.PublicKeyCredential) {
-    PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(
-      (uvpaa) => {
-        if (uvpaa) {
-          notSupported.classList.add('hidden');
-        }
-      },
+
+  clearButton.addEventListener('click', async () => {
+    console.log(
+      '%cCLICKED: %c/#clear-all-button',
+      'color: yellow',
+      'color: cyan',
     );
-  }
-  clearButton.addEventListener('click', () => {
+    await assertion(credId);
+    await removeCredential(credId);
+    await logOut();
+
     localStorage.clear();
-    window.location.reload();
+    assertButton.classList.add('hidden');
+    clearButton.classList.add('hidden');
   });
 
-  submitButton.addEventListener('click', async () => {
+  assertButton.addEventListener('click', async () => {
     await assertion(credId);
     window.location.reload();
   });
