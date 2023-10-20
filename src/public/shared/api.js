@@ -30,38 +30,46 @@ export async function attestation(
     body: JSON.stringify(options),
   }).then((r) => r.json());
 
-  attestationOptions.user.id = base64url.decode(attestationOptions.user.id);
-  attestationOptions.challenge = base64url.decode(attestationOptions.challenge);
+  if (typeof attestationOptions.error !== 'undefined') {
+    throw new Error(attestationOptions.error);
+  } else {
+    attestationOptions.user.id = base64url.decode(attestationOptions.user.id);
+    attestationOptions.challenge = base64url.decode(
+      attestationOptions.challenge,
+    );
 
-  if (attestationOptions.excludeCredentials) {
-    for (let cred of attestationOptions.excludeCredentials) {
-      cred.id = base64url.decode(cred.id);
+    if (attestationOptions.excludeCredentials) {
+      for (let cred of attestationOptions.excludeCredentials) {
+        cred.id = base64url.decode(cred.id);
+      }
     }
+
+    const cred = await navigator.credentials.create({
+      publicKey: attestationOptions,
+    });
+
+    const credential = {};
+    credential.id = cred.id;
+    credential.rawId = base64url.encode(cred.rawId);
+    credential.type = cred.type;
+
+    if (cred.response) {
+      const clientDataJSON = base64url.encode(cred.response.clientDataJSON);
+      const attestationObject = base64url.encode(
+        cred.response.attestationObject,
+      );
+      credential.response = {
+        clientDataJSON,
+        attestationObject,
+      };
+    }
+    localStorage.setItem(`credId`, credential.id);
+
+    return await fetch('/attestation/response', {
+      ...DEFAULTS,
+      body: JSON.stringify(credential),
+    });
   }
-
-  const cred = await navigator.credentials.create({
-    publicKey: attestationOptions,
-  });
-
-  const credential = {};
-  credential.id = cred.id;
-  credential.rawId = base64url.encode(cred.rawId);
-  credential.type = cred.type;
-
-  if (cred.response) {
-    const clientDataJSON = base64url.encode(cred.response.clientDataJSON);
-    const attestationObject = base64url.encode(cred.response.attestationObject);
-    credential.response = {
-      clientDataJSON,
-      attestationObject,
-    };
-  }
-  localStorage.setItem(`credId`, credential.id);
-
-  return await fetch('/attestation/response', {
-    ...DEFAULTS,
-    body: JSON.stringify(credential),
-  });
 }
 
 export async function assertion(credId) {

@@ -123,15 +123,17 @@ export class AssertionController {
     const expectedChallenge = session.challenge;
     if (typeof expectedChallenge !== 'string') {
       res
-        .status(404)
-        .json({ reason: 'not_found', error: 'Challenge not found.' });
+        .status(401)
+        .json({ reason: 'unauthorized', error: 'Challenge not found.' });
       return;
     }
     const savedUser = await this.authService.search({
       'credentials.credId': body.id,
     });
     if (!savedUser) {
-      res.status(404).json({ reason: 'not_found', error: 'User not found.' });
+      res
+        .status(403)
+        .json({ reason: 'not_found', error: 'Credential not found.' });
       return;
     }
 

@@ -71,28 +71,41 @@ export class AttestationController {
    *
    * @param session - Express Session
    * @param options - Attestation Selector DTO
+   * @param req - Express Request
    * @param res - Express Response
    */
   @Post('/request')
   async request(
     @Session() session: Record<string, any>,
     @Body() options: AttestationSelectorDto, // TODO: Update to use internal Options
+    @Req() req: Request,
     @Res() res: Response,
   ) {
-    this.logger.log(`POST /attestation/request for Session: ${session.id}`);
+    console.log(req.headers.host);
+    this.logger.log(
+      `POST /attestation/request for Session: ${session.id} and Wallet: ${session.wallet}`,
+    );
     try {
       const wallet = session.wallet;
+      if (!wallet) {
+        res
+          .status(401)
+          .json({ reason: 'unauthorized', error: 'Wallet not connected' });
+        return;
+      }
 
       const user = await this.authService.find(wallet);
       if (!user) {
-        res.redirect(307, '/');
+        res
+          .status(403)
+          .json({ reason: 'not_found', error: 'Wallet not found.' });
         return;
       }
 
       const attestationOptions = this.attestationService.request(user, options);
 
       session.challenge = attestationOptions.challenge;
-
+      this.logger.debug(attestationOptions);
       res.json(attestationOptions);
     } catch (e) {
       res.status(500).json({ error: e.message });

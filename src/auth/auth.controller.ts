@@ -74,6 +74,8 @@ export class AuthController {
   @Get('/logout')
   logout(@Session() session: Record<string, any>, @Res() res: Response) {
     delete session.wallet;
+    delete session.active;
+    delete session.requestId;
     res.redirect(302, '/');
   }
   /**
