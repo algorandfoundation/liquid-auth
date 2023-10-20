@@ -57,12 +57,9 @@ export class ConnectGateway {
     this.logger.debug(
       `WSS / Event: link for Session: ${handshake.sessionID} with RequestId: ${body.requestId}`,
     );
-    console.log(`Message Recieved to Link ${body.requestId}`);
-    // Recast the handshake
-
     // Find the stored session
     const session = await this.sessionService.find(handshake.sessionID);
-    console.log(`Session found ${session}`);
+
     // Connect to the redis feed
     if (this.subClient.status !== 'ready') {
       await this.subClient.connect();

@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Req, Res, Session } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Logger,
+  Post,
+  Req,
+  Res,
+  Session,
+} from '@nestjs/common';
 import type { Request, Response } from 'express';
 import type {
   AssertionCredentialJSON,
@@ -10,6 +19,7 @@ import { AssertionService } from './assertion.service.js';
 
 @Controller('assertion')
 export class AssertionController {
+  private readonly logger = new Logger(AssertionController.name);
   constructor(
     private assertionService: AssertionService,
     private authService: AuthService,
@@ -25,6 +35,9 @@ export class AssertionController {
     @Res() res: Response,
     @Body() body?: PublicKeyCredentialRequestOptions,
   ) {
+    this.logger.log(
+      `GET /request/${req.params.credId} for Session: ${session.id}`,
+    );
     const user = await this.authService.search({
       'credentials.credId': req.params.credId,
     });
@@ -63,10 +76,13 @@ export class AssertionController {
     @Res() res: Response,
     @Body() body?: PublicKeyCredentialRequestOptions,
   ) {
+    this.logger.log(
+      `POST /request/${req.params.credId} for Session: ${session.id}`,
+    );
     const user = await this.authService.search({
       'credentials.credId': req.params.credId,
     });
-    console.log({ user, credId: req.params.credId });
+
     if (!user) {
       res.status(404).json({ reason: 'not_found', error: 'User not found.' });
       return;
@@ -78,7 +94,7 @@ export class AssertionController {
       req.params.credId,
       body,
     );
-    console.log(options);
+
     session.challenge = options.challenge;
     res.json(options);
   }
@@ -103,6 +119,7 @@ export class AssertionController {
     @Res() res: Response,
     @Body() body: AssertionCredentialJSON,
   ) {
+    this.logger.log(`POST /response for Session: ${session.id}`);
     const expectedChallenge = session.challenge;
     if (typeof expectedChallenge !== 'string') {
       res

@@ -48,6 +48,8 @@ export class ConnectController {
       this.client.emit<string>('auth', { requestId: parsedRequest, wallet });
       session.wallet = wallet;
       session.active = true;
+      res.status(200);
+      res.end();
     } catch (e) {
       res.status(500).json({ error: e.message });
     }

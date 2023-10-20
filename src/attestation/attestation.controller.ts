@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Logger,
   Post,
   Req,
   Res,
@@ -20,12 +21,16 @@ import { AuthGuard } from '../auth/auth.guard.js';
 @Controller('attestation')
 @UseGuards(AuthGuard)
 export class AttestationController {
+  private readonly logger = new Logger(AttestationController.name);
   constructor(
     private attestationService: AttestationService,
     private authService: AuthService,
   ) {}
   /**
    * Hard Coded Request Attestation Options
+   *
+   * for demonstrations
+   * @deprecated
    */
   @Get('/request/:walletId')
   async demoRequest(
@@ -33,6 +38,9 @@ export class AttestationController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    this.logger.log(
+      `GET /attestation/request/${req.params.walletId} for Session: ${session.id}`,
+    );
     try {
       const wallet = req.params.walletId;
 
@@ -71,11 +79,15 @@ export class AttestationController {
     @Body() options: AttestationSelectorDto, // TODO: Update to use internal Options
     @Res() res: Response,
   ) {
+    this.logger.log(`POST /attestation/request for Session: ${session.id}`);
     try {
       const wallet = session.wallet;
 
       const user = await this.authService.find(wallet);
-      if (!user) res.redirect(307, '/');
+      if (!user) {
+        res.redirect(307, '/');
+        return;
+      }
 
       const attestationOptions = this.attestationService.request(user, options);
 
@@ -97,6 +109,7 @@ export class AttestationController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    this.logger.log(`POST /attestation/response for Session: ${session.id}`);
     try {
       const username = session.wallet;
       const expectedChallenge = session.challenge;

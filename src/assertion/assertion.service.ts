@@ -25,7 +25,6 @@ export class AssertionService {
     const allowCredentials = [];
     for (const cred of user.credentials) {
       // `credId` is specified and matches
-      console.log(credId, cred.credId);
       if (credId && cred.credId == credId) {
         allowCredentials.push({
           id: cred.credId,
@@ -34,7 +33,7 @@ export class AssertionService {
         });
       }
     }
-    console.log(allowCredentials);
+
     return fido2.generateAssertionOptions({
       timeout: this.configService.get<number>('timeout'),
       rpID: this.configService.get<string>('hostname'),

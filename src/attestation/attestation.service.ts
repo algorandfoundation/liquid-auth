@@ -48,7 +48,6 @@ export class AttestationService {
         alg: param,
       });
     }
-    console.log(attestationOptions);
     return attestationOptions;
   }
 

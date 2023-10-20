@@ -41,7 +41,7 @@ async function bootstrap() {
   const uri = `mongodb${
     env !== 'development' ? '+srv' : ''
   }://${username}:${password}@${host}/${name}?authSource=admin&retryWrites=true&w=majority`;
-  console.log(uri);
+
   const store = MongoStore.create({
     mongoUrl: uri,
     ttl: 20000,
