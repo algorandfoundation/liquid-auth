@@ -39,13 +39,15 @@ export class ConnectController {
     @Body() { requestId, wallet }: LinkResponseDTO,
   ) {
     try {
-      console.log(`Wallet Response ${requestId} ${wallet}`);
+      this.logger.log(
+        `POST /connect/response for Request: ${requestId} Session: ${session.id} with Wallet: ${wallet}`,
+      );
       const parsedRequest =
         typeof requestId === 'string' ? parseFloat(requestId) : requestId;
-      console.log('req', { requestId, parsedRequest });
       // TODO: Have wallet challenge
       this.client.emit<string>('auth', { requestId: parsedRequest, wallet });
       session.wallet = wallet;
+      session.active = true;
     } catch (e) {
       res.status(500).json({ error: e.message });
     }
