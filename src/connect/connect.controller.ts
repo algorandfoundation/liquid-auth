@@ -11,6 +11,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
 import { Response } from 'express';
+import { AuthService } from '../auth/auth.service.js';
 type LinkResponseDTO = {
   requestId: string | number;
   wallet: string;
@@ -22,7 +23,10 @@ export class ConnectController {
 
   @WebSocketServer()
   server: Server;
-  constructor(@Inject('ACCOUNT_LINK_SERVICE') private client: ClientProxy) {}
+  constructor(
+    private authService: AuthService,
+    @Inject('ACCOUNT_LINK_SERVICE') private client: ClientProxy,
+  ) {}
   /**
    * Submit a response from a ConnectQR Scan
    * and login to service
@@ -48,6 +52,9 @@ export class ConnectController {
       this.client.emit<string>('auth', { requestId: parsedRequest, wallet });
       session.wallet = wallet;
       session.active = true;
+
+      await this.authService.init(wallet);
+
       res.status(200);
       res.end();
     } catch (e) {

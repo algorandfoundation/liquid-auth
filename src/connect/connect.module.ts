@@ -5,10 +5,15 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Session, SessionSchema } from './session.schema.js';
 import { SessionService } from './session.service.js';
+import { AuthService } from '../auth/auth.service.js';
+import { User, UserSchema } from '../auth/auth.schema.js';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Session.name, schema: SessionSchema }]),
+    MongooseModule.forFeature([
+      { name: Session.name, schema: SessionSchema },
+      { name: User.name, schema: UserSchema },
+    ]),
     // TODO: inject configuration
     ClientsModule.register([
       {
@@ -24,6 +29,6 @@ import { SessionService } from './session.service.js';
     ]),
   ],
   controllers: [ConnectController],
-  providers: [SessionService, ConnectGateway],
+  providers: [AuthService, SessionService, ConnectGateway],
 })
 export class ConnectModule {}
