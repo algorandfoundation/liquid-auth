@@ -10,7 +10,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
 import { AuthService } from '../auth/auth.service.js';
-import { AlgorandEncoder } from '@algorandfoundation/algo-models';
+import { AlgorandEncoder } from './AlgoEncoder.js';
 
 const algoEncoder = new AlgorandEncoder();
 
