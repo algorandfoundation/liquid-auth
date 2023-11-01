@@ -1,8 +1,12 @@
 import QRCode from 'https://esm.sh/qrcode';
 import { closeModal } from '/shared/modal-controls.js';
+import nacl from 'https://esm.sh/tweetnacl';
+import { attestation } from './api.js';
+// import base64url from 'base64url';
 export async function handleModalOpen(requestId) {
   const socket = io('/');
-
+  const challenge = base64url.encode(nacl.randomBytes(nacl.sign.seedLength));
+  console.log(challenge);
   socket.on('connect', function () {
     console.log('Connected');
   });
@@ -34,7 +38,7 @@ export async function handleModalOpen(requestId) {
   }
   QRCode.toCanvas(
     document.getElementById('connect-qr-code-canvas'),
-    JSON.stringify({ origin: window.location.origin, requestId }),
+    JSON.stringify({ origin: window.location.origin, requestId, challenge }),
     { scale },
   );
 
@@ -42,11 +46,25 @@ export async function handleModalOpen(requestId) {
     await socket.connect();
   }
   // await linkRequest(requestId)
-  socket.emit('link', { requestId }, () => {
+  socket.emit('link', { requestId }, async () => {
     console.log('On Link response');
     closeModal(document.getElementById('connect-qr-code-modal'));
     socket.close();
-    window.location.reload();
+    const credId = window.localStorage.getItem('credId');
+    console.log(
+      '%cCLICK: %c/dashboard/#register',
+      'color: yellow',
+      'color: cyan',
+      credId,
+    );
+    if (window.location.pathname === '/') {
+      if (!credId || credId.length === 0) {
+        await attestation().catch((e) => {
+          console.error(e);
+        });
+      }
+    }
+    if (window.location.pathname === '/') window.location.reload();
   });
   return socket;
 }

@@ -1,7 +1,8 @@
 import { attestation, removeCredential } from '/shared/api.js';
 import { initAll } from '/shared/modal-controls.js';
 import QRCode from 'https://esm.sh/qrcode';
-import { handleModalOpen } from './shared/qr-connect-modal.js';
+import { handleModalOpen } from '/shared/qr-connect-modal.js';
+import { fakeScan } from '/shared/fake-wallet.js';
 
 let isCredentialActive = false;
 
@@ -127,16 +128,17 @@ export function render() {
     },
   ]);
   document.getElementById('fake-scan').onclick = () => {
-    fetch('/connect/response', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        requestId,
-        wallet: 'IKMUKRWTOEJMMJD4MUAQWWB4C473DEHXLCYHJ4R3RZWZKPNE7E2ZTQ7VD4',
-      }),
-    });
+    fakeScan(requestId);
+    // fetch('/connect/response', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify({
+    //     requestId,
+    //     wallet: 'IKMUKRWTOEJMMJD4MUAQWWB4C473DEHXLCYHJ4R3RZWZKPNE7E2ZTQ7VD4',
+    //   }),
+    // });
   };
   /**
    * Content Section
