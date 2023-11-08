@@ -17,7 +17,7 @@ Start monodb in a separate terminal
 ```bash
 docker-compose up
 ```
-Run the Authentication Service then open http://localhost:3000 in your browser.
+Run the Authentication Service then open http://localhost in your browser.
 
 ```bash
 $ npm run start:debug
