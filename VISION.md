@@ -1,7 +1,7 @@
 # Overview
 
-The vision of this project is to eventually replicate this work in `go-algorand`. It relates
-to [ARC-31](https://github.com/algorandfoundation/ARCs/pull/160) and poses the question:
+The vision of this project is to attest to services based on Algorand specific private keys.
+It relates to [ARC-31](https://github.com/algorandfoundation/ARCs/pull/160) and poses the question:
 
 > Can we use FIDO2 to authenticate users to a blockchain?
 
