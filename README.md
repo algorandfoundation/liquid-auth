@@ -1,6 +1,9 @@
 # nest-fido2
 
-See the [Vision Document](VISION.md), [Sequence Diagram](SEQUENCE.md) and [Decisions](decisions/README.md) for more information.
+- [Vision](VISION.md)
+- [Architecture Diagram](ARCHITECTURE.md)
+- [Sequence Diagram](SEQUENCE.md)
+- [Decisions](decisions/README.md)
 
 ## Installation
 
