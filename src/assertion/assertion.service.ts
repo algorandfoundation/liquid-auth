@@ -29,7 +29,6 @@ export class AssertionService {
         allowCredentials.push({
           id: cred.credId,
           type: 'public-key',
-          transports: ['internal'],
         });
       }
     }
