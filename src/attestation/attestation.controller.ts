@@ -145,6 +145,7 @@ export class AttestationController {
 
       res.json(user);
     } catch (e) {
+      this.logger.error(e.message, e.stack)
       res.status(500).json({ error: e.message });
     }
   }
