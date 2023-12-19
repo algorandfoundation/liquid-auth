@@ -132,12 +132,13 @@ export class AttestationController {
           .json({ reason: 'not_found', error: 'Challenge not found.' });
         return;
       }
+      this.logger.debug(`Username: ${username} Challenge: ${expectedChallenge}`)
       const credential = await this.attestationService.response(
         expectedChallenge,
         req.get('User-Agent'),
         body,
       );
-
+      this.logger.debug(credential)
       const user = await this.authService.addCredential(username, credential);
 
       delete session.challenge;
