@@ -41,6 +41,49 @@ export class ConnectGateway {
   handleConnection(@Session() session: Record<any, any>) {
     this.logger.debug(`WSS / Client Connected with Session: ${session.id}`);
   }
+  @SubscribeMessage('hello')
+  async hello(@MessageBody() data: string, @ConnectedSocket() client: Socket) {
+    const handshake = client.handshake as Handshake;
+    const session = await this.sessionService.find(handshake.sessionID);
+    console.log('Hello triggered', session);
+    return data;
+  }
+  @SubscribeMessage('wait')
+  async waitOnRegistration(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { wallet: string },
+  ) {
+    console.log('waiting');
+
+    // Connect to the redis feed
+    if (this.subClient.status !== 'ready') {
+      await this.subClient.connect();
+    }
+    this.subClient.subscribe('registration');
+
+    // Handle messages
+    const obs$: Observable<any> = new Observable((observer) => {
+      this.subClient.on('message', async (channel, eventMessage) => {
+        console.log(eventMessage);
+        const { data } = JSON.parse(eventMessage);
+        console.log(body.wallet, data.wallet);
+        if (body.wallet === data.wallet) {
+          observer.next(data);
+          this.subClient.disconnect();
+          observer.complete();
+        }
+      });
+    });
+    return obs$.pipe(
+      map((obs$) => ({
+        data: {
+          device: obs$.credential.device,
+          credId: obs$.credential.credId,
+          wallet: obs$.wallet,
+        },
+      })),
+    );
+  }
   /**
    * On Link Connection, wait for the wallet to connect
    * @param client
@@ -70,6 +113,7 @@ export class ConnectGateway {
     const obs$: Observable<any> = new Observable((observer) => {
       this.subClient.on('message', async (channel, eventMessage) => {
         const { data } = JSON.parse(eventMessage);
+        console.log(body.requestId, data.requestId, data, body);
         if (body.requestId === data.requestId) {
           await this.sessionService.updateWallet(session, data.wallet);
           observer.next(data);
@@ -81,6 +125,7 @@ export class ConnectGateway {
     return obs$.pipe(
       map((obs$) => ({
         data: {
+          credId: obs$.credId,
           requestId: obs$.requestId,
           wallet: obs$.wallet,
         },

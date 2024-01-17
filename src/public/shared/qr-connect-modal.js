@@ -1,8 +1,6 @@
 import QRCode from 'https://esm.sh/qrcode';
 import { closeModal } from '/shared/modal-controls.js';
 import nacl from 'https://esm.sh/tweetnacl';
-import { attestation } from './api.js';
-// import base64url from 'base64url';
 export async function handleModalOpen(requestId) {
   const socket = io('/');
   const challenge = base64url.encode(nacl.randomBytes(nacl.sign.seedLength));
@@ -45,6 +43,7 @@ export async function handleModalOpen(requestId) {
   if (socket.disconnected) {
     await socket.connect();
   }
+
   // await linkRequest(requestId)
   socket.emit('link', { requestId }, async () => {
     console.log('On Link response');
@@ -57,13 +56,6 @@ export async function handleModalOpen(requestId) {
       'color: cyan',
       credId,
     );
-    if (window.location.pathname === '/') {
-      if (!credId || credId.length === 0) {
-        await attestation().catch((e) => {
-          console.error(e);
-        });
-      }
-    }
     if (window.location.pathname === '/') window.location.reload();
   });
   return socket;

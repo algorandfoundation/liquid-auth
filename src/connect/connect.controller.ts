@@ -24,6 +24,7 @@ const base64ToUint8Array = (encoded) => {
 import nacl from 'tweetnacl';
 
 type LinkResponseDTO = {
+  credId?: string;
   requestId: string | number;
   wallet: string;
   challenge: string;
@@ -52,7 +53,8 @@ export class ConnectController {
   async linkWalletResponse(
     @Res() res: Response,
     @Session() session: Record<string, any>,
-    @Body() { requestId, wallet, challenge, signature }: LinkResponseDTO,
+    @Body()
+    { requestId, wallet, challenge, signature, credId }: LinkResponseDTO,
   ) {
     try {
       this.logger.log(
@@ -93,6 +95,7 @@ export class ConnectController {
         this.client.emit<string>('auth', {
           requestId,
           wallet,
+          credId,
         });
         session.wallet = wallet;
         session.active = true;

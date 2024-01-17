@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Logger,
   Post,
   Req,
@@ -17,12 +18,14 @@ import { AuthService } from '../auth/auth.service.js';
 import { AttestationService } from './attestation.service.js';
 import type { AttestationSelectorDto } from './attestation.dto.js';
 import { AuthGuard } from '../auth/auth.guard.js';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Controller('attestation')
 @UseGuards(AuthGuard)
 export class AttestationController {
   private readonly logger = new Logger(AttestationController.name);
   constructor(
+    @Inject('ACCOUNT_LINK_SERVICE') private client: ClientProxy,
     private attestationService: AttestationService,
     private authService: AuthService,
   ) {}
@@ -118,7 +121,7 @@ export class AttestationController {
   @Post('/response')
   async attestationResponse(
     @Session() session: Record<string, any>,
-    @Body() body: AttestationCredentialJSON,
+    @Body() body: AttestationCredentialJSON & { device?: string },
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -132,20 +135,26 @@ export class AttestationController {
           .json({ reason: 'not_found', error: 'Challenge not found.' });
         return;
       }
-      this.logger.debug(`Username: ${username} Challenge: ${expectedChallenge}`)
+      this.logger.debug(
+        `Username: ${username} Challenge: ${expectedChallenge}`,
+      );
+      console.log(body);
       const credential = await this.attestationService.response(
         expectedChallenge,
         req.get('User-Agent'),
         body,
       );
-      this.logger.debug(credential)
+      this.logger.debug(credential);
       const user = await this.authService.addCredential(username, credential);
 
       delete session.challenge;
-
+      this.client.emit<string>('registration', {
+        wallet: user.wallet,
+        credential,
+      });
       res.json(user);
     } catch (e) {
-      this.logger.error(e.message, e.stack)
+      this.logger.error(e.message, e.stack);
       res.status(500).json({ error: e.message });
     }
   }

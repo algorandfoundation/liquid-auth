@@ -60,7 +60,7 @@ export class AttestationService {
   async response(
     expectedChallenge: string,
     ua: string,
-    credential: AttestationCredentialJSON,
+    credential: AttestationCredentialJSON & { device?: string },
   ) {
     const expectedOrigin = this.appService.getOrigin(ua);
     const expectedRPID = this.configService.get<string>('hostname');
@@ -78,6 +78,7 @@ export class AttestationService {
     }
 
     return {
+      device: credential.device || 'Unknown Device',
       publicKey: authenticatorInfo.base64PublicKey,
       credId: authenticatorInfo.base64CredentialID,
       prevCounter: authenticatorInfo.counter,

@@ -1,30 +1,16 @@
-import { attestation, removeCredential } from '/shared/api.js';
+import { removeCredential } from '/shared/api.js';
 import { initAll } from '/shared/modal-controls.js';
 import QRCode from 'https://esm.sh/qrcode';
 import { handleModalOpen } from '/shared/qr-connect-modal.js';
 import { fakeScan } from '/shared/fake-wallet.js';
 
-let isCredentialActive = false;
-
-function showHideRegisterButton() {
-  const registerButton = document.getElementById('register');
-  if (!isCredentialActive) {
-    registerButton.classList.remove('hidden');
-  } else {
-    registerButton.classList.add('hidden');
-  }
-}
 async function getCredentials() {
   const user = await fetch('/auth/keys').then((r) => r.json());
   const credId = localStorage.getItem('credId');
   if (!Array.isArray(user.credentials) || user.credentials.length === 0)
-    isCredentialActive = false;
-  return typeof user.credentials !== 'undefined'
-    ? user.credentials.map((cred) => {
-        if (cred.credId === credId) {
-          isCredentialActive = true;
-        }
-        return `
+    return typeof user.credentials !== 'undefined'
+      ? user.credentials.map((cred) => {
+          return `
             <tr>
               <th scope="row">${cred.credId === credId}</th>
               <th>${cred.credId}</th>
@@ -40,8 +26,8 @@ async function getCredentials() {
               </div></td>
             </tr>
             `;
-      })
-    : [];
+        })
+      : [];
 }
 
 async function renderCredentials(element) {
@@ -50,7 +36,7 @@ async function renderCredentials(element) {
   );
 
   const creds = await getCredentials();
-  showHideRegisterButton();
+  // showHideRegisterButton();
   if (creds.length > 0) {
     transactionButton.classList.remove('hidden');
   } else {
@@ -146,7 +132,6 @@ export function render() {
    */
   const content = document.getElementById('content');
   const list = document.getElementById('list');
-  const error = document.getElementById('error');
   const toInput = document.getElementById('to');
   const fromInput = document.getElementById('from');
   const amountInput = document.getElementById('amount');
@@ -190,29 +175,6 @@ export function render() {
   });
 
   /**
-   * Register a Credential
-   * @type {HTMLElement}
-   */
-  const registerButton = document.getElementById('register');
-  registerButton.addEventListener('click', () => {
-    console.log(
-      '%cCLICK: %c/dashboard/#register',
-      'color: yellow',
-      'color: cyan',
-      credId,
-    );
-    attestation()
-      .then(() => {
-        error.classList.add('hidden');
-        return renderCredentials(list);
-      })
-      .catch((e) => {
-        error.classList.add('error');
-        error.innerText = e.message;
-      });
-  });
-
-  /**
    * Unsupported Message
    * @type {string}
    */
@@ -231,7 +193,7 @@ export function render() {
           content.innerText = UNSUPPORTED;
         } else {
           renderCredentials(list).then(() => {
-            showHideRegisterButton();
+            // showHideRegisterButton();
             content.innerText = `You have a session and your device supports PublicKeyCredential. 
               
               Add a credential

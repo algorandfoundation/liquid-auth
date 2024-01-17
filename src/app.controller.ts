@@ -31,6 +31,13 @@ export class AppController {
         site: process.env.ORIGIN,
       },
     });
+    assetlinks.push({
+      relation: relation,
+      target: {
+        namespace: 'web',
+        site: 'https://fido-home.telluric.guru',
+      },
+    });
     if (process.env.ANDROID_PACKAGENAME && process.env.ANDROID_SHA256HASH) {
       assetlinks.push({
         relation: relation,

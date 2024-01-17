@@ -3,6 +3,7 @@ import { HydratedDocument } from 'mongoose';
 
 export type UserDocument = HydratedDocument<User>;
 export type Credential = {
+  device?: string;
   publicKey: string; //base64PublicKey,
   credId: string; //base64CredentialID,
   prevCounter: number; //counter,
