@@ -113,7 +113,6 @@ export class AuthController {
       }
     }
   }
-
   /**
    * Read Session
    *
@@ -121,6 +120,7 @@ export class AuthController {
    */
   @Get('/session')
   async read(@Session() session: Record<string, any>) {
+    session.connected = true;
     const user = await this.authService.find(session.wallet);
     return user || {};
   }

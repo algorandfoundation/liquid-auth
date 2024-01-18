@@ -91,15 +91,13 @@ export class ConnectController {
         const parsedRequest =
           typeof requestId === 'string' ? parseFloat(requestId) : requestId;
         console.log('Request Forwarding', parsedRequest);
-
+        session.wallet = wallet;
+        session.active = true;
         this.client.emit<string>('auth', {
           requestId,
           wallet,
           credId,
         });
-        session.wallet = wallet;
-        session.active = true;
-
         return res.status(200).end();
       }
     } catch (e) {
