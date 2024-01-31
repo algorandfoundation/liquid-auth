@@ -62,7 +62,12 @@ export class AuthService {
   async update(user: User): Promise<User> {
     return this.userModel.findOneAndUpdate({ id: user.id }, user).exec();
   }
-
+  async findCredential(credId: string) {
+    const user = await this.userModel.findOne<User>({ 'credentials.credId': credId }).exec();
+    if (user) {
+      return user.credentials.find((cred) => cred.credId === credId);
+    }
+  }
   async addCredential(id: string, credential: Credential) {
     const user = await this.find(id);
 

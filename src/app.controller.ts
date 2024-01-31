@@ -65,17 +65,17 @@ export class AppController {
     @Session() session: Record<string, any>,
   ) {
     session.active = true;
-    if (session?.wallet) {
-      this.logger.log(
-        `GET / Redirect for Session: ${session.id} with Wallet: ${session.wallet}`,
-      );
-      res.redirect(307, '/dashboard');
-    } else {
+    // if (session?.wallet) {
+    //   this.logger.log(
+    //     `GET / Redirect for Session: ${session.id} with Wallet: ${session.wallet}`,
+    //   );
+    //   // res.redirect(307, '/dashboard');
+    // } else {
       this.logger.log(
         `GET / Render for Session: ${session.id} UA: ${req.headers['user-agent']}`,
       );
       res.render('index');
-    }
+    // }
   }
   /**
    * Dashboard View

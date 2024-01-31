@@ -148,7 +148,7 @@ export class AttestationController {
       const user = await this.authService.addCredential(username, credential);
 
       delete session.challenge;
-      this.client.emit<string>('registration', {
+      this.client.emit<string>('auth-interaction', {
         wallet: user.wallet,
         credential,
       });

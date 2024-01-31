@@ -36,6 +36,7 @@ export class SessionService {
    * @param wallet - The Wallet Address
    */
   async updateWallet(session: Session, wallet: string): Promise<Session> {
+    console.log(`!!!!!!!!!!!${session}`)
     const data = JSON.parse(session.session);
     data.wallet = wallet;
     return this.sessionModel

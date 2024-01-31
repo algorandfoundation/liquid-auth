@@ -1,7 +1,7 @@
 import {
   Body,
   Controller,
-  Get,
+  Get, Inject,
   Logger,
   Post,
   Req,
@@ -16,11 +16,13 @@ import type {
 
 import { AuthService } from '../auth/auth.service.js';
 import { AssertionService } from './assertion.service.js';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Controller('assertion')
 export class AssertionController {
   private readonly logger = new Logger(AssertionController.name);
   constructor(
+    @Inject('ACCOUNT_LINK_SERVICE') private client: ClientProxy,
     private assertionService: AssertionService,
     private authService: AuthService,
   ) {}
@@ -145,9 +147,16 @@ export class AssertionController {
     );
 
     await this.authService.update(user);
-
+    const credential = await this.authService.findCredential(body.id);
+    console.log(credential)
     delete session.challenge;
     session.wallet = user.wallet;
+
+    this.client.emit<string>('auth-interaction', {
+      wallet: user.wallet,
+      credential,
+    });
+
     res.json(user);
   }
 }
