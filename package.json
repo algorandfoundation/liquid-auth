@@ -4,7 +4,7 @@
     "dev:api": "npm run dev --if-present --workspace @algorandfoundation/avicennia-js",
     "dev:sdk": "npm run dev --if-present --workspace @algorandfoundation/propagule-js",
     "dev:ui": "npm run dev --if-present --workspace dapp-ui",
-    "build": "npm run build --if-present --ws",
+    "build": "npm run build --workspace @algorandfoundation/propagule-js && npm run build --workspace @algorandfoundation/avicennia-js && npm run build --workspace dapp-ui",
     "lint": "npm run lint --if-present --ws",
     "clean": "rm -rf node_modules ./packages/propagule-js/lib ./packages/avicennia-api/src/public ./packages/avicennia-api/src/views",
     "start:prod": "npm run start:prod --workspace @algorandfoundation/avicennia-js"
