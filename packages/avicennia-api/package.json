@@ -6,6 +6,9 @@
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
+  "workspaces": [
+    "./packages/**"
+  ],
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -73,7 +76,7 @@
     "ts-loader": "^9.4.4",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=18.0.0 <21.0.0"
