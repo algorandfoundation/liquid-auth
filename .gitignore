@@ -1,14 +1,5 @@
-src/views
-src/public
-views
-public
-
-# Project Files
-.env.production
 .data
-.vercel
 .idea
-.vscode
 
 # Logs
 logs
@@ -140,6 +131,3 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-
-# Sentry Config File
-.sentryclirc

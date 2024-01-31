@@ -1,0 +1,10 @@
+{
+  "include": ["./src/**/*.ts"],
+  "compilerOptions": {
+    "outDir": "lib",
+    "declaration": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "skipLibCheck": true
+  }
+}

@@ -63,8 +63,8 @@ async function bootstrap() {
 
   app.useWebSocketAdapter(redisIoAdapter);
 
-  app.useStaticAssets(resolve('./src/public'));
-  app.setBaseViewsDir(resolve('./src/views'));
+  app.useStaticAssets(resolve('./public'));
+  app.setBaseViewsDir(resolve('./views'));
   app.setViewEngine('html');
   app.engine('html', hbs.__express);
   await app.listen(process.env.PORT || 3000);

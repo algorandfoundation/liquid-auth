@@ -1,0 +1,26 @@
+{
+  "name": "@algorandfoundation/propagule-js",
+  "version": "1.0.0",
+  "description": "Connect to Algorand Dapp",
+  "main": "./lib/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc",
+    "test": "tsc && c8 node --test ./tests/*.test.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/qrcode": "^1.5.5",
+    "c8": "^9.1.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.3"
+  },
+  "peerDependencies": {
+    "algosdk": "^2.7.0",
+    "tweetnacl": "^1.0.3"
+  }
+}
