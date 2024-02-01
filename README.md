@@ -5,48 +5,28 @@
 - [Sequence Diagram](SEQUENCE.md)
 - [Decisions](decisions/README.md)
 
-## Installation
+# Overview
 
-```bash
-npm install
-```
+This project holds the standard FIDO2 api endpoints and the Proof of Knowledge for Algorand specific private keys. 
+The api is a stateful session-based architecture with endpoint guards. 
+A user must prove ownership of a private key to associate PublicKeyCredentials
 
-## Develop
+## Using the app
 
-Start mongodb and redis server using docker-compose
+#### Install the [Android client]() to your device and navigate to https://nest-fido2.onrender.com/.
 
-```bash
-docker-compose up -d
-```
+![Step-1.png](docs%2FStep-1.png)
 
+#### Open the Connect Modal and scan the QR code using the "Connect" button on the Android device
 
-WebAuthn requires a secure context (HTTPS) to work and this will not allow you to test the FIDO2 feature in your local machine.
+![Step-1-QRCode.png](docs%2FStep-1-QRCode.png)
 
-### NGROK
+#### Register a credential on the Android device
 
-Copy the default env configuration template
-```bash
-cp ./packages/aviceinna-api/.env.example ./packages/aviceinna-api/.env
-```
+![Step-2.png](docs%2FStep-2.png)
 
-Sign up for a free account at [ngrok](https://ngrok.com/) and install the ngrok package.
-Configure a Static Domain for your ngrok account and update the .env file with the following keys with the values from ngrok:
+#### If registration is successful, you can test the credential in the browser
 
-```bash
-HOSTNAME=example-static-domain.ngrok-free.app
-ORIGIN=https://example-static-domain.ngrok-free.app
-```
+![Step-3.png](docs%2FStep-3.png)
 
-Run the ngrok proxy to forward the local development server to the internet.
-
-```bash
-ngrok http --domain=example-static-domain.ngrok-free.app 3000
-```
-
-Run the Authentication Service then navigate to the ngrok URL in your browser to test the FIDO2 feature.
-
-```bash
-npm run dev
-```
-
-
+# Requirements [WIP]
