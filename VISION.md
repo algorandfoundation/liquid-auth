@@ -10,4 +10,4 @@ compliant with `WebAuthn` and `FIDO2`.
 
 ## Decisions
 
-See all Decisions in [decisions/README.md](decisions/README.md)
+See all Decisions in [.decisions/README.md](.decisions/README.md)
