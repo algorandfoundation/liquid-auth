@@ -4,15 +4,15 @@
   "description": "",
   "author": "",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite build --watch --emptyOutDir",
-    "build": "vite build && mkdir ../avicennia-api/views && mv ../avicennia-api/public/index.html ../avicennia-api/views/index.html",
+    "build": "vite build --emptyOutDir",
     "lint": "eslint \"{src,apps,libs,test}/**/*.{ts,tsx}\" --fix"
   },
   "dependencies": {
-    "@algorandfoundation/propagule-js": "^1.0.0",
+    "@liquid/auth-client": "^1.0.0",
     "@emotion/react": "^11.11.3",
     "@emotion/server": "^11.11.0",
     "@emotion/styled": "^11.11.0",

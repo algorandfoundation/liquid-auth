@@ -1,10 +1,12 @@
 {
+  "name": "liquid-auth",
+  "private": true,
   "scripts": {
     "dev": "concurrently \"npm:dev:*\"",
-    "dev:api": "npm run dev --if-present --workspace @algorandfoundation/avicennia-js",
-    "dev:sdk": "npm run dev --if-present --workspace @algorandfoundation/propagule-js",
+    "dev:api": "npm run dev --if-present --workspace @liquid/auth-api",
+    "dev:sdk": "npm run dev --if-present --workspace @liquid/auth-client",
     "dev:ui": "npm run dev --if-present --workspace dapp-ui",
-    "build": "npm run build --workspace @algorandfoundation/propagule-js && npm run build --workspace @algorandfoundation/avicennia-js && npm run build --workspace dapp-ui",
+    "build": "npm run build --workspace @liquid/auth-client && npm run build --workspace @liquid/auth-api && npm run build --workspace dapp-ui",
     "lint": "npm run lint --if-present --ws",
     "clean": "rm -rf node_modules ./packages/propagule-js/lib ./packages/avicennia-api/src/public ./packages/avicennia-api/src/views",
     "start:prod": "npm run start:prod --workspace @algorandfoundation/avicennia-js"

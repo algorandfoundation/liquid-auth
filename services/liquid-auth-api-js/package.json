@@ -1,14 +1,11 @@
 {
-  "name": "@algorandfoundation/avicennia-js",
+  "name": "@liquid/auth-api",
   "version": "1.0.0-beta.1",
   "description": "",
   "author": "",
   "private": true,
   "type": "module",
-  "license": "UNLICENSED",
-  "workspaces": [
-    "./packages/**"
-  ],
+  "license": "MIT",
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -22,6 +19,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "preinstall": "node bin/bootstrap.js",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org phearzero --project node-express dist && sentry-cli sourcemaps upload --org phearzero --project node-express dist"
   },
   "dependencies": {

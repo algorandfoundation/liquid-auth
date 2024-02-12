@@ -2,7 +2,7 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Modal from '@mui/material/Modal';
-import { Message, toBase64URL } from '@algorandfoundation/propagule-js';
+import { Message, toBase64URL } from '@liquid/auth-client';
 import QRCodeStyling, {Options} from "qr-code-styling";
 import { useContext, useEffect, useState } from 'react';
 import {Fade} from "@mui/material";

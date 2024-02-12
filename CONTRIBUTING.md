@@ -12,7 +12,7 @@ This is a guide on how to get the project running and how to contribute
 #### Clone the project
 
 ```bash
-git clone git@github.com:PhearZero/nest-fido2.git && cd nest-fido2
+git clone git@github.com:algorandfoundation/liquid-auth.git && cd liquid-auth
 ```
 
 #### Install package dependencies
@@ -31,13 +31,8 @@ WebAuthn requires a secure context (HTTPS) to work and this will not allow you t
 
 ### NGROK
 
-#### Copy the default env configuration template
-```bash
-cp ./packages/aviceinna-api/.env.example ./packages/aviceinna-api/.env
-```
-
 Sign up for a free account at [ngrok](https://ngrok.com/) and install the ngrok package.
-Configure a Static Domain for your ngrok account and update the .env file with the following keys with the values from ngrok:
+Configure a Static Domain for your ngrok account and update the [.env](services/liquid-auth-api-js/README.md) file with the following keys with the values from ngrok:
 
 ```bash
 HOSTNAME=example-static-domain.ngrok-free.app

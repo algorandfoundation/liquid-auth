@@ -4,7 +4,7 @@ import Typography from "@mui/material/Typography";
 import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
-import { fromBase64Url, toBase64URL } from '@algorandfoundation/propagule-js';
+import { fromBase64Url, toBase64URL } from '@liquid/auth-client';
 import { Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
 import { useCredentialStore } from '../../store';
 
