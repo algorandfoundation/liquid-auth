@@ -47,7 +47,7 @@ export async function assertion(credId: string) {
 
   options.challenge = fromBase64Url(options.challenge);
 
-  for (let cred of options.allowCredentials) {
+  for (const cred of options.allowCredentials) {
     cred.id = fromBase64Url(cred.id);
   }
 

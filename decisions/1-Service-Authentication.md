@@ -9,7 +9,6 @@ WebAuthn(Browser) and FIDO2(Android).
 - Use `Nest.js` as a backend for team familiarity
 - Use https://developer.chrome.com/docs/devtools/webauthn/ for Browser testing
 - Use https://simplewebauthn.dev/ for primary server library
-- Use https://github.com/PhearZero/foundation.algo.demo for Android testing
 - Use https://developers.google.com/android/reference/com/google/android/gms/fido/fido2/package-summary for primary Android Library
 
 ## Implementation

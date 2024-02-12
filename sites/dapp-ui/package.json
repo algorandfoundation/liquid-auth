@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite build --watch --emptyOutDir",
     "build": "vite build && mkdir ../avicennia-api/views && mv ../avicennia-api/public/index.html ../avicennia-api/views/index.html",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+    "lint": "eslint \"{src,apps,libs,test}/**/*.{ts,tsx}\" --fix"
   },
   "dependencies": {
     "@algorandfoundation/propagule-js": "^1.0.0",

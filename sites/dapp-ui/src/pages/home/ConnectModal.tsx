@@ -11,7 +11,7 @@ import * as nacl from 'tweetnacl'
 import { StateContext } from '../../Contexts';
 import { useCredentialStore, Credential } from '../../store';
 const style = {
-    position: 'absolute' as 'absolute',
+    position: 'absolute' as const,
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
@@ -92,7 +92,7 @@ export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondar
     const [barcode, setBarcode] = React.useState("/qr-loading.png")
     const handleOpen = () => {
         setBarcode("/qr-loading.png")
-        let message = new Message(window.location.origin, state.challenge, state.requestId)
+        const message = new Message(window.location.origin, state.challenge, state.requestId)
 
         // JSON encoding
         qrOpts.data = `${message}`

@@ -10,7 +10,9 @@
     "start:prod": "npm run start:prod --workspace @algorandfoundation/avicennia-js"
   },
   "workspaces": [
-    "packages/**"
+    "clients/**",
+    "services/**",
+    "sites/**"
   ],
   "devDependencies": {
     "concurrently": "^8.2.2"
