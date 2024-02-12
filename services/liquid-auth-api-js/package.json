@@ -12,14 +12,14 @@
     "start": "nest start",
     "dev": "nest start --watch",
     "start:debug": "cross-env NODE_ENV=development nest start --debug --watch",
-    "start:prod": "node dist/main.js",
+    "start:prod": "node dist/src/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "preinstall": "node bin/bootstrap.js",
+    "preinstall": "node bin/bootstrap.js && node bin/update-well-known.js",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org phearzero --project node-express dist && sentry-cli sourcemaps upload --org phearzero --project node-express dist"
   },
   "dependencies": {

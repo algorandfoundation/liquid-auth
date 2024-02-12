@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "ES2022",
+    "module": "ESNext",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -20,7 +20,7 @@
     "noFallthroughCasesInSwitch": false,
     "preserveValueImports": false,
     "inlineSources": true,
-
+    "resolveJsonModule": true,
     // Set `sourceRoot` to  "/" to strip the build path prefix
     // from generated source code references.
     // This improves issue grouping in Sentry.
