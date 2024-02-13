@@ -40,7 +40,7 @@ export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondar
             "gradient": {
                 "type": "radial",
                 "rotation": 0,
-                "colorStops": [{"offset": 0, "color": "#62c3ca"}, {"offset": 1, "color": "#1d3726"}]
+                "colorStops": [{"offset": 0, "color": "#9966ff"}, {"offset": 1, "color": "#332257"}]
             }
         },
         "backgroundOptions": {"color": "#ffffff", "gradient": null},
@@ -51,7 +51,7 @@ export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondar
             "gradient": {
                 "type": "linear",
                 "rotation": 0,
-                "colorStops": [{"offset": 0, "color": "#224244"}, {"offset": 1, "color": "#040908"}]
+                "colorStops": [{"offset": 0, "color": "#332257"}, {"offset": 1, "color": "#040908"}]
             }
         },
         "cornersDotOptions": {

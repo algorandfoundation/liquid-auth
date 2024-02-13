@@ -29,7 +29,7 @@ export function GetStartedCard(){
                 </Typography>
             </CardContent>
             <CardActions>
-                <ConnectModal/>
+                <ConnectModal color="secondary"/>
             </CardActions>
         </Card>
     )

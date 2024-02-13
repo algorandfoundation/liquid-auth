@@ -155,8 +155,8 @@ export function RegisteredCard(){
               </Table>
             </CardContent>
             <CardActions>
-              <Button onClick={handleTestCredentialClick}>Test Credential</Button>
-              <Button>Sign Out</Button>
+              <Button onClick={handleTestCredentialClick} color="secondary">Test Credential</Button>
+              {/*<Button>Sign Out</Button>*/}
             </CardActions>
         </Card>
     )
