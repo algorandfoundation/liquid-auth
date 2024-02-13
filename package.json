@@ -8,8 +8,7 @@
     "dev:ui": "npm run dev --if-present --workspace dapp-ui",
     "build": "npm run build --workspace @liquid/auth-client && npm run build --workspace @liquid/auth-api && npm run build --workspace dapp-ui",
     "lint": "npm run lint --if-present --ws",
-    "clean": "rm -rf node_modules ./packages/propagule-js/lib ./packages/avicennia-api/src/public ./packages/avicennia-api/src/views",
-    "start:prod": "npm run start:prod --workspace @algorandfoundation/avicennia-js"
+    "start": "npm run start:prod --workspace @liquid/auth-api"
   },
   "workspaces": [
     "clients/**",
