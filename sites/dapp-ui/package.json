@@ -8,6 +8,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite build --watch --emptyOutDir",
+    "dev:no-api": "vite dev",
     "build": "vite build --emptyOutDir",
     "lint": "eslint \"{src,apps,libs,test}/**/*.{ts,tsx}\" --fix"
   },

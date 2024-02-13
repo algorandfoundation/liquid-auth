@@ -2,12 +2,13 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Modal from '@mui/material/Modal';
-import { Message, toBase64URL } from '@liquid/auth-client';
+import {toBase64URL} from "@liquid/auth-client/encoding";
+import { Message } from '@liquid/auth-client/connect';
 import QRCodeStyling, {Options} from "qr-code-styling";
 import { useContext, useEffect, useState } from 'react';
 import {Fade} from "@mui/material";
 import {useSocket} from '../../hooks/useSocket';
-import * as nacl from 'tweetnacl'
+import nacl from 'tweetnacl';
 import { StateContext } from '../../Contexts';
 import { useCredentialStore, Credential } from '../../store';
 const style = {
@@ -144,7 +145,6 @@ export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondar
                             transform: 'translate(-50%, -50%)',
                             top: "50%",
                         }}/>
-                        {/*<Box component="img" src="/logo.png" sx={{ position: 'absolute', transform: 'translate(-50%, -50%)', top: "50%", height: 65, width: 65}} />*/}
                     </Box>
                 </Box>
                 </Fade>

@@ -22,9 +22,7 @@ export function WaitForRegistrationCard(){
     if(step !== 'connected'){
       return
     }
-
-    socket.emit('wait', { wallet }, async ({data: {credId, device}}) => {
-      console.log('Registration response', credId, device);
+    socket.emit('wait', { wallet }, async ({data: {credId, device}}: {data: {credId: string, device: string}}) => {
       save({name: wallet, credentials: [...credentials[wallet].credentials, {id: credId, device}]});
       window.localStorage.setItem('credId', credId);
       setState('registered')
@@ -42,7 +40,7 @@ export function WaitForRegistrationCard(){
                 }
               }}
                 image="/hero-2.jpg                                                                                                                                                                        "
-                title="Step 1: Connect Wallet"
+                title="Step 2: Wait for registration"
             />
             <CardContent>
                 <Typography gutterBottom variant="h5" component="div">

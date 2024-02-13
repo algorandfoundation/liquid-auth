@@ -3,8 +3,6 @@ import { useContext, ReactElement, useState, useMemo } from 'react';
 import { ColorModeContext, StateContext } from './Contexts';
 import Layout from './Layout';
 
-import { useSession } from './hooks/useSession';
-
 import { GetStartedCard } from './pages/home/GetStarted';
 import { WaitForRegistrationCard } from './pages/dashboard/WaitForRegistration';
 import { RegisteredCard } from './pages/dashboard/Registered';
@@ -45,7 +43,7 @@ export default function ProviderApp(){
               <ColorModeContext.Provider value={colorMode}>
                   <ThemeProvider theme={theme}>
                       <CssBaseline />
-                      <App hasSession={false}/>
+                      <App/>
                   </ThemeProvider>
               </ColorModeContext.Provider>
           </StateContext.Provider>
@@ -53,8 +51,7 @@ export default function ProviderApp(){
     )
 }
 
-export function App({ hasSession }: { hasSession: boolean }) {
-  useSession();
+export function App() {
   const { state } = useContext(StateContext);
 
   // Authentication Steps
@@ -66,7 +63,7 @@ export function App({ hasSession }: { hasSession: boolean }) {
   const Content = STATES[state];
 
   return (
-    <Layout hasSession={hasSession}>
+    <Layout>
       <Content />
     </Layout>
   );

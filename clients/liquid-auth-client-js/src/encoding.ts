@@ -1,4 +1,3 @@
-// Modified from: https://github.com/herrjemand/Base64URL-ArrayBuffer
 const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
 /**

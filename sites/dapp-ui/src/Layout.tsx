@@ -13,7 +13,7 @@ import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import { useSocket } from './hooks/useSocket';
 
-export default function Layout({children, hasSession}: {hasSession: boolean} & PropsWithChildren) {
+export default function Layout({children}: PropsWithChildren) {
   const {state, setState} = useContext(StateContext)
   const colorMode = useContext(ColorModeContext)
   const theme = useTheme()
@@ -24,7 +24,7 @@ export default function Layout({children, hasSession}: {hasSession: boolean} & P
   const {isConnected} = useSocket()
   return (
       <>
-        <AppBar position="sticky" sx={isDarkMode ? { background: 'transparent', boxShadow: 'none'} : {}}>
+        <AppBar position="sticky" sx={isDarkMode ? {background: 'transparent', boxShadow: 'none'} : {}}>
           <Toolbar>
             <IconButton
                 size="large"
@@ -47,7 +47,7 @@ export default function Layout({children, hasSession}: {hasSession: boolean} & P
             </IconButton>
             <IconButton onClick={() => {
               setState(state === 'start' ? 'connected' : 'registered')
-            }} aria-label="delete" disabled={state === 'registered' && hasSession} color="inherit">
+            }} aria-label="delete" disabled={state === 'registered'} color="inherit">
               <NavigateNextIcon/>
             </IconButton>
             <IconButton sx={{ml: 1}} onClick={colorMode.toggle} color="inherit">
@@ -55,6 +55,13 @@ export default function Layout({children, hasSession}: {hasSession: boolean} & P
             </IconButton>
           </Toolbar>
         </AppBar>
+
+        <Container component="main" maxWidth="md"
+                   sx={{display: "flex", height: "calc(100vh - 64px)", overflow: "auto"}}>
+          <Box sx={{my: 4, flex: 1}}>
+            {children}
+          </Box>
+        </Container>
         <div className="ocean">
           <div className="bubble bubble--1" style={bubbleStyle}></div>
           <div className="bubble bubble--2" style={bubbleStyle}></div>
@@ -68,14 +75,7 @@ export default function Layout({children, hasSession}: {hasSession: boolean} & P
           <div className="bubble bubble--10" style={bubbleStyle}></div>
           <div className="bubble bubble--11" style={bubbleStyle}></div>
           <div className="bubble bubble--12" style={bubbleStyle}></div>
-          <div id="octocat"></div>
         </div>
-        <Container component="main" maxWidth="md"
-                   sx={{display: "flex", height: "calc(100vh - 64px)", overflow: "auto"}}>
-          <Box sx={{my: 4, flex: 1}}>
-            {children}
-          </Box>
-        </Container>
       </>
   );
 }
