@@ -37,9 +37,9 @@ async function bootstrap() {
   const host = config.get('database.host');
   const password = config.get('database.password');
   const name = config.get('database.name');
-
+  const isAtlas = config.get('database.atlas')
   const uri = `mongodb${
-    env !== 'development' ? '+srv' : ''
+    isAtlas ? '+srv' : ''
   }://${username}:${password}@${host}/${name}?authSource=admin&retryWrites=true&w=majority`;
 
   const store = MongoStore.create({
