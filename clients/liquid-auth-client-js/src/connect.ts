@@ -1,8 +1,9 @@
 import {DEFAULT_FETCH_OPTIONS} from "./constants.js";
 import type {Account} from 'algosdk'
-import {encodeAddress} from "algosdk";
-import nacl from 'tweetnacl'
-import {toBase64URL} from './encoding.js'
+import type {SignKeyPair} from 'tweetnacl'
+import {sign} from 'tweetnacl'
+import {toBase64URL, encodeAddress} from './encoding.js'
+
 
 export class Message {
     origin: string;
@@ -25,16 +26,16 @@ export class Message {
      *
      * @param key
      */
-    sign(key: string | Account | Uint8Array | nacl.SignKeyPair): void{
+    sign(key: string | Account | Uint8Array | SignKeyPair): void{
         const encoder = new TextEncoder()
-        let keyPair: nacl.SignKeyPair
+        let keyPair: SignKeyPair
 
         // Seed or Secret Key
         if(key instanceof Uint8Array){
             if(key.length === 32){
-                keyPair = nacl.sign.keyPair.fromSeed(key)
+                keyPair = sign.keyPair.fromSeed(key)
             } else if(key.length === 64){
-                keyPair = nacl.sign.keyPair.fromSecretKey(key)
+                keyPair = sign.keyPair.fromSecretKey(key)
             } else {
                 throw new TypeError('Invalid seed or secret key')
             }
@@ -42,15 +43,15 @@ export class Message {
 
         // Algorand SDK
         if(typeof (key as Account).addr !== 'undefined' && typeof (key as Account).addr === 'string'){
-            keyPair = nacl.sign.keyPair.fromSecretKey((key as Account).sk)
+            keyPair = sign.keyPair.fromSecretKey((key as Account).sk)
         }
 
         // NACL
-        if((key as nacl.SignKeyPair).publicKey instanceof Uint8Array && (key as nacl.SignKeyPair).secretKey instanceof Uint8Array){
+        if((key as SignKeyPair).publicKey instanceof Uint8Array && (key as SignKeyPair).secretKey instanceof Uint8Array){
             console.log('nacl')
-            keyPair = key as nacl.SignKeyPair
+            keyPair = key as SignKeyPair
         }
-        this.signature = toBase64URL(nacl.sign.detached(encoder.encode(this.challenge), keyPair.secretKey));
+        this.signature = toBase64URL(sign.detached(encoder.encode(this.challenge), keyPair.secretKey));
         this.wallet = encodeAddress(keyPair.publicKey)
     }
 
@@ -90,7 +91,7 @@ export async function fetchConnectResponse(msg: Message){
  * @param requestId
  * @param key
  */
-export async function connect(origin: string, requestId: number, key: string | Account | Uint8Array | nacl.SignKeyPair){
+export async function connect(origin: string, requestId: number, key: string | Account | Uint8Array | SignKeyPair){
     const msg = await Message.fromResponse(await fetchConnectRequest(origin, requestId))
     msg.sign(key)
     return await fetchConnectResponse(msg)

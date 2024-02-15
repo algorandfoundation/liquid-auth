@@ -8,18 +8,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite build --watch --emptyOutDir",
-    "dev:no-api": "vite dev",
+    "dev:no-api": "vite dev --host 0.0.0.0",
     "build": "vite build --emptyOutDir",
     "lint": "eslint \"{src,apps,libs,test}/**/*.{ts,tsx}\" --fix"
   },
   "dependencies": {
-    "@liquid/auth-client": "^1.0.0",
     "@emotion/react": "^11.11.3",
     "@emotion/server": "^11.11.0",
     "@emotion/styled": "^11.11.0",
+    "@liquid/auth-client": "^1.0.0",
     "@mui/icons-material": "^5.15.4",
     "@mui/material": "^5.15.4",
-    "@tanstack/react-query": "^5.17.15",
+    "@tanstack/react-query": "^5.20.5",
+    "@tanstack/react-query-devtools": "^5.20.5",
     "qr-code-styling": "^1.6.0-rc.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -37,7 +38,11 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
     "mkdirp": "^3.0.1",
+    "sharp": "^0.33.2",
+    "svgo": "^3.2.0",
     "typescript": "^5.2.2",
-    "vite": "^5.0.8"
+    "vite": "^5.0.8",
+    "vite-plugin-image-optimizer": "^1.1.7",
+    "vite-plugin-pwa": "^0.18.1"
   }
 }

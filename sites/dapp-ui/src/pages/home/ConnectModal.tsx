@@ -8,8 +8,8 @@ import QRCodeStyling, {Options} from "qr-code-styling";
 import { useContext, useEffect, useState } from 'react';
 import {Fade} from "@mui/material";
 import {useSocket} from '../../hooks/useSocket';
-import nacl from 'tweetnacl';
-import { StateContext } from '../../Contexts';
+import {randomBytes, sign} from 'tweetnacl';
+import {SnackbarContext, StateContext} from '../../Contexts';
 import { useCredentialStore, Credential } from '../../store';
 const style = {
     position: 'absolute' as const,
@@ -22,13 +22,15 @@ const style = {
     boxShadow: 24,
 };
 export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning'}) {
+    const snackbar = useContext(SnackbarContext)
     const {socket} = useSocket();
+
     const credentials = useCredentialStore((state)=> state.addresses);
     const save = useCredentialStore((state)=> state.update);
     const {state: step, setState} = useContext(StateContext)
     const [state] = useState({
         requestId: Math.random(),
-        challenge: toBase64URL(nacl.randomBytes(nacl.sign.seedLength))
+        challenge: toBase64URL(randomBytes(sign.seedLength))
     })
     const qrOpts = {
         "width": 500,
@@ -65,10 +67,16 @@ export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondar
             }
         }
     }
-    useEffect(() => {
-        if(step !== 'start'){
-            return
+
+    const [open, setOpen] = React.useState(false);
+    const [barcode, setBarcode] = React.useState("/qr-loading.png")
+    const handleOpen = () => {
+        setBarcode("/qr-loading.png")
+        if(socket.disconnected){
+            console.warn('Socket is disconnected, attempting to reconnect')
+            socket.connect()
         }
+
         socket.emit('link', { requestId: state.requestId }, async ({data}: {data: {credId?: string, requestId: string|number, wallet: string}}) => {
             console.log('On Link response');
             console.log(data)
@@ -82,17 +90,16 @@ export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondar
                 console.log(data.credId)
                 window.localStorage.setItem('credId', data.credId);
                 setState('registered')
+                snackbar.setMessage('Connected with Credential')
+                snackbar.setOpen(true)
             } else {
+                snackbar.setMessage('Connected Public Key')
+                snackbar.setOpen(true)
                 setState('connected')
             }
 
         });
-    }, [])
 
-    const [open, setOpen] = React.useState(false);
-    const [barcode, setBarcode] = React.useState("/qr-loading.png")
-    const handleOpen = () => {
-        setBarcode("/qr-loading.png")
         const message = new Message(window.location.origin, state.challenge, state.requestId)
 
         // JSON encoding

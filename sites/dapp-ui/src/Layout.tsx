@@ -4,15 +4,15 @@ import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
-import {Avatar, Badge, useTheme} from '@mui/material';
+import {useTheme} from '@mui/material';
 import {PropsWithChildren, useContext} from 'react';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { ColorModeContext, StateContext } from './Contexts';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import { useSocket } from './hooks/useSocket';
-
+import {SessionMenu} from "./components/user/SessionMenu.tsx";
+import {MessageSnackbar} from "./components/Snackbar.tsx";
 export default function Layout({children}: PropsWithChildren) {
   const {state, setState} = useContext(StateContext)
   const colorMode = useContext(ColorModeContext)
@@ -21,22 +21,11 @@ export default function Layout({children}: PropsWithChildren) {
   const bubbleStyle = {
     backgroundColor: isDarkMode ? 'white' : 'black'
   }
-  const {isConnected} = useSocket()
   return (
       <>
         <AppBar position="sticky" sx={isDarkMode ? {background: 'transparent', boxShadow: 'none'} : {}}>
           <Toolbar>
-            <IconButton
-                size="large"
-                edge="start"
-                color="inherit"
-                aria-label="menu"
-                disabled={state === 'start'}
-            >
-              <Badge variant="dot" color={isConnected ? "success" : "error"}>
-                <Avatar alt="Remy Sharp" src="/logo.png"/>
-              </Badge>
-            </IconButton>
+            <SessionMenu/>
             <Typography variant="h6" component="div" sx={{flexGrow: 1}}>
               Liquid dApp
             </Typography>
@@ -50,7 +39,7 @@ export default function Layout({children}: PropsWithChildren) {
             }} aria-label="delete" disabled={state === 'registered'} color="inherit">
               <NavigateNextIcon/>
             </IconButton>
-            <IconButton sx={{ml: 1}} onClick={colorMode.toggle} color="inherit">
+            <IconButton sx={{ml: 1}} onClick={colorMode.toggle} color="inherit" aria-label="Switch theme">
               {theme.palette.mode === 'dark' ? <Brightness7Icon/> : <Brightness4Icon/>}
             </IconButton>
           </Toolbar>
@@ -60,6 +49,7 @@ export default function Layout({children}: PropsWithChildren) {
                    sx={{display: "flex", height: "calc(100vh - 64px)", overflow: "auto"}}>
           <Box sx={{my: 4, flex: 1}}>
             {children}
+            <MessageSnackbar/>
           </Box>
         </Container>
         <div className="ocean">

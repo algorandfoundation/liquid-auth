@@ -2,19 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/logo.png" />
+    <meta name="description" content="Liquid Auth example dApp">
+    <link rel="icon" type="image/svg+xml" href="/logo-background.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Fonts to support Material Design -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-            rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap"
-    />
+    <!-- PWA -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
+    <link rel="mask-icon" href="/maskable-icon.png" color="#121212">
+    <meta name="theme-color" content="#121212">
     <title>Liquid dApp</title>
+    <style>
+        body {
+            background-color: #121212;
+        }
+
+        img {
+            object-fit: cover !important;
+        }
+    </style>
 </head>
 <body>
 <div id="root"></div>
-<script type="module" src="src/entry-main.tsx"></script>
+<script async type="module" src="src/entry-main.tsx"></script>
 </body>
 </html>

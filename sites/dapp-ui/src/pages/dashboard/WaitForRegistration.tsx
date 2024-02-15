@@ -27,7 +27,7 @@ export function WaitForRegistrationCard(){
       window.localStorage.setItem('credId', credId);
       setState('registered')
     });
-  }, [])
+  })
     return (
         <Card >
             <CardMedia
