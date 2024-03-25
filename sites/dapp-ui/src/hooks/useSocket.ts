@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 // "undefined" means the URL will be computed from the `window.location` object
 const URL = `${window.location.origin}`;
 
-export const socket = io(URL, {autoConnect: false});
+export const socket = io(URL, {autoConnect: true});
 
 export function useSocket(){
 

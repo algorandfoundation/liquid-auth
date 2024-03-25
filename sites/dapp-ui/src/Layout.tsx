@@ -21,6 +21,34 @@ export default function Layout({children}: PropsWithChildren) {
   const bubbleStyle = {
     backgroundColor: isDarkMode ? 'white' : 'black'
   }
+  function prevState(){
+    switch(state){
+        case 'debug':
+            return 'debug'
+        case 'start':
+            return 'debug'
+        case 'connected':
+            return 'registered'
+        case 'registered':
+            return 'connected'
+      default:
+        return 'debug'
+    }
+  }
+  function nextState() {
+    switch(state) {
+        case 'debug':
+            return 'start'
+        case 'start':
+            return 'connected'
+        case 'connected':
+            return 'registered'
+        case 'registered':
+            return 'connected'
+        default:
+            return 'debug'
+    }
+  }
   return (
       <>
         <AppBar position="sticky" sx={isDarkMode ? {background: 'transparent', boxShadow: 'none'} : {}}>
@@ -30,12 +58,12 @@ export default function Layout({children}: PropsWithChildren) {
               Liquid dApp
             </Typography>
             <IconButton onClick={() => {
-              setState(state === 'registered' ? 'connected' : 'start')
-            }} aria-label="delete" disabled={state === 'start'} color="inherit">
+              setState(prevState())
+            }} aria-label="delete" disabled={state === 'debug'} color="inherit">
               <NavigateBeforeIcon/>
             </IconButton>
             <IconButton onClick={() => {
-              setState(state === 'start' ? 'connected' : 'registered')
+              setState(nextState())
             }} aria-label="delete" disabled={state === 'registered'} color="inherit">
               <NavigateNextIcon/>
             </IconButton>

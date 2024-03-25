@@ -11,17 +11,22 @@ const PUBLIC_DIR = resolve(API_DIR, 'public')
 const VIEW_DIR = resolve(API_DIR, 'views')
 console.log(API_DIR)
 export default defineConfig({
+    // base: '/app',
     server: {
-        proxy: {
-            '^/auth/.*': 'http://localhost:3000',
-            '^/connect/.*': 'http://localhost:3000',
-            '^/attestation/.*': 'http://localhost:3000',
-            '^/assertion/.*': 'http://localhost:3000',
-            '/socket.io': {
-                target: 'ws://localhost:3000',
-                ws: true,
-            },
+        hmr: {
+            port: 8000,
+            host: 'localhost'
         }
+        // proxy: {
+        //     '^/auth/.*': 'http://localhost:3000',
+        //     '^/connect/.*': 'http://localhost:3000',
+        //     '^/attestation/.*': 'http://localhost:3000',
+        //     '^/assertion/.*': 'http://localhost:3000',
+        //     '/socket.io': {
+        //         target: 'ws://localhost:3000',
+        //         ws: true,
+        //     },
+        // }
     },
     build: {
         // rollupOptions: {

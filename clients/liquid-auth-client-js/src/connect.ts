@@ -6,15 +6,35 @@ import {toBase64URL, encodeAddress} from './encoding.js'
 
 
 export class Message {
+    /**
+     * Origin of the Request
+     */
     origin: string;
+    /**
+     * Challenge to be signed
+     */
     challenge: string;
+    /**
+     * Linking Request ID
+     */
     requestId: number;
+    /**
+     * Label for the remote Service
+     */
+    label?: string;
+    /**
+     * Address that signed the message
+     */
     wallet?: string;
+    /**
+     * Signature of the challenge
+     */
     signature?: string;
-    constructor(origin: string, challenge: string, requestId: number) {
+    constructor(origin: string, challenge: string, requestId: number, label?: string) {
         this.origin = origin
         this.challenge = challenge
         this.requestId = requestId
+        this.label = label
     }
     static async fromResponse(response: Response|Message){
         const msg = response instanceof Response ? await response.json(): response;
@@ -26,7 +46,7 @@ export class Message {
      *
      * @param key
      */
-    sign(key: string | Account | Uint8Array | SignKeyPair): void{
+    sign(key: string | Account | Uint8Array | SignKeyPair): Message{
         const encoder = new TextEncoder()
         let keyPair: SignKeyPair
 
@@ -53,10 +73,11 @@ export class Message {
         }
         this.signature = toBase64URL(sign.detached(encoder.encode(this.challenge), keyPair.secretKey));
         this.wallet = encodeAddress(keyPair.publicKey)
+        return this;
     }
 
     toString(){
-        let optional: {wallet?: string, signature?: string} = {}
+        let optional: {wallet?: string, signature?: string, label?: string} = {}
 
         if(typeof this.wallet === 'string'){
             optional.wallet = this.wallet;
@@ -65,6 +86,11 @@ export class Message {
         if(typeof this.signature === 'string'){
             optional.signature = this.signature
         }
+
+        if(typeof this.label === 'string'){
+            optional.label = this.label
+        }
+
         return JSON.stringify({ origin: this.origin, requestId: this.requestId, challenge: this.challenge, ...optional })
     }
 }

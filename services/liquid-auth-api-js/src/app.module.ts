@@ -1,13 +1,22 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from './auth/auth.module.js';
-import { AppController } from './app.controller.js';
+
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+
+import configuration from './config/configuration.js';
+
+// FIDO
 import { AttestationModule } from './attestation/attestation.module.js';
 import { AssertionModule } from './assertion/assertion.module.js';
-import { AppService } from './app.service.js';
+
+import { AndroidController } from './android/android.controller.js';
+// User Endpoints
+import { AuthModule } from './auth/auth.module.js';
+
+// Connect/Signals
 import { ConnectModule } from './connect/connect.module.js';
-import configuration from './config/configuration.js';
+import { SignalsModule } from './signals/signals.module.js';
+import { AppController } from "./app.controller.js";
 
 @Module({
   imports: [
@@ -17,7 +26,6 @@ import configuration from './config/configuration.js';
       useFactory: async (configService: ConfigService) => {
         const database = configService.get('database');
         const { host, username, password, name, atlas: isAtlas } = database;
-        //mongodb+srv://algorand:<password>@fido2.ccg8rav.mongodb.net/?retryWrites=true&w=majority
         const uri = `mongodb${
           isAtlas ? '+srv' : ''
         }://${username}:${password}@${host}/${name}?authSource=admin&retryWrites=true&w=majority`;
@@ -31,8 +39,8 @@ import configuration from './config/configuration.js';
     AttestationModule,
     AssertionModule,
     ConnectModule,
+    SignalsModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AndroidController, AppController],
 })
 export class AppModule {}

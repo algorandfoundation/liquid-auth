@@ -50,10 +50,10 @@ export function StatusCard({session, user, socket}: ProfileCardProps){
                 </pre>
             </CardContent>
             {user && <CardActions disableSpacing>
-                <IconButton aria-label="sign out">
-                    <LogoutIcon onClick={()=>{
-                        fetch('/auth/logout')
-                    }} />
+                <IconButton aria-label="sign out" onClick={()=>{
+                    fetch('/auth/logout')
+                }}>
+                    <LogoutIcon/>
                 </IconButton>
                 <IconButton aria-label="share">
                     <ShareIcon />

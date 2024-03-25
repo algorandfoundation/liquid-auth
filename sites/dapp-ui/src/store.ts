@@ -39,3 +39,32 @@ export const useCredentialStore = create<CredentialStore>(
   { name: 'avicennia-credential-store', storage: createJSONStorage(() => localStorage) }
   ),
 );
+
+interface PeerStore {
+    candidates: RTCIceCandidateInit[];
+    addCandidate: (candidate: RTCIceCandidateInit) => void;
+    clearCandidates: () => void;
+}
+export const usePeerStore = create<PeerStore>((set) => ({
+    candidates: [],
+    addCandidate: (candidate: RTCIceCandidateInit) => set((state)=>({candidates: [...state.candidates, candidate]})),
+    clearCandidates: () => set({candidates: []}),
+}));
+
+export type Message = {
+    text: string;
+    type: 'local' | 'remote';
+    timestamp: number;
+}
+
+interface MessageStore {
+    messages: Message[];
+    addMessage: (message: Message) => void;
+    clearMessages: () => void;
+
+}
+export const useMessageStore = create<MessageStore>((set) => ({
+   messages: [],
+    addMessage: (message: Message) => set((state)=>({messages: [...state.messages, message]})),
+clearMessages: () => set({messages: []}),
+}))

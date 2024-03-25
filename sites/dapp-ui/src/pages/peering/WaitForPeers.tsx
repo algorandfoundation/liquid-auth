@@ -1,0 +1,97 @@
+import CardMedia from "@mui/material/CardMedia";
+import CardContent from "@mui/material/CardContent";
+import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
+import { CircularProgress } from '@mui/material';
+import { useEffect } from 'react';
+import {useSocket} from '../../hooks/useSocket';
+import { useCredentialStore } from '../../store';
+import { useAddressQuery } from '../../hooks/useAddress';
+import { useNavigate } from "react-router-dom";
+import { usePeerConnection } from "../../hooks/usePeerConnection.ts";
+import { useDataChannel } from "../../hooks/useDataChannel.ts";
+
+export function WaitForPeersCard(){
+  const navigate = useNavigate()
+
+  const walletStr = window.localStorage.getItem('wallet');
+  const wallet = walletStr ? JSON.parse(walletStr) : null;
+
+  const {socket} = useSocket();
+  const address = useAddressQuery(wallet);
+  const peerConnection = usePeerConnection((event) => {
+    if (event.candidate) {
+      console.log('Local Candidate', event.candidate.toJSON())
+      socket.emit('answer-candidate', event.candidate.toJSON())
+    } else {
+      console.log(event)
+    }
+  });
+
+  useEffect(()=>{
+    if(!peerConnection) return
+    // peerConnection.createDataChannel('1')
+    function handleOnDataChannel(event: RTCDataChannelEvent){
+      console.log('Data Channel Event', event.channel)
+      event.channel.send('Hello World')
+    }
+    peerConnection.addEventListener('datachannel', handleOnDataChannel)
+
+    return ()=> {
+      peerConnection.removeEventListener('datachannel', handleOnDataChannel)
+    }
+  }, [peerConnection])
+
+  useEffect(()=>{
+    if(!peerConnection) return
+    async function handleDescription(sdp: string){
+      console.log('OFFER', sdp)
+      await peerConnection?.setRemoteDescription({type: 'offer', sdp} as RTCSessionDescriptionInit)
+      const answer =  await peerConnection?.createAnswer()
+      await peerConnection?.setLocalDescription(answer)
+      console.log('ANSWER', answer?.sdp)
+      socket.emit('answer-description', answer?.sdp)
+    }
+    socket.on('call-description', handleDescription)
+    return ()=>{
+      socket.off('call-description', handleDescription)
+    }
+  },[socket])
+  useEffect(()=>{
+    if(!peerConnection) return
+    function handleCallCandidate(data: RTCIceCandidate){
+      console.log('Remote Candidate', data)
+      peerConnection.addIceCandidate(data)
+    }
+    socket.on('call-candidate', handleCallCandidate)
+    return ()=>{
+      socket.off('call-candidate', handleCallCandidate)
+    }
+  }, [socket])
+    return (
+        <Card >
+            <CardMedia
+              sx={{ height: {
+                  xs: 250,
+                  sm: 550,
+                  md: 600,
+                  lg: 600,
+                  xl: 600,
+                }
+              }}
+                image="/hero-2.jpg                                                                                                                                                                        "
+                title="Step 2: Wait for registration"
+            />
+            <CardContent>
+                <Typography gutterBottom variant="h5" component="div">
+                    Waiting for Peer Connection (2 of 3)
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  <CircularProgress size={15}/> Waiting for Passkey registration for address:
+                </Typography>
+              {address.isLoading && <CircularProgress/>}
+              {address.isFetched && <Typography variant="body2" color="text.secondary"> {address.data}</Typography>}
+            </CardContent>
+        </Card>
+    )
+}

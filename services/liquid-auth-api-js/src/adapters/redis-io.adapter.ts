@@ -14,7 +14,7 @@ export class RedisIoAdapter extends IoAdapter {
   private readonly sessionHandler: RequestHandler;
   private adapterConstructor: ReturnType<typeof createAdapter>;
   private pubClient: Redis;
-  private subClient: Redis;
+  public subClient: Redis;
 
   constructor(app: NestExpressApplication, sessionHandler: RequestHandler) {
     super(app);

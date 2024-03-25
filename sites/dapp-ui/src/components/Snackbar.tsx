@@ -9,7 +9,7 @@ export function MessageSnackbar(){
     const greaterThanMid = useMediaQuery(theme.breakpoints.up("md"));
 
     const {open, setOpen, message, setMessage} = useContext(SnackbarContext)
-    console.log('MessageSnackbar', open, setOpen, message, setMessage)
+
     const handleClose = () => {
         setOpen(false)
         setMessage('')

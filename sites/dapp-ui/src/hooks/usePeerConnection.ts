@@ -1,53 +1,57 @@
-import {useEffect, useMemo} from "react";
+import {createContext, useContext, useEffect, useState} from "react";
+
+type PeerConnectionState = {peerConnection: RTCPeerConnection | null}
+export const PeerConnectionContext = createContext({
+    peerConnection: null
+} as PeerConnectionState);
 
 
-const DEFAULT_CONFIG = {
-    iceServers: [
-        {
-            urls: [
-                'stun:stun.l.google.com:19302',
-                'stun:stun1.l.google.com:19302',
-                'stun:stun2.l.google.com:19302',
-            ],
-        },
-    ],
-    iceCandidatePoolSize: 10,
-};
 
-type PeerConnectionConfig = {
-    onMessage: (event: MessageEvent)=>void;
-    onIceCandidate: (event: RTCPeerConnectionIceEvent)=>void;
-    channelName?: string;
-    configuration?: RTCConfiguration;
-}
-export function usePeerConnection(onIceCandidate: (event: RTCPeerConnectionIceEvent)=>void, channelName = 'data', configuration = DEFAULT_CONFIG) {
-    console.log(configuration)
-    const peerConnection = useMemo(()=>new RTCPeerConnection(configuration), [configuration]);
-    const dataChannel = useMemo(()=>peerConnection.createDataChannel(channelName), [channelName, peerConnection]);
+export function usePeerConnectionState(){
+    const {peerConnection} = useContext(PeerConnectionContext);
+    const [connectionState, setConnectionState] = useState(peerConnection?.connectionState || null);
+
     useEffect(() => {
+        if(!peerConnection) return;
+        function handleConnectionStateChange() {
+            if(!peerConnection) return;
+            console.log(`Connection state change: ${peerConnection.connectionState}`);
+            setConnectionState(peerConnection.connectionState);
+        }
+
+        peerConnection.addEventListener('connectionstatechange', handleConnectionStateChange);
+        return () => {
+            peerConnection.removeEventListener('connectionstatechange', handleConnectionStateChange);
+        }
+    }, [peerConnection]);
+
+    return connectionState;
+}
+export function usePeerConnection(
+    onIceCandidate: (event: RTCPeerConnectionIceEvent)=>void) {
+    const {peerConnection} = useContext(PeerConnectionContext);
+
+    useEffect(() => {
+        if(!peerConnection) return;
         function handleICEGatheringStateChange() {
-            console.log(`ICE gathering state: ${peerConnection.iceGatheringState}`);
+            console.log(`ICE gathering state: ${peerConnection?.iceGatheringState}`);
         }
         function handleConnectionStateChange() {
             console.log(`Connection state change: ${peerConnection.connectionState}`);
         }
 
         function handleSignalingStateChange() {
-            console.log(`Signaling state change: ${peerConnection.signalingState}`);
+            console.log(`Signaling state change: ${peerConnection?.signalingState}`);
         }
 
         function handleICEConnectionStateChange() {
-            console.log(`ICE connection state change: ${peerConnection.iceConnectionState}`);
+            console.log(`ICE connection state change: ${peerConnection?.iceConnectionState}`);
         }
         peerConnection.addEventListener('icegatheringstatechange', handleICEGatheringStateChange);
         peerConnection.addEventListener('connectionstatechange', handleConnectionStateChange);
         peerConnection.addEventListener('signalingstatechange', handleSignalingStateChange);
         peerConnection.addEventListener('iceconnectionstatechange ', handleICEConnectionStateChange);
         peerConnection.addEventListener('icecandidate', onIceCandidate);
-
-        dataChannel.addEventListener("open", (event) => {
-            console.log(event)
-        });
 
         return () => {
             peerConnection.removeEventListener('icegatheringstatechange', handleICEGatheringStateChange);

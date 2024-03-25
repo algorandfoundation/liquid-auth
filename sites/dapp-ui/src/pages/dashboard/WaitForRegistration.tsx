@@ -28,6 +28,11 @@ export function WaitForRegistrationCard(){
       setState('registered')
     });
   })
+  useEffect(()=>{
+    socket.on('call-candidate', (data: any) => {
+      console.log(data)
+    })
+  }, [socket])
     return (
         <Card >
             <CardMedia

@@ -1,15 +1,20 @@
 import * as crypto from 'node:crypto';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import base64url from 'base64url';
 
 import type { FilterQuery } from 'mongoose';
 import { Credential, User } from './auth.schema.js';
+import { Session } from './session.schema.js';
 
 @Injectable()
 export class AuthService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  private readonly logger = new Logger(AuthService.name);
+  constructor(
+    @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(Session.name) private sessionModel: Model<Session>,
+  ) {}
 
   /**
    * Initialize a User
@@ -63,7 +68,9 @@ export class AuthService {
     return this.userModel.findOneAndUpdate({ id: user.id }, user).exec();
   }
   async findCredential(credId: string) {
-    const user = await this.userModel.findOne<User>({ 'credentials.credId': credId }).exec();
+    const user = await this.userModel
+      .findOne<User>({ 'credentials.credId': credId })
+      .exec();
     if (user) {
       return user.credentials.find((cred) => cred.credId === credId);
     }
@@ -91,5 +98,36 @@ export class AuthService {
 
   async all() {
     return this.userModel.find({}).exec();
+  }
+
+  /**
+   * Find a Session by ID
+   *
+   * @param sid - Session ID
+   */
+  async findSession(sid: string): Promise<Session> {
+    this.logger.log(`Finding session ${sid}`);
+    return this.sessionModel.findOne({ _id: sid }).exec();
+  }
+
+  /**
+   * Update Wallet by Session ID
+   * @param session - The stored Session
+   * @param wallet - The Wallet Address
+   */
+  async updateSessionWallet(
+    session: Session,
+    wallet: string,
+  ): Promise<Session> {
+    const data = JSON.parse(session.session);
+    data.wallet = wallet;
+    return this.sessionModel
+      .findOneAndUpdate(
+        { _id: session._id },
+        {
+          session: JSON.stringify(data),
+        },
+      )
+      .exec();
   }
 }

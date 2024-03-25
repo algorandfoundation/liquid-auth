@@ -8,9 +8,10 @@ import QRCodeStyling, {Options} from "qr-code-styling";
 import { useContext, useEffect, useState } from 'react';
 import {Fade} from "@mui/material";
 import {useSocket} from '../../hooks/useSocket';
-import {randomBytes, sign} from 'tweetnacl';
-import {SnackbarContext, StateContext} from '../../Contexts';
+import nacl from 'tweetnacl';
+import { StateContext } from '../../Contexts';
 import { useCredentialStore, Credential } from '../../store';
+import { useNavigate } from "react-router-dom";
 const style = {
     position: 'absolute' as const,
     top: '50%',
@@ -22,15 +23,14 @@ const style = {
     boxShadow: 24,
 };
 export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning'}) {
-    const snackbar = useContext(SnackbarContext)
+    const navigate = useNavigate()
     const {socket} = useSocket();
-
     const credentials = useCredentialStore((state)=> state.addresses);
     const save = useCredentialStore((state)=> state.update);
     const {state: step, setState} = useContext(StateContext)
     const [state] = useState({
         requestId: Math.random(),
-        challenge: toBase64URL(randomBytes(sign.seedLength))
+        challenge: toBase64URL(nacl.randomBytes(nacl.sign.seedLength))
     })
     const qrOpts = {
         "width": 500,
@@ -67,19 +67,17 @@ export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondar
             }
         }
     }
-
-    const [open, setOpen] = React.useState(false);
-    const [barcode, setBarcode] = React.useState("/qr-loading.png")
-    const handleOpen = () => {
-        setBarcode("/qr-loading.png")
-        if(socket.disconnected){
-            console.warn('Socket is disconnected, attempting to reconnect')
-            socket.connect()
-        }
-
-        socket.emit('link', { requestId: state.requestId }, async ({data}: {data: {credId?: string, requestId: string|number, wallet: string}}) => {
-            console.log('On Link response');
+    useEffect(()=>{
+       socket.on('link', (data)=>{
             console.log(data)
+       })
+    },[socket])
+    const [open, setOpen] = React.useState(false);
+    useEffect(() => {
+        if(!open){
+            return
+        }
+        socket.emit('link', { requestId: state.requestId }, async ({data}: {data: {credId?: string, requestId: string|number, wallet: string}}) => {
             let newCredentials: Credential[] = []
             if(typeof credentials[data.wallet] !== 'undefined'){
                 newCredentials = credentials[data.wallet].credentials
@@ -90,16 +88,19 @@ export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondar
                 console.log(data.credId)
                 window.localStorage.setItem('credId', data.credId);
                 setState('registered')
-                snackbar.setMessage('Connected with Credential')
-                snackbar.setOpen(true)
+                navigate('/peering')
             } else {
-                snackbar.setMessage('Connected Public Key')
-                snackbar.setOpen(true)
                 setState('connected')
+                navigate('/peering')
             }
 
         });
+    }, [open])
 
+
+    const [barcode, setBarcode] = React.useState("/qr-loading.png")
+    const handleOpen = () => {
+        setBarcode("/qr-loading.png")
         const message = new Message(window.location.origin, state.challenge, state.requestId)
 
         // JSON encoding
@@ -126,6 +127,7 @@ export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondar
                 aria-labelledby="modal-modal-title"
                 aria-describedby="modal-modal-description"
             >
+                <Box>
                 <Fade in={open}>
                 <Box sx={style}>
                     <Box sx={{
@@ -152,9 +154,12 @@ export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondar
                             transform: 'translate(-50%, -50%)',
                             top: "50%",
                         }}/>
+
                     </Box>
+
                 </Box>
                 </Fade>
+                </Box>
             </Modal>
         </div>
     );

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
+</head>
+<body>
+<button onclick="handleClick()">Send</button>
+<script>
+
+  function handleClick() {
+    console.log('Handle Click')
+    socket.emit('lfg', 'Hello from client');
+  }
+  const socket = io('http://localhost:3000');
+  socket.emit('join', 'ROOMID')
+  socket.on('connect', () => {
+    console.log('Connected to server');
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Disconnected from server');
+  });
+
+  socket.on('lfgz', (message) => {
+    console.log('New message', message);
+  });
+</script>
+</body>
+</html>
