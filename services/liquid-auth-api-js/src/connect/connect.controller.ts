@@ -10,6 +10,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
 import { AuthService } from '../auth/auth.service.js';
+import { AlgodService } from '../algod/algod.service.js';
 import { AlgorandEncoder } from './AlgoEncoder.js';
 
 const algoEncoder = new AlgorandEncoder();
@@ -37,6 +38,7 @@ export class ConnectController {
 
   constructor(
     private authService: AuthService,
+    private algodService: AlgodService,
     @Inject('ACCOUNT_LINK_SERVICE') private client: ClientProxy,
   ) {}
 
@@ -70,36 +72,61 @@ export class ConnectController {
 
       // Validate Signature
       const encoder = new TextEncoder();
+      const encodedChallenge = encoder.encode(challenge);
+
       if (
         !nacl.sign.detached.verify(
-          encoder.encode(challenge),
+          encodedChallenge,
           uint8Signature,
           publicKey,
         )
       ) {
-        return res
-          .status(401)
-          .json({
-            error: 'Invalid signature',
-          })
-          .end();
-      } else {
-        this.logger.log('AUTH Wallet is attested');
-        // Authenticated user
-        await this.authService.init(wallet);
+        // signature check failed, check if its rekeyed
+        // if it is, verify against that public key instead
+        const accountInfo = await this.algodService.accountInformation(wallet).do();
+        console.log(accountInfo);  
+        console.log(accountInfo.authAddr);
 
-        const parsedRequest =
-          typeof requestId === 'string' ? parseFloat(requestId) : requestId;
-        console.log('Request Forwarding', parsedRequest);
-        session.wallet = wallet;
-        session.active = true;
-        this.client.emit<string>('auth', {
-          requestId,
-          wallet,
-          credId,
-        });
-        return res.status(200).end();
+        if (!accountInfo.authAddr) {
+          return res
+            .status(401)
+            .json({ error: 'Invalid signature' })
+            .end();
+        }
+
+        const authPublicKey = algoEncoder.decodeAddress(accountInfo.authAddr);
+
+        // Validate Auth Address Signature
+        if (
+          !nacl.sign.detached.verify(
+            encodedChallenge,
+            uint8Signature,
+            authPublicKey,
+          )
+        ) {
+          return res
+            .status(401)
+            .json({ error: 'Invalid signature' })
+            .end();
+        }
       }
+
+      this.logger.log('AUTH Wallet is attested');
+      // Authenticated user
+      await this.authService.init(wallet);
+
+      const parsedRequest =
+        typeof requestId === 'string' ? parseFloat(requestId) : requestId;
+      console.log('Request Forwarding', parsedRequest);
+      session.wallet = wallet;
+      session.active = true;
+      this.client.emit<string>('auth', {
+        requestId,
+        wallet,
+        credId,
+      });
+      return res.status(200).end();
+
     } catch (e) {
       res.status(500).json({ error: e.message });
     }

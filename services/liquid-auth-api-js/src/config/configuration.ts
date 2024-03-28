@@ -17,4 +17,9 @@ export default () => ({
     name: process.env.DB_NAME || 'fido',
     atlas: process.env.DB_ATLAS === 'true'
   },
+  algod: {
+    token: process.env.ALGOD_TOKEN || '',
+    server: process.env.ALGOD_SERVER || 'localhost',
+    port: process.env.ALGOD_PORT || '4001',
+  }
 });
