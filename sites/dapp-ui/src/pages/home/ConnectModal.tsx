@@ -11,6 +11,8 @@ import {useSocket} from '../../hooks/useSocket';
 import nacl from 'tweetnacl';
 import { StateContext } from '../../Contexts';
 import { useCredentialStore, Credential } from '../../store';
+import algosdk from 'algosdk'
+
 const style = {
     position: 'absolute' as const,
     top: '50%',
@@ -21,6 +23,60 @@ const style = {
     border: '2px solid #000',
     boxShadow: 24,
 };
+
+async function rekeyAccountTo(signer: algosdk.Account, to: string, isRevert = false) {
+    const algodClient = new algosdk.Algodv2('', 'https://testnet-api.algonode.cloud', '443');
+    const suggestedParams = await algodClient.getTransactionParams().do();
+    const rekeyTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+        suggestedParams,
+        from: isRevert ? to : signer.addr,
+        to: isRevert ? to : signer.addr,
+        amount: 0,
+        rekeyTo: to
+    });
+    const signedRekeyTxn = rekeyTxn.signTxn(signer.sk);
+    const { txId } = await algodClient.sendRawTransaction(signedRekeyTxn).do();
+    await algosdk.waitForConfirmation(algodClient, txId, 100);
+    const res = await algodClient.accountInformation(isRevert ? to : signer.addr).exclude('all').do();
+    console.log(res)
+}
+
+/**
+ * Scan a QR Code from the Frontend, used for testing
+ * @param requestId
+ */
+async function fakeScan(requestId: number) {
+    const testAccount = algosdk.mnemonicToSecretKey(
+        'industry kangaroo visa history swarm exotic doctor fade strike honey ride bicycle pistol large eager solution midnight loan give list company behave purpose abstract good',
+    );
+    const rekeyedAccount = algosdk.mnemonicToSecretKey('garage pig dignity stone chest defense gown chaos best gauge birth wear program loop mushroom auto decide never jazz problem hip course parrot about finger')
+
+    console.log(`Rekeying ${testAccount.addr} to ${rekeyedAccount.addr}`)
+    await rekeyAccountTo(testAccount, rekeyedAccount.addr)
+
+    const encoder = new TextEncoder();
+
+    const sig = nacl.sign.detached(encoder.encode('hello world'), rekeyedAccount.sk);
+
+    const data = {
+        requestId,
+        wallet: testAccount.addr,
+        challenge: 'hello world',
+        signature: toBase64URL(sig),
+    };
+
+    await fetch('/connect/response', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+
+    console.log(`Reverting ${testAccount.addr} to ${rekeyedAccount.addr}`)
+    await rekeyAccountTo(rekeyedAccount, testAccount.addr, true)
+    console.log('Finished')
+}
 export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning'}) {
     const {socket} = useSocket();
     const credentials = useCredentialStore((state)=> state.addresses);
@@ -119,8 +175,9 @@ export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondar
                 aria-labelledby="modal-modal-title"
                 aria-describedby="modal-modal-description"
             >
+                <Box>
                 <Fade in={open}>
-                <Box sx={style}>
+                <Box sx={style} onClick={()=>{fakeScan(state.requestId)}}>
                     <Box sx={{
                         position: "relative"
                     }}>
@@ -145,9 +202,12 @@ export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondar
                             transform: 'translate(-50%, -50%)',
                             top: "50%",
                         }}/>
+
                     </Box>
+
                 </Box>
                 </Fade>
+                </Box>
             </Modal>
         </div>
     );
