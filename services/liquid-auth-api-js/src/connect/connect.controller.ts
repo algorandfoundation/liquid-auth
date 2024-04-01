@@ -83,18 +83,18 @@ export class ConnectController {
       ) {
         // signature check failed, check if its rekeyed
         // if it is, verify against that public key instead
-        const accountInfo = await this.algodService.accountInformation(wallet).do();
+        const accountInfo = await this.algodService.accountInformation(wallet).exclude('all').do();
         console.log(accountInfo);  
-        console.log(accountInfo.authAddr);
+        console.log(accountInfo['auth-addr']);
 
-        if (!accountInfo.authAddr) {
+        if (!accountInfo['auth-addr']) {
           return res
             .status(401)
             .json({ error: 'Invalid signature' })
             .end();
         }
 
-        const authPublicKey = algoEncoder.decodeAddress(accountInfo.authAddr);
+        const authPublicKey = algoEncoder.decodeAddress(accountInfo['auth-addr']);
 
         // Validate Auth Address Signature
         if (
