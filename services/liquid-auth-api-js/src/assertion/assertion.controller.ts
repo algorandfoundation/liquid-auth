@@ -1,14 +1,16 @@
 import {
   Body,
   Controller,
-  Get, Inject,
+  Get,
+  HttpException,
+  HttpStatus,
+  Inject,
   Logger,
   Post,
   Req,
-  Res,
   Session,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 import type {
   AssertionCredentialJSON,
   PublicKeyCredentialRequestOptions,
@@ -25,7 +27,7 @@ export class AssertionController {
     @Inject('ACCOUNT_LINK_SERVICE') private client: ClientProxy,
     private assertionService: AssertionService,
     private authService: AuthService,
-  ) {}
+  ) { }
 
   /**
    * Hard Coded Request Assertion Options for demo
@@ -34,7 +36,6 @@ export class AssertionController {
   async assertionDemoRequest(
     @Session() session: Record<string, any>,
     @Req() req: Request,
-    @Res() res: Response,
     @Body() body?: PublicKeyCredentialRequestOptions,
   ) {
     this.logger.log(
@@ -45,17 +46,20 @@ export class AssertionController {
     });
 
     if (!user) {
-      res.status(404).json({ reason: 'not_found', error: 'User not found.' });
-      return;
+      throw new HttpException(
+        JSON.stringify({ reason: 'not_found', error: 'User not found.' }),
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     // Get options, save challenge and respond
-    const options = this.assertionService.request(
+    const options = await this.assertionService.request(
       user,
       req.params.credId,
       body,
     );
-    res.json(options);
+
+    return JSON.stringify(options);
   }
   /**
    * Request Assertion
@@ -68,14 +72,12 @@ export class AssertionController {
    *
    * @param session - Express Session
    * @param req - Express Request
-   * @param res - Express Response
    * @param [body] - Standard Public Key Request Options
    */
   @Post('/request/:credId')
   async assertionRequest(
     @Session() session: Record<string, any>,
     @Req() req: Request,
-    @Res() res: Response,
     @Body() body?: PublicKeyCredentialRequestOptions,
   ) {
     this.logger.log(
@@ -86,19 +88,22 @@ export class AssertionController {
     });
 
     if (!user) {
-      res.status(404).json({ reason: 'not_found', error: 'User not found.' });
-      return;
+      throw new HttpException(
+        JSON.stringify({ reason: 'not_found', error: 'User not found.' }),
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     // Get options, save challenge and respond
-    const options = this.assertionService.request(
+    const options = await this.assertionService.request(
       user,
       req.params.credId,
       body,
     );
 
     session.challenge = options.challenge;
-    res.json(options);
+
+    return JSON.stringify(options);
   }
 
   /**
@@ -111,32 +116,30 @@ export class AssertionController {
    *
    * @param session - Express Session
    * @param req - Express Request
-   * @param res - Express Response
    * @param body - Assertion Credential JSON
    */
   @Post('/response')
   async assertionResponse(
     @Session() session: Record<string, any>,
     @Req() req: Request,
-    @Res() res: Response,
     @Body() body: AssertionCredentialJSON,
   ) {
     this.logger.log(`POST /response for Session: ${session.id}`);
     const expectedChallenge = session.challenge;
     if (typeof expectedChallenge !== 'string') {
-      res
-        .status(401)
-        .json({ reason: 'unauthorized', error: 'Challenge not found.' });
-      return;
+      throw new HttpException(
+        JSON.stringify({ reason: 'unauthorized', error: 'Challenge not found.' }),
+        HttpStatus.UNAUTHORIZED,
+      );
     }
     const savedUser = await this.authService.search({
       'credentials.credId': body.id,
     });
     if (!savedUser) {
-      res
-        .status(403)
-        .json({ reason: 'not_found', error: 'Credential not found.' });
-      return;
+      throw new HttpException(
+        JSON.stringify({ reason: 'not_found', error: 'Credential not found.' }),
+        HttpStatus.FORBIDDEN,
+      );
     }
 
     const user = this.assertionService.response(
@@ -157,6 +160,6 @@ export class AssertionController {
       credential,
     });
 
-    res.json(user);
+    return JSON.stringify(user);
   }
 }
