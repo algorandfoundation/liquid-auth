@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
+  HttpStatus,
   Post,
   Req,
   Res,
@@ -21,53 +23,53 @@ export class AuthController {
   constructor(private authService: AuthService) {}
   /**
    * Debugging Route that shows all Users
-   * @param res
    */
   @Get('/all')
-  async all(@Res() res: Response) {
-    res.json(await this.authService.all());
+  async all() {
+    return JSON.stringify(await this.authService.all());
   }
 
   /**
    * Display user keys
    *
    * @param session
-   * @param res
    */
   @Get('/keys')
   @UseGuards(AuthGuard)
-  async keys(@Session() session: Record<string, any>, @Res() res: Response) {
+  async keys(@Session() session: Record<string, any>) {
     const wallet = session.wallet;
     const user = await this.authService.find(wallet);
-    res.json(user || {});
+    return JSON.stringify(user || {});
   }
   /**
    * Delete Credential
    *
    * @param session - Express Session
    * @param req - Express Request
-   * @param res - Express Response
    */
   @Delete('/keys/:id')
   @UseGuards(AuthGuard)
   async remove(
     @Session() session: Record<string, any>,
     @Req() req: Request,
-    @Res() res: Response,
   ) {
     const user = await this.authService.find(session.wallet);
 
     if (!user) {
-      res.status(404).json({ error: 'User not found' });
+      throw new HttpException(
+        JSON.stringify({ error: 'User not found' }),
+        HttpStatus.NOT_FOUND,
+      );
     } else {
-      this.authService
-        .removeCredential(user, req.params.id)
-        .then(() => {
-          res.json({ success: true });
-        })
-        .catch((e) => {
-          res.status(500).json({ error: e.message });
-        });
+      try {
+        await this.authService.removeCredential(user, req.params.id)
+        return JSON.stringify({ success: true })
+      } catch (e) {
+        throw new HttpException(
+          JSON.stringify({ error: e.message }),
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
   }
 
@@ -88,28 +90,30 @@ export class AuthController {
    *
    * @param session - The session object
    * @param userLoginDto - The credentials to post
-   * @param res - The response object
    */
   @Post('/session')
   async create(
     @Session() session: Record<string, any>,
     @Body() userLoginDto: LoginRequestDTO,
-    @Res() res: Response,
   ) {
     if (
       typeof userLoginDto.wallet !== 'string' ||
       userLoginDto.wallet.length !== 58
     ) {
-      res
-        .status(400)
-        .json({ reason: 'invalid_input', error: 'Invalid wallet' });
+      throw new HttpException(
+        JSON.stringify({ reason: 'invalid_input', error: 'Invalid wallet' }),
+        HttpStatus.BAD_REQUEST,
+      );
     } else {
       try {
         const user = await this.authService.init(userLoginDto.wallet);
         session.wallet = user.wallet;
-        res.json(user);
+        return JSON.stringify(user);
       } catch (e) {
-        res.status(500).json({ error: e.message });
+        throw new HttpException(
+          JSON.stringify({ error: e.message }),
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
       }
     }
   }
@@ -122,6 +126,6 @@ export class AuthController {
   async read(@Session() session: Record<string, any>) {
     session.connected = true;
     const user = await this.authService.find(session.wallet);
-    return user || {};
+    return JSON.stringify(user || {});
   }
 }
