@@ -5,13 +5,14 @@ import {
   Session,
   Inject,
   Logger,
-  Res,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { Response } from 'express';
 import { AuthService } from '../auth/auth.service.js';
 import { AlgodService } from '../algod/algod.service.js';
 import { AlgorandEncoder } from './AlgoEncoder.js';
+import * as nacl from 'tweetnacl';
 
 const algoEncoder = new AlgorandEncoder();
 
@@ -22,7 +23,6 @@ const base64ToUint8Array = (encoded) => {
       .map((c) => c.charCodeAt(0)),
   );
 };
-import nacl from 'tweetnacl';
 
 type LinkResponseDTO = {
   credId?: string;
@@ -53,7 +53,6 @@ export class ConnectController {
    */
   @Post('response')
   async linkWalletResponse(
-    @Res() res: Response,
     @Session() session: Record<string, any>,
     @Body()
     { requestId, wallet, challenge, signature, credId }: LinkResponseDTO,
@@ -75,26 +74,22 @@ export class ConnectController {
       const encodedChallenge = encoder.encode(challenge);
 
       if (
-        !nacl.sign.detached.verify(
-          encodedChallenge,
-          uint8Signature,
-          publicKey,
-        )
+        !nacl.sign.detached.verify(encodedChallenge, uint8Signature, publicKey)
       ) {
         // signature check failed, check if its rekeyed
         // if it is, verify against that public key instead
-        const accountInfo = await this.algodService.accountInformation(wallet).exclude('all').do();
-        console.log(accountInfo);  
-        console.log(accountInfo['auth-addr']);
+        const accountInfo = await this.algodService
+          .accountInformation(wallet)
+          .exclude('all')
+          .do();
 
         if (!accountInfo['auth-addr']) {
-          return res
-            .status(401)
-            .json({ error: 'Invalid signature' })
-            .end();
+          throw new HttpException('Invalid signature', HttpStatus.FORBIDDEN);
         }
 
-        const authPublicKey = algoEncoder.decodeAddress(accountInfo['auth-addr']);
+        const authPublicKey = algoEncoder.decodeAddress(
+          accountInfo['auth-addr'],
+        );
 
         // Validate Auth Address Signature
         if (
@@ -104,10 +99,7 @@ export class ConnectController {
             authPublicKey,
           )
         ) {
-          return res
-            .status(401)
-            .json({ error: 'Invalid signature' })
-            .end();
+          throw new HttpException('Invalid signature', HttpStatus.FORBIDDEN);
         }
       }
 
@@ -125,10 +117,13 @@ export class ConnectController {
         wallet,
         credId,
       });
-      return res.status(200).end();
 
+      return;
     } catch (e) {
-      res.status(500).json({ error: e.message });
+      throw new HttpException(
+        JSON.stringify({ error: e.message }),
+        HttpStatus.FORBIDDEN,
+      );
     }
   }
 }
