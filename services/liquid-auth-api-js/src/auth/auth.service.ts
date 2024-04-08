@@ -2,7 +2,6 @@ import * as crypto from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import base64url from 'base64url';
 
 import type { FilterQuery } from 'mongoose';
 import { Credential, User } from './auth.schema.js';
@@ -36,7 +35,7 @@ export class AuthService {
    */
   async create(wallet: string): Promise<User> {
     const createdUser = new this.userModel({
-      id: base64url.encode(crypto.randomBytes(32)),
+      id: crypto.randomBytes(32).toString('base64url'),
       wallet,
       credentials: [],
     });
