@@ -41,6 +41,7 @@
     "express-session": "^1.17.3",
     "express-socket.io-session": "^1.3.5",
     "hbs": "^4.2.0",
+    "hi-base32": "^0.5.1",
     "mongoose": "^7.6.3",
     "redis": "^4.6.10",
     "reflect-metadata": "^0.1.13",
@@ -80,6 +81,12 @@
     "node": ">=18.0.0 <21.0.0"
   },
   "jest": {
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
     "moduleFileExtensions": [
       "js",
       "json",

@@ -1,5 +1,5 @@
 import { sha512_256 } from 'js-sha512';
-import base32 from 'hi-base32';
+import * as base32 from 'hi-base32';
 
 const ALGORAND_PUBLIC_KEY_BYTE_LENGTH = 32;
 const ALGORAND_ADDRESS_BYTE_LENGTH = 36;
