@@ -43,7 +43,7 @@ describe('AuthController', () => {
     it('(OK) should return all users', async () => {
       const users = await authController.all();
 
-      expect(users).toBe(JSON.stringify(dummyUsers));
+      expect(users).toBe(dummyUsers);
     });
 
     it('(FAIL) should fail when mongo db throws an error', async () => {
@@ -62,7 +62,7 @@ describe('AuthController', () => {
       const session = new Session();
       const user = await authController.keys(session);
 
-      expect(user).toBe(JSON.stringify(dummyUser));
+      expect(user).toBe(dummyUser);
     });
 
     it('(FAIL) should fail when mongo db throws an error', async () => {
@@ -71,7 +71,7 @@ describe('AuthController', () => {
         .mockRejectedValue(new Error('failed to retrieve user'));
 
       const session = new Session();
-    
+
       await expect(authController.keys(session)).rejects.toThrowError();
     });
   });
@@ -81,9 +81,9 @@ describe('AuthController', () => {
       const session = new Session();
       const req = { body: {}, params: { id: 1 } } as any as Request;
 
-      await expect(authController.remove(session, req)).resolves.toBe(
-        JSON.stringify({ success: true }),
-      );
+      await expect(authController.remove(session, req)).resolves.toBe({
+        success: true,
+      });
     });
 
     it('(FAIL) should fail if it cannot find the user', async () => {
@@ -96,7 +96,9 @@ describe('AuthController', () => {
     });
 
     it('(FAIL) should fail when mongo db throws an error', async () => {
-      authService.find = jest.fn().mockRejectedValue(new Error('failed to find user'));
+      authService.find = jest
+        .fn()
+        .mockRejectedValue(new Error('failed to find user'));
 
       const session = new Session();
       const req = { body: {}, params: { id: 1 } } as any as Request;
@@ -136,7 +138,7 @@ describe('AuthController', () => {
       const body = { wallet: dummyUser.wallet };
 
       await expect(authController.create(session, body)).resolves.toBe(
-        JSON.stringify(dummyUser),
+        dummyUser,
       );
     });
 
@@ -154,7 +156,7 @@ describe('AuthController', () => {
       const session = new Session();
 
       await expect(authController.read(session)).resolves.toBe(
-        JSON.stringify(dummyUser),
+        dummyUser,
       );
     });
 
@@ -163,9 +165,7 @@ describe('AuthController', () => {
 
       const session = new Session();
 
-      await expect(authController.read(session)).resolves.toBe(
-        JSON.stringify({}),
-      );
+      await expect(authController.read(session)).resolves.toBe({}));
     });
   });
 });
