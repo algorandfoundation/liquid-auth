@@ -7,7 +7,7 @@ import { User, UserSchema } from './auth.schema';
 import { getModelToken } from '@nestjs/mongoose';
 import { Request, Response } from 'express';
 import { dummyUsers } from '../../tests/constants';
-import { mockAuthService } from '../__mocks__/auth.service.mock.ts'
+import { mockAuthService } from '../__mocks__/auth.service.mock';
 
 describe('AuthController', () => {
   let authController: AuthController;
@@ -23,7 +23,7 @@ describe('AuthController', () => {
         {
           provide: AuthService,
           useValue: mockAuthService,
-        }
+        },
         {
           provide: getModelToken(User.name),
           useValue: userModel,
@@ -42,7 +42,7 @@ describe('AuthController', () => {
   describe('Get /all', () => {
     it('(OK) should return all users', async () => {
       const users = await authController.all();
-      
+
       expect(users).toBe(JSON.stringify(dummyUsers));
     });
 
