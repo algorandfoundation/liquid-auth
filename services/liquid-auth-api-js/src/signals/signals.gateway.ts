@@ -22,9 +22,9 @@ export class SignalsGateway {
     data: { candidate: string; sdpMid: string; sdpMLineIndex: number },
     @ConnectedSocket() client: Socket,
   ) {
-    this.logger.debug(`(call-candidate): ${data}`);
-    const handshake = client.handshake as Handshake;
-    const session = handshake.session as Record<string, any>;
+    this.logger.debug(`(call-candidate): ${JSON.stringify(data)}`);
+    const request = client.request as Record<string, any>;
+    const session = request.session as Record<string, any>;
     this.server.in(session.wallet).emit('call-candidate', data);
   }
   @SubscribeMessage('call-description')
@@ -35,8 +35,8 @@ export class SignalsGateway {
     this.logger.log(`(call-description): ${data}`);
 
     // Session from the initial Handshake
-    const handshake = client.handshake as Handshake;
-    const session = handshake.session as Record<string, any>;
+    const request = client.request as Record<string, any>;
+    const session = request.session as Record<string, any>;
 
     // Send description to all clients in the public key's room
     this.server.in(session.wallet).emit('call-description', data);
@@ -47,8 +47,8 @@ export class SignalsGateway {
     @ConnectedSocket() client: Socket,
   ) {
     this.logger.log(`(answer-description): ${data}`);
-    const handshake = client.handshake as Handshake;
-    const session = handshake.session as Record<string, any>;
+    const request = client.request as Record<string, any>;
+    const session = request.session as Record<string, any>;
     this.server.in(session.wallet).emit('answer-description', data);
   }
   @SubscribeMessage('answer-candidate')
@@ -57,9 +57,9 @@ export class SignalsGateway {
     data: { candidate: string; sdpMid: string; sdpMLineIndex: number },
     @ConnectedSocket() client: Socket,
   ) {
-    this.logger.debug(`(answer-candidate): ${data}`);
-    const handshake = client.handshake as Handshake;
-    const session = handshake.session as Record<string, any>;
+    this.logger.debug(`(answer-candidate): ${JSON.stringify(data)}`);
+    const request = client.request as Record<string, any>;
+    const session = request.session as Record<string, any>;
     this.server.in(session.wallet).emit('answer-candidate', data);
   }
 }

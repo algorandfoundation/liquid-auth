@@ -22,7 +22,9 @@ export function WaitForPeersCard(){
   const peerConnection = usePeerConnection((event) => {
     if (event.candidate) {
       console.log('Local Candidate', event.candidate.toJSON())
-      socket.emit('answer-candidate', event.candidate.toJSON())
+        const data = event.candidate.toJSON()
+        // data.type = 'offerCandidate'
+      socket.emit('answer-candidate', data)
     } else {
       console.log(event)
     }
@@ -59,9 +61,11 @@ export function WaitForPeersCard(){
   },[socket])
   useEffect(()=>{
     if(!peerConnection) return
-    function handleCallCandidate(data: RTCIceCandidate){
+    async function handleCallCandidate(data: RTCIceCandidate){
       console.log('Remote Candidate', data)
-      peerConnection.addIceCandidate(data)
+        // data.type = 'answerCandidate'
+        console.log('Remote Candidate ICE', new RTCIceCandidate(data))
+      await peerConnection!!.addIceCandidate( new RTCIceCandidate(data))
     }
     socket.on('call-candidate', handleCallCandidate)
     return ()=>{

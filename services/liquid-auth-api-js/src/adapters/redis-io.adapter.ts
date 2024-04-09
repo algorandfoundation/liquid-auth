@@ -35,13 +35,7 @@ export class RedisIoAdapter extends IoAdapter {
 
   createIOServer(port: number, options?: ServerOptions): any {
     const server = super.createIOServer(port, options);
-    const wrap =
-      (middleware: (request: any, options: any, next: any) => any) =>
-      (socket: Socket, next: (err?: Error) => void) => {
-        return middleware(socket.request, {}, next);
-      };
-    server.use(wrap(this.sessionHandler));
-    server.use(socketSessions(this.sessionHandler, { autoSave: true }));
+    server.engine.use(this.sessionHandler);
     server.adapter(this.adapterConstructor);
     return server;
   }

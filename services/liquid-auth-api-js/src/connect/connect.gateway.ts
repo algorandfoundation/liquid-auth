@@ -4,7 +4,7 @@ import { map } from 'rxjs/operators';
 import {
   ConnectedSocket,
   MessageBody,
-  OnGatewayConnection,
+  OnGatewayConnection, OnGatewayDisconnect,
   OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
@@ -18,7 +18,8 @@ import { RedisIoAdapter } from '../adapters/redis-io.adapter';
     origin: '*',
   },
 })
-export class ConnectGateway implements OnGatewayInit, OnGatewayConnection {
+export class ConnectGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+  private timers = new Map<string, NodeJS.Timeout>();
   private ioAdapter: RedisIoAdapter;
   private readonly logger = new Logger(ConnectGateway.name);
   constructor(private authService: AuthService) {}
@@ -41,17 +42,44 @@ export class ConnectGateway implements OnGatewayInit, OnGatewayConnection {
    *
    * @param client
    */
-  async handleConnection(client: Socket) {
-    const handshake = client.handshake as Handshake;
-    const session = handshake.session as Record<string, any>;
+  async handleConnection(socket: Socket) {
+    const request = socket.request as Record<string, any>;
+    const session = request.session as Record<string, any>;
+
+    const timer = setInterval(() => {
+      session.reload((err) => {
+        // console.log('Reloaded session')
+        if (err) {
+          // forces the client to reconnect
+          socket.conn.close();
+          // you can also use socket.disconnect(), but in that case the client
+          // will not try to reconnect
+        }
+      });
+    }, 200);
+
+    if(this.timers.has(request.sessionID)) {
+        clearInterval(this.timers.get(request.sessionID));
+    }
+
+    this.timers.set(request.sessionID, timer);
+
     this.logger.debug(
-      `(*) Client Connected with Session: ${handshake.sessionID}${
+      `(*) Client Connected with Session: ${request.sessionID}${
         session.wallet ? ` and PublicKey: ${session.wallet}` : ''
       }`,
     );
     if (typeof session.wallet === 'string') {
       this.logger.debug(`(*) Client Joining Room ${session.wallet}`);
-      await client.join(session.wallet);
+      await socket.join(session.wallet);
+    }
+  }
+
+  handleDisconnect(socket: Socket) {
+    const request = socket.request as Record<string, any>;
+    this.logger.debug(`(*) Client Disconnected with Session: ${request.sessionID}`);
+    if(this.timers.has(request.sessionID)) {
+        clearInterval(this.timers.get(request.sessionID));
     }
   }
   /**
@@ -66,15 +94,16 @@ export class ConnectGateway implements OnGatewayInit, OnGatewayConnection {
   ): Promise<
     Observable<{ data: { requestId: string | number; wallet: string } }>
   > {
-    const handshake = client.handshake as Handshake;
+    const request = client.request as Record<string, any>;
     this.logger.debug(
-      `(link): link for Session: ${handshake.sessionID} with RequestId: ${body.requestId}`,
+      `(link): link for Session: ${request.sessionID} with RequestId: ${body.requestId}`,
     );
 
     // Find the stored session
-    const session = await this.authService.findSession(handshake.sessionID);
+    const session = await this.authService.findSession(request.sessionID);
     console.log('Session', session);
     if (session) {
+      console.log('Listening to auth messages')
       await this.ioAdapter.subClient.subscribe('auth');
 
       // Handle messages
@@ -85,7 +114,7 @@ export class ConnectGateway implements OnGatewayInit, OnGatewayConnection {
           console.log(body.requestId, data.requestId, data, body);
           if (body.requestId === data.requestId) {
             this.logger.debug(
-              `(*) Linking Wallet: ${data.wallet} to Session: ${handshake.sessionID}`,
+              `(*) Linking Wallet: ${data.wallet} to Session: ${request.sessionID}`,
             );
             await this.authService.updateSessionWallet(session, data.wallet);
             this.logger.debug(`(*) Joining Room: ${data.wallet}`);

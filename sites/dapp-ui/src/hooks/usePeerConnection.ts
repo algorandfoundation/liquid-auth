@@ -30,7 +30,7 @@ export function usePeerConnectionState(){
 export function usePeerConnection(
     onIceCandidate: (event: RTCPeerConnectionIceEvent)=>void) {
     const {peerConnection} = useContext(PeerConnectionContext);
-
+    window.peerConnection = peerConnection;
     useEffect(() => {
         if(!peerConnection) return;
         function handleICEGatheringStateChange() {
@@ -47,12 +47,16 @@ export function usePeerConnection(
         function handleICEConnectionStateChange() {
             console.log(`ICE connection state change: ${peerConnection?.iceConnectionState}`);
         }
+
+        function handleICECandidateError(event){
+            console.error('ICE Candidate Error', event)
+        }
         peerConnection.addEventListener('icegatheringstatechange', handleICEGatheringStateChange);
         peerConnection.addEventListener('connectionstatechange', handleConnectionStateChange);
         peerConnection.addEventListener('signalingstatechange', handleSignalingStateChange);
         peerConnection.addEventListener('iceconnectionstatechange ', handleICEConnectionStateChange);
         peerConnection.addEventListener('icecandidate', onIceCandidate);
-
+        peerConnection.addEventListener('icecandidateerror', handleICECandidateError)
         return () => {
             peerConnection.removeEventListener('icegatheringstatechange', handleICEGatheringStateChange);
             peerConnection.removeEventListener('connectionstatechange', handleConnectionStateChange);

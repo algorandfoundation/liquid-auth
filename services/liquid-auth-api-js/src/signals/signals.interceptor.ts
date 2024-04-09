@@ -16,12 +16,12 @@ export class SignalsInterceptor implements NestInterceptor {
     next: CallHandler,
   ): Promise<Observable<any>> {
     const client = context.switchToWs().getClient() as Socket;
-    const handshake = client.handshake as Handshake;
-    const session = handshake.session as Record<string, any>;
+    const request = client.request as Record<string, any>;
+    const session = request.session as Record<string, any>;
 
     if (typeof session.wallet !== 'string') {
       this.logger.error(
-        `(*) Client ${handshake.sessionID} is not authenticated`,
+        `(*) Client ${request.sessionID} is not authenticated`,
       );
       client.disconnect();
     } else {
