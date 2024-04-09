@@ -38,3 +38,10 @@ export const dummyUsers = [
     credentials: [],
   },
 ];
+
+export const dummyOptions = {
+  timeout: 0,
+  rpID: 'meh',
+  allowCredentials: [],
+  userVerification: 'required',
+};
