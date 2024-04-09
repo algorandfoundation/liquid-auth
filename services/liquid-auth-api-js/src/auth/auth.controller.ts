@@ -26,7 +26,7 @@ export class AuthController {
    */
   @Get('/all')
   async all() {
-    return JSON.stringify(await this.authService.all());
+    return await this.authService.all();
   }
 
   /**
@@ -39,7 +39,7 @@ export class AuthController {
   async keys(@Session() session: Record<string, any>) {
     const wallet = session.wallet;
     const user = await this.authService.find(wallet);
-    return JSON.stringify(user || {});
+    return user || {};
   }
   /**
    * Delete Credential
@@ -57,16 +57,16 @@ export class AuthController {
 
     if (!user) {
       throw new HttpException(
-        JSON.stringify({ error: 'User not found' }),
+        { error: 'User not found' },
         HttpStatus.NOT_FOUND,
       );
     } else {
       try {
         await this.authService.removeCredential(user, req.params.id)
-        return JSON.stringify({ success: true })
+        return { success: true };
       } catch (e) {
         throw new HttpException(
-          JSON.stringify({ error: e.message }),
+          { error: e.message },
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
@@ -101,17 +101,17 @@ export class AuthController {
       userLoginDto.wallet.length !== 58
     ) {
       throw new HttpException(
-        JSON.stringify({ reason: 'invalid_input', error: 'Invalid wallet' }),
+        { reason: 'invalid_input', error: 'Invalid wallet' },
         HttpStatus.BAD_REQUEST,
       );
     } else {
       try {
         const user = await this.authService.init(userLoginDto.wallet);
         session.wallet = user.wallet;
-        return JSON.stringify(user);
+        return user;
       } catch (e) {
         throw new HttpException(
-          JSON.stringify({ error: e.message }),
+          { error: e.message },
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
@@ -126,6 +126,6 @@ export class AuthController {
   async read(@Session() session: Record<string, any>) {
     session.connected = true;
     const user = await this.authService.find(session.wallet);
-    return JSON.stringify(user || {});
+    return user || {};
   }
 }
