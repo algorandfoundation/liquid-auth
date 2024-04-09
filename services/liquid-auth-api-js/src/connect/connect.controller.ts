@@ -120,10 +120,7 @@ export class ConnectController {
 
       return;
     } catch (e) {
-      throw new HttpException(
-        JSON.stringify({ error: e.message }),
-        HttpStatus.FORBIDDEN,
-      );
+      throw new HttpException({ error: e.message }, HttpStatus.FORBIDDEN);
     }
   }
 }
