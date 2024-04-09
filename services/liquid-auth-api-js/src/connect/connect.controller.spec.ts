@@ -5,6 +5,7 @@ import { AuthService } from '../auth/auth.service';
 import * as crypto from 'node:crypto';
 import { Session } from './session.schema';
 import { accFixture } from '../../tests/constants';
+import { mockAuthService } from '../__mocks__/auth.service.mock';
 
 describe('ConnectController', () => {
   let connectController: ConnectController;
@@ -15,13 +16,7 @@ describe('ConnectController', () => {
       providers: [
         {
           provide: AuthService,
-          useValue: {
-            init: jest.fn().mockResolvedValue({
-              id: crypto.randomBytes(32).toString('base64url'),
-              wallet: accFixture.accs[0].addr,
-              credentials: [],
-            }),
-          },
+          useValue:,mockAuthService,
         },
         {
           provide: 'ACCOUNT_LINK_SERVICE',
@@ -69,7 +64,7 @@ describe('ConnectController', () => {
       expect(response).toBe(undefined);
     });
 
-    it("(FAIL)    should throw an error when the signature doesn't match the account", async () => {
+    it("(FAIL) should throw an error when the signature doesn't match the account", async () => {
       const session = new Session();
 
       const linkResponseDTO = {
