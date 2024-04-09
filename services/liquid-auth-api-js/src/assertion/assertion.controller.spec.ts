@@ -8,8 +8,11 @@ import { Request } from 'express';
 import { AssertionController } from './assertion.controller';
 import { AssertionService } from './assertion.service';
 import { dummyUsers } from '../../tests/constants';
+import { mockAuthService } from '../__mocks__/auth.service.mock';
+import { mockAssertionService } from '../__mocks__/assertion.service.mock';
 import { AppService } from '../app.service';
 import { ConfigService } from '@nestjs/config';
+import { warn } from 'node:console';
 
 // PublicKeyCredentialRequestOptions
 const dummyPKCRO = {
@@ -48,8 +51,15 @@ describe('AssertionController', () => {
       controllers: [AssertionController],
       providers: [
         ConfigService,
-        AuthService,
+        {
+          provide: AuthService,
+          useValue: mockAuthService,
+        },
         AppService,
+        {
+          provide: AssertionService,
+          useValue: mockAssertionService,
+        },
         AssertionService,
         {
           provide: 'ACCOUNT_LINK_SERVICE',
@@ -76,14 +86,9 @@ describe('AssertionController', () => {
 
   describe('Get /request/:credId', () => {
     it('(OK) should save the challenge', async () => {
-      const dummyUser = dummyUsers[0];
       const session = new Session();
       const req = { body: {}, params: { credId: 1 } } as any as Request;
       const body = dummyPKCRO;
-
-      authService.search = jest.fn().mockResolvedValue(dummyUser);
-
-      assertionService.request = jest.fn().mockResolvedValue(dummyOptions);
 
       await expect(
         assertionController.assertionDemoRequest(session, req, body),
@@ -104,17 +109,9 @@ describe('AssertionController', () => {
 
   describe('Post /request/:credId', () => {
     it('(OK) should create a valid assertion request', async () => {
-      const dummyUser = dummyUsers[0];
-
       const session = new Session();
       const req = { body: {}, params: { credId: 1 } } as any as Request;
       const body = dummyPKCRO;
-
-      userModel.findOne = jest.fn().mockReturnValue({
-        exec: jest.fn().mockResolvedValue(dummyUser),
-      });
-
-      assertionService.request = jest.fn().mockResolvedValue(dummyOptions);
 
       await expect(
         assertionController.assertionRequest(session, req, body),
@@ -125,9 +122,7 @@ describe('AssertionController', () => {
       const req = { body: {}, params: { credId: 1 } } as any as Request;
       const body = dummyPKCRO;
 
-      userModel.findOne = jest.fn().mockReturnValue({
-        exec: jest.fn().mockResolvedValue(undefined),
-      });
+      authService.search = jest.fn().mockResolvedValue(undefined);
 
       await expect(
         assertionController.assertionRequest(session, req, body),
@@ -146,10 +141,6 @@ describe('AssertionController', () => {
         get: jest.fn().mockReturnValue('User-Agent String'),
       } as any as Request;
       const body = dummyACJSON;
-
-      assertionService.response = jest.fn().mockReturnValue(dummyUser);
-      authService.search = jest.fn().mockResolvedValue(dummyUser);
-      authService.update = jest.fn();
 
       await expect(
         assertionController.assertionResponse(session, req, body),

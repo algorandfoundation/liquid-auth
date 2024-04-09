@@ -27,7 +27,7 @@ export class AssertionController {
     @Inject('ACCOUNT_LINK_SERVICE') private client: ClientProxy,
     private assertionService: AssertionService,
     private authService: AuthService,
-  ) { }
+  ) {}
 
   /**
    * Hard Coded Request Assertion Options for demo
@@ -47,19 +47,19 @@ export class AssertionController {
 
     if (!user) {
       throw new HttpException(
-        JSON.stringify({ reason: 'not_found', error: 'User not found.' }),
+        { reason: 'not_found', error: 'User not found.' },
         HttpStatus.NOT_FOUND,
       );
     }
 
     // Get options, save challenge and respond
-    const options = await this.assertionService.request(
+    const options = this.assertionService.request(
       user,
       req.params.credId,
       body,
     );
 
-    return JSON.stringify(options);
+    return options;
   }
   /**
    * Request Assertion
@@ -89,7 +89,7 @@ export class AssertionController {
 
     if (!user) {
       throw new HttpException(
-        JSON.stringify({ reason: 'not_found', error: 'User not found.' }),
+        { reason: 'not_found', error: 'User not found.' },
         HttpStatus.NOT_FOUND,
       );
     }
@@ -103,7 +103,7 @@ export class AssertionController {
 
     session.challenge = options.challenge;
 
-    return JSON.stringify(options);
+    return options;
   }
 
   /**
@@ -128,7 +128,7 @@ export class AssertionController {
     const expectedChallenge = session.challenge;
     if (typeof expectedChallenge !== 'string') {
       throw new HttpException(
-        JSON.stringify({ reason: 'unauthorized', error: 'Challenge not found.' }),
+        { reason: 'unauthorized', error: 'Challenge not found.' },
         HttpStatus.UNAUTHORIZED,
       );
     }
@@ -137,7 +137,7 @@ export class AssertionController {
     });
     if (!savedUser) {
       throw new HttpException(
-        JSON.stringify({ reason: 'not_found', error: 'Credential not found.' }),
+        { reason: 'not_found', error: 'Credential not found.' },
         HttpStatus.FORBIDDEN,
       );
     }
@@ -160,6 +160,6 @@ export class AssertionController {
       credential,
     });
 
-    return JSON.stringify(user);
+    return user;
   }
 }
