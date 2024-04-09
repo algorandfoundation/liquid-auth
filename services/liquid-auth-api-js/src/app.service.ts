@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import UAParser from 'ua-parser-js';
-import { assetLinks } from './assetlinks';
+
+// ignore due to jest
+// @ts-ignore
+import assetLinks from '../assetlinks.json' with { type: 'json' };
 
 @Injectable()
 export class AppService {
