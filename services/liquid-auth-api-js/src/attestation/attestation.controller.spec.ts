@@ -7,6 +7,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Request } from 'express';
 import { AttestationController } from './attestation.controller';
 import { accFixture, dummyUsers } from '../../tests/constants';
+import { mockAuthService } from '../__mocks__/auth.service.mock';
 import { mockAccountLinkService } from '../__mocks__/account-link.service.mock';
 import { AppService } from '../app.service';
 import { ConfigService } from '@nestjs/config';
@@ -39,7 +40,10 @@ describe('AttestationController', () => {
       controllers: [AttestationController],
       providers: [
         ConfigService,
-        AuthService,
+        {
+          provide: AuthService,
+          useValue: mockAuthService,
+        },
         AppService,
         AttestationService,
         {
