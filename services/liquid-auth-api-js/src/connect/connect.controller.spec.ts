@@ -16,7 +16,7 @@ describe('ConnectController', () => {
       providers: [
         {
           provide: AuthService,
-          useValue:,mockAuthService,
+          useValue: mockAuthService,
         },
         {
           provide: 'ACCOUNT_LINK_SERVICE',
