@@ -7,12 +7,11 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Request } from 'express';
 import { AssertionController } from './assertion.controller';
 import { AssertionService } from './assertion.service';
-import { dummyUsers } from '../../tests/constants';
+import { dummyUsers, dummyOptions } from '../../tests/constants';
 import { mockAuthService } from '../__mocks__/auth.service.mock';
 import { mockAssertionService } from '../__mocks__/assertion.service.mock';
 import { AppService } from '../app.service';
 import { ConfigService } from '@nestjs/config';
-import { warn } from 'node:console';
 
 // PublicKeyCredentialRequestOptions
 const dummyPKCRO = {
@@ -31,16 +30,8 @@ const dummyACJSON = {
   },
 };
 
-const dummyOptions = {
-  timeout: 0,
-  rpID: 'meh',
-  allowCredentials: [],
-  userVerification: 'required',
-};
-
 describe('AssertionController', () => {
   let assertionController: AssertionController;
-  let assertionService: AssertionService;
   let authService: AuthService;
   let userModel: Model<User>;
 
@@ -75,7 +66,6 @@ describe('AssertionController', () => {
     }).compile();
 
     authService = moduleRef.get<AuthService>(AuthService);
-    assertionService = moduleRef.get<AssertionService>(AssertionService);
     assertionController =
       moduleRef.get<AssertionController>(AssertionController);
   });
