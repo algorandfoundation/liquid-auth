@@ -7,6 +7,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Request } from 'express';
 import { AttestationController } from './attestation.controller';
 import { accFixture, dummyUsers } from '../../tests/constants';
+import { mockAccountLinkService } from '../__mocks__/account-link.service.mock';
 import { AppService } from '../app.service';
 import { ConfigService } from '@nestjs/config';
 import { AttestationService } from './attestation.service';
@@ -43,9 +44,7 @@ describe('AttestationController', () => {
         AttestationService,
         {
           provide: 'ACCOUNT_LINK_SERVICE',
-          useValue: {
-            emit: jest.fn(),
-          },
+          useValue: mockAccountLinkService,
         },
         {
           provide: getModelToken(User.name),
@@ -67,7 +66,6 @@ describe('AttestationController', () => {
 
   describe('Post /request', () => {
     it('(OK) should create a challenge', async () => {
-      const dummyUser = dummyUsers[0];
       const dummyAttestationOptions = { challenge: 'meh' };
 
       const session: Record<string, any> = new Session();
@@ -79,11 +77,6 @@ describe('AttestationController', () => {
           host: 'meh',
         },
       } as Request;
-
-      authService.find = jest.fn().mockResolvedValue(dummyUser);
-      attestationService.request = jest
-        .fn()
-        .mockReturnValue(dummyAttestationOptions);
 
       await expect(
         attestationController.request(session, body, req),
@@ -126,7 +119,6 @@ describe('AttestationController', () => {
   describe('Post /response', () => {
     it('(OK) should register a key', async () => {
       const dummyUser = dummyUsers[0];
-      const dummyAttestationOptions = { challenge: 'meh' };
 
       const session: Record<string, any> = new Session();
       session.wallet = accFixture.accs[0].addr;
@@ -134,11 +126,6 @@ describe('AttestationController', () => {
 
       const body = dummyACJSON;
       const req = { get: jest.fn() } as any as Request;
-
-      authService.addCredential = jest.fn().mockResolvedValue(dummyUser);
-      attestationService.response = jest
-        .fn()
-        .mockReturnValue(dummyAttestationOptions);
 
       await expect(
         attestationController.attestationResponse(session, body, req),

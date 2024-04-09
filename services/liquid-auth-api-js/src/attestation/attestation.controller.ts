@@ -92,10 +92,7 @@ export class AttestationController {
       const wallet = session.wallet;
       if (!wallet) {
         throw new HttpException(
-          JSON.stringify({
-            reason: 'unauthorized',
-            error: 'Wallet not connected',
-          }),
+          { reason: 'unauthorized', error: 'Wallet not connected' },
           HttpStatus.UNAUTHORIZED,
         );
       }
@@ -103,10 +100,7 @@ export class AttestationController {
       const user = await this.authService.find(wallet);
       if (!user) {
         throw new HttpException(
-          JSON.stringify({
-            reason: 'not_found',
-            error: 'Wallet not found',
-          }),
+          { reason: 'not_found', error: 'Wallet not found' },
           HttpStatus.FORBIDDEN,
         );
       }
@@ -116,10 +110,10 @@ export class AttestationController {
       session.challenge = attestationOptions.challenge;
       this.logger.debug(attestationOptions);
 
-      return JSON.stringify(attestationOptions);
+      return attestationOptions;
     } catch (e) {
       throw new HttpException(
-        JSON.stringify({ error: e.message }),
+        { error: e.message },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -140,10 +134,7 @@ export class AttestationController {
       const expectedChallenge = session.challenge;
       if (typeof expectedChallenge !== 'string') {
         throw new HttpException(
-          JSON.stringify({
-            reason: 'not_found',
-            error: 'Challenge not found',
-          }),
+          { reason: 'not_found', error: 'Challenge not found' },
           HttpStatus.NOT_FOUND
         );
       }
@@ -165,11 +156,11 @@ export class AttestationController {
         credential,
       });
 
-      return JSON.stringify(user);
+      return user;
     } catch (e) {
       this.logger.error(e.message, e.stack);
       throw new HttpException(
-        JSON.stringify({ error: e.message }),
+        { error: e.message },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
