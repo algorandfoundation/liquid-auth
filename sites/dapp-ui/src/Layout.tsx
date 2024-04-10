@@ -8,47 +8,23 @@ import {useTheme} from '@mui/material';
 import {PropsWithChildren, useContext} from 'react';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
-import { ColorModeContext, StateContext } from './Contexts';
+import { ColorModeContext } from './Contexts';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import {SessionMenu} from "./components/user/SessionMenu.tsx";
 import {MessageSnackbar} from "./components/Snackbar.tsx";
+import { useLocation, useNavigate } from "react-router-dom";
 export default function Layout({children}: PropsWithChildren) {
-  const {state, setState} = useContext(StateContext)
+  const location = useLocation();
+  const navigate = useNavigate()
   const colorMode = useContext(ColorModeContext)
   const theme = useTheme()
   const isDarkMode = theme.palette.mode === 'dark'
   const bubbleStyle = {
     backgroundColor: isDarkMode ? 'white' : 'black'
   }
-  function prevState(){
-    switch(state){
-        case 'debug':
-            return 'debug'
-        case 'start':
-            return 'debug'
-        case 'connected':
-            return 'registered'
-        case 'registered':
-            return 'connected'
-      default:
-        return 'debug'
-    }
-  }
-  function nextState() {
-    switch(state) {
-        case 'debug':
-            return 'start'
-        case 'start':
-            return 'connected'
-        case 'connected':
-            return 'registered'
-        case 'registered':
-            return 'connected'
-        default:
-            return 'debug'
-    }
-  }
+  const breadcrumbs = ["/", "/peering", "/connected", "/registered"]
+  const index = breadcrumbs.indexOf(location.pathname)
   return (
       <>
         <AppBar position="sticky" sx={isDarkMode ? {background: 'transparent', boxShadow: 'none'} : {}}>
@@ -58,13 +34,13 @@ export default function Layout({children}: PropsWithChildren) {
               Liquid dApp
             </Typography>
             <IconButton onClick={() => {
-              setState(prevState())
-            }} aria-label="delete" disabled={state === 'debug'} color="inherit">
+              index > 0 && navigate(breadcrumbs[index - 1])
+            }} aria-label="delete" disabled={index === 0} color="inherit">
               <NavigateBeforeIcon/>
             </IconButton>
             <IconButton onClick={() => {
-              setState(nextState())
-            }} aria-label="delete" disabled={state === 'registered'} color="inherit">
+              index < breadcrumbs.length - 1 && navigate(breadcrumbs[index + 1])
+            }} aria-label="delete" disabled={index === breadcrumbs.length - 1} color="inherit">
               <NavigateNextIcon/>
             </IconButton>
             <IconButton sx={{ml: 1}} onClick={colorMode.toggle} color="inherit" aria-label="Switch theme">

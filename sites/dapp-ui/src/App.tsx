@@ -18,6 +18,7 @@ import {
   RouterProvider
 } from "react-router-dom";
 import { WaitForPeersCard } from "./pages/peering/WaitForPeers.tsx";
+import ConnectedPage from "./pages/connected.tsx";
 const queryClient = new QueryClient()
 
 const DEFAULT_CONFIG: RTCConfiguration = {
@@ -34,11 +35,11 @@ const DEFAULT_CONFIG: RTCConfiguration = {
 };
 
 const router = createHashRouter([
-  {'path': '/', 'element': <GetStartedCard/>},
-  {'path': '/peering', 'element': <WaitForPeersCard/>},
-  {'path': '/connected', 'element': <WaitForRegistrationCard/>},
-  {'path': '/registered', 'element': <RegisteredCard/>},
-  {'path': '/debug/webrtc', 'element': <DebugWebRTC/>},
+  {'path': '/', 'element':  <Layout><GetStartedCard/></Layout>},
+  {'path': '/peering', 'element': <Layout><WaitForPeersCard/></Layout>},
+  {'path': '/connected', 'element': <Layout><ConnectedPage/></Layout>},
+  {'path': '/registered', 'element': <Layout><RegisteredCard/></Layout>},
+  {'path': '/debug/webrtc', 'element': <Layout><DebugWebRTC/></Layout>},
 ])
 export default function ProviderApp(){
     const [open, setOpen] = useState(false)
@@ -78,9 +79,7 @@ export default function ProviderApp(){
                       <CssBaseline />
                       <PeerConnectionContext.Provider value={{peerConnection}}>
                       <DataChannelContext.Provider value={{dataChannel, setDataChannel}}>
-                        <Layout>
                           <RouterProvider router={router} />
-                        </Layout>
                       </DataChannelContext.Provider>
                       </PeerConnectionContext.Provider>
                       <ReactQueryDevtools initialIsOpen={false} />

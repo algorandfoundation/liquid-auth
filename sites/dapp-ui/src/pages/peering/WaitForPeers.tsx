@@ -5,20 +5,17 @@ import Card from "@mui/material/Card";
 import { CircularProgress } from '@mui/material';
 import { useEffect } from 'react';
 import {useSocket} from '../../hooks/useSocket';
-import { useCredentialStore } from '../../store';
-import { useAddressQuery } from '../../hooks/useAddress';
 import { useNavigate } from "react-router-dom";
 import { usePeerConnection } from "../../hooks/usePeerConnection.ts";
-import { useDataChannel } from "../../hooks/useDataChannel.ts";
+import { useDataChannel, useDataChannelMessages } from "../../hooks/useDataChannel.ts";
 
 export function WaitForPeersCard(){
   const navigate = useNavigate()
-
   const walletStr = window.localStorage.getItem('wallet');
   const wallet = walletStr ? JSON.parse(walletStr) : null;
 
   const {socket} = useSocket();
-  const address = useAddressQuery(wallet);
+  // const address = useAddressQuery(wallet);
   const peerConnection = usePeerConnection((event) => {
     if (event.candidate) {
       console.log('Local Candidate', event.candidate.toJSON())
@@ -29,20 +26,17 @@ export function WaitForPeersCard(){
       console.log(event)
     }
   });
-
+  const datachannel = useDataChannel("remote", peerConnection)
+  useDataChannelMessages((event) => {
+    console.log(event)
+  })
   useEffect(()=>{
-    if(!peerConnection) return
-    // peerConnection.createDataChannel('1')
-    function handleOnDataChannel(event: RTCDataChannelEvent){
-      console.log('Data Channel Event', event.channel)
-      event.channel.send('Hello World')
-    }
-    peerConnection.addEventListener('datachannel', handleOnDataChannel)
+    if(!datachannel) return
 
-    return ()=> {
-      peerConnection.removeEventListener('datachannel', handleOnDataChannel)
-    }
-  }, [peerConnection])
+
+    // datachannel.send('Hello World')
+    navigate('/connected')
+  }, [datachannel])
 
   useEffect(()=>{
     if(!peerConnection) return
@@ -93,8 +87,7 @@ export function WaitForPeersCard(){
                 <Typography variant="body1" color="text.secondary">
                   <CircularProgress size={15}/> Waiting for Passkey registration for address:
                 </Typography>
-              {address.isLoading && <CircularProgress/>}
-              {address.isFetched && <Typography variant="body2" color="text.secondary"> {address.data}</Typography>}
+                <Typography variant="body2" color="text.secondary"> {wallet}</Typography>
             </CardContent>
         </Card>
     )
