@@ -2,10 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AlgodService } from '../algod/algod.service';
 import { ConnectController } from './connect.controller';
 import { AuthService } from '../auth/auth.service';
-import * as crypto from 'node:crypto';
 import { Session } from './session.schema';
 import { accFixture } from '../../tests/constants';
 import { mockAuthService } from '../__mocks__/auth.service.mock';
+import { mockAccountLinkService } from '../__mocks__/account-link.service.mock';
 
 describe('ConnectController', () => {
   let connectController: ConnectController;
@@ -16,13 +16,11 @@ describe('ConnectController', () => {
       providers: [
         {
           provide: AuthService,
-          useValue: mockAuthService,
+          useValue: { ...mockAuthService },
         },
         {
           provide: 'ACCOUNT_LINK_SERVICE',
-          useValue: {
-            emit: jest.fn(),
-          },
+          useValue: { ...mockAccountLinkService },
         },
         {
           provide: AlgodService,
