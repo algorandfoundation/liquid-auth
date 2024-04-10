@@ -29,7 +29,6 @@ const dummyACJSON = {
 
 describe('AttestationController', () => {
   let attestationController: AttestationController;
-  let attestationService: AttestationService;
   let authService: AuthService;
   let userModel: Model<User>;
 
@@ -58,7 +57,6 @@ describe('AttestationController', () => {
     }).compile();
 
     authService = moduleRef.get<AuthService>(AuthService);
-    attestationService = moduleRef.get<AttestationService>(AttestationService);
     attestationController = moduleRef.get<AttestationController>(
       AttestationController,
     );
@@ -84,7 +82,7 @@ describe('AttestationController', () => {
 
       await expect(
         attestationController.request(session, body, req),
-      ).resolves.toBe(JSON.stringify(dummyAttestationOptions));
+      ).resolves.toBe(dummyAttestationOptions);
     });
 
     it('(FAIL) should fail if there is no session wallet set', async () => {
@@ -133,7 +131,7 @@ describe('AttestationController', () => {
 
       await expect(
         attestationController.attestationResponse(session, body, req),
-      ).resolves.toBe(JSON.stringify(dummyUser));
+      ).resolves.toBe(dummyUser);
     });
 
     it('(FAIL) should fail if the expectedChallenge is not a string', async () => {
