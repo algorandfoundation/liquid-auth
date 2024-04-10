@@ -6,7 +6,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Logger, UseInterceptors } from '@nestjs/common';
-import type { Handshake, Server, Socket } from 'socket.io';
+import type { Server, Socket } from 'socket.io';
 import { SignalsInterceptor } from './signals.interceptor.js';
 
 @WebSocketGateway()
@@ -28,7 +28,7 @@ export class SignalsGateway {
     this.server.in(session.wallet).emit('call-candidate', data);
   }
   @SubscribeMessage('call-description')
-  async onCallDescription(
+  onCallDescription(
     @MessageBody() data: string,
     @ConnectedSocket() client: Socket,
   ) {
@@ -42,7 +42,7 @@ export class SignalsGateway {
     this.server.in(session.wallet).emit('call-description', data);
   }
   @SubscribeMessage('answer-description')
-  async onAnswerDescription(
+  onAnswerDescription(
     @MessageBody() data: string,
     @ConnectedSocket() client: Socket,
   ) {

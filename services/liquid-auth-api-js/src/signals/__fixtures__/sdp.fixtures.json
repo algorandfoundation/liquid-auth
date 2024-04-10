@@ -1,0 +1,4 @@
+{
+  "call": "v=0\no=- 872275877217328554 2 IN IP4 127.0.0.1\ns=-\nt=0 0\na=group:BUNDLE data\na=msid-semantic: WMS\nm=application 9 UDP/DTLS/SCTP webrtc-datachannel\nc=IN IP4 0.0.0.0\na=ice-ufrag:NXxR\na=ice-pwd:PGHIKpCaFejy4Sadz+snc5UN\na=ice-options:trickle renomination\na=fingerprint:sha-256 9D:60:CD:39:4A:DC:B5:01:B3:F1:08:84:B9:4E:B5:6B:98:61:57:15:8B:1B:64:D6:C6:5B:AF:3D:5B:EF:48:4B\na=setup:actpass\na=mid:data\na=sctp-port:5000\na=max-message-size:262144",
+  "answer": "v=0\no=- 1147071363730077050 2 IN IP4 127.0.0.1\ns=-\nt=0 0\na=group:BUNDLE data\na=msid-semantic: WMS\nm=application 9 UDP/DTLS/SCTP webrtc-datachannel\nc=IN IP4 0.0.0.0\na=ice-ufrag:v0OA\na=ice-pwd:DzuJ/M1IneOLTOKOMC3XPWWF\na=ice-options:trickle\na=fingerprint:sha-256 25:0A:8E:3E:EB:31:86:0E:EA:2E:32:A1:2D:BE:C4:73:C7:A0:D4:43:D0:A7:B6:BB:C6:D3:68:23:85:C0:18:3C\na=setup:active\na=mid:data\na=sctp-port:5000\na=max-message-size:262144"
+}
