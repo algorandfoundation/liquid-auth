@@ -57,70 +57,83 @@ export class ConnectController {
     @Body()
     { requestId, wallet, challenge, signature, credId }: LinkResponseDTO,
   ) {
-    try {
-      this.logger.log(
-        `POST /connect/response for RequestId: ${requestId} Session: ${session.id} with Wallet: ${wallet}`,
-      );
-      // Decode Address
-      const publicKey = algoEncoder.decodeAddress(wallet);
+    this.logger.log(
+      `POST /connect/response for RequestId: ${requestId} Session: ${session.id} with Wallet: ${wallet}`,
+    );
 
-      // Decode signature
-      const uint8Signature = base64ToUint8Array(
-        signature.replace(/-/g, '+').replace(/_/g, '/').replace(/\s/g, ''),
-      );
+    // Decode Address
+    const publicKey = algoEncoder.decodeAddress(wallet);
 
-      // Validate Signature
-      const encoder = new TextEncoder();
-      const encodedChallenge = encoder.encode(challenge);
+    // Decode signature
+    const uint8Signature = base64ToUint8Array(
+      signature.replace(/-/g, '+').replace(/_/g, '/').replace(/\s/g, ''),
+    );
 
-      if (
-        !nacl.sign.detached.verify(encodedChallenge, uint8Signature, publicKey)
-      ) {
-        // signature check failed, check if its rekeyed
-        // if it is, verify against that public key instead
-        const accountInfo = await this.algodService
+    // Validate Signature
+    const encoder = new TextEncoder();
+    const encodedChallenge = encoder.encode(challenge);
+
+    if (
+      !nacl.sign.detached.verify(encodedChallenge, uint8Signature, publicKey)
+    ) {
+      // signature check failed, check if its rekeyed
+      // if it is, verify against that public key instead
+      let accountInfo;
+      try {
+        accountInfo = await this.algodService
           .accountInformation(wallet)
           .exclude('all')
           .do();
-
-        if (!accountInfo['auth-addr']) {
-          throw new HttpException('Invalid signature', HttpStatus.FORBIDDEN);
-        }
-
-        const authPublicKey = algoEncoder.decodeAddress(
-          accountInfo['auth-addr'],
+      } catch (e) {
+        throw new HttpException(
+          'Failed to fetch Account Info',
+          HttpStatus.INTERNAL_SERVER_ERROR,
         );
-
-        // Validate Auth Address Signature
-        if (
-          !nacl.sign.detached.verify(
-            encodedChallenge,
-            uint8Signature,
-            authPublicKey,
-          )
-        ) {
-          throw new HttpException('Invalid signature', HttpStatus.FORBIDDEN);
-        }
       }
 
-      this.logger.log('AUTH Wallet is attested');
-      // Authenticated user
-      await this.authService.init(wallet);
+      if (!accountInfo['auth-addr']) {
+        throw new HttpException('Invalid signature', HttpStatus.FORBIDDEN);
+      }
 
-      const parsedRequest =
-        typeof requestId === 'string' ? parseFloat(requestId) : requestId;
-      console.log('Request Forwarding', parsedRequest);
-      session.wallet = wallet;
-      session.active = true;
-      this.client.emit<string>('auth', {
-        requestId,
-        wallet,
-        credId,
-      });
+      const authPublicKey = algoEncoder.decodeAddress(accountInfo['auth-addr']);
 
-      return;
-    } catch (e) {
-      throw new HttpException({ error: e.message }, HttpStatus.FORBIDDEN);
+      // Validate Auth Address Signature
+      if (
+        !nacl.sign.detached.verify(
+          encodedChallenge,
+          uint8Signature,
+          authPublicKey,
+        )
+      ) {
+        throw new HttpException('Invalid signature', HttpStatus.FORBIDDEN);
+      }
     }
+
+    this.logger.log('AUTH Wallet is attested');
+    // Authenticated user
+    try {
+      await this.authService.init(wallet);
+    } catch (e) {
+      throw new HttpException(
+        'Failed to initialize wallet',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const parsedRequest =
+      typeof requestId === 'string' ? parseFloat(requestId) : requestId;
+
+    console.log('Request Forwarding', parsedRequest);
+
+    session.wallet = wallet;
+    session.active = true;
+
+    this.client.emit<string>('auth', {
+      requestId,
+      wallet,
+      credId,
+    });
+
+    return;
   }
 }
