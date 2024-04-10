@@ -6,9 +6,14 @@ import { User, UserSchema } from '../auth/auth.schema';
 import { getModelToken } from '@nestjs/mongoose';
 import { Request } from 'express';
 import { AttestationController } from './attestation.controller';
-import { accFixture, dummyUsers } from '../../tests/constants';
+import {
+  accFixture,
+  dummyUsers,
+  dummyAttestationOptions
+} from '../../tests/constants';
 import { mockAuthService } from '../__mocks__/auth.service.mock';
 import { mockAccountLinkService } from '../__mocks__/account-link.service.mock';
+import { mockAttestationService } from '../__mocks__/attestation.service.mock';
 import { AppService } from '../app.service';
 import { ConfigService } from '@nestjs/config';
 import { AttestationService } from './attestation.service';
@@ -41,13 +46,16 @@ describe('AttestationController', () => {
         ConfigService,
         {
           provide: AuthService,
-          useValue: mockAuthService,
+          useValue: { ...mockAuthService },
         },
         AppService,
-        AttestationService,
+        {
+          provide: AttestationService,
+          useValue: { ...mockAttestationService },
+        },
         {
           provide: 'ACCOUNT_LINK_SERVICE',
-          useValue: mockAccountLinkService,
+          useValue: { ...mockAccountLinkService },
         },
         {
           provide: getModelToken(User.name),
@@ -68,8 +76,6 @@ describe('AttestationController', () => {
 
   describe('Post /request', () => {
     it('(OK) should create a challenge', async () => {
-      const dummyAttestationOptions = { challenge: 'meh' };
-
       const session: Record<string, any> = new Session();
       session.wallet = accFixture.accs[0].addr;
 
