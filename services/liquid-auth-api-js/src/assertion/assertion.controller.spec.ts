@@ -82,7 +82,7 @@ describe('AssertionController', () => {
 
       await expect(
         assertionController.assertionDemoRequest(session, req, body),
-      ).resolves.toBe(JSON.stringify(dummyOptions));
+      ).resolves.toBe(dummyOptions);
     });
     it('(FAIL) should fail if it cannot find a user', async () => {
       const session = new Session();
@@ -105,7 +105,7 @@ describe('AssertionController', () => {
 
       await expect(
         assertionController.assertionRequest(session, req, body),
-      ).resolves.toBe(JSON.stringify(dummyOptions));
+      ).resolves.toBe(dummyOptions);
     });
     it('(FAIL) should fail if it cannot find a user', async () => {
       const session = new Session();
@@ -134,7 +134,7 @@ describe('AssertionController', () => {
 
       await expect(
         assertionController.assertionResponse(session, req, body),
-      ).resolves.toBe(JSON.stringify(dummyUser));
+      ).resolves.toBe(dummyUser);
     });
     it('(FAIL) should fail if the challenge is not a string', async () => {
       const session: Record<string, any> = new Session();
