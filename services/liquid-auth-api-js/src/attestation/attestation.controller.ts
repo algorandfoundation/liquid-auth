@@ -2,8 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  HttpException,
-  HttpStatus,
   Inject,
   Logger,
   Post,
@@ -77,12 +75,14 @@ export class AttestationController {
    * @param session - Express Session
    * @param options - Attestation Selector DTO
    * @param req - Express Request
+   * @param res - Express Response
    */
   @Post('/request')
   async request(
     @Session() session: Record<string, any>,
     @Body() options: AttestationSelectorDto, // TODO: Update to use internal Options
     @Req() req: Request,
+    @Res() res: Response,
   ) {
     console.log(req.headers.host);
     this.logger.log(
@@ -91,31 +91,27 @@ export class AttestationController {
     try {
       const wallet = session.wallet;
       if (!wallet) {
-        throw new HttpException(
-          { reason: 'unauthorized', error: 'Wallet not connected' },
-          HttpStatus.UNAUTHORIZED,
-        );
+        res
+          .status(401)
+          .json({ reason: 'unauthorized', error: 'Wallet not connected' });
+        return;
       }
 
       const user = await this.authService.find(wallet);
       if (!user) {
-        throw new HttpException(
-          { reason: 'not_found', error: 'Wallet not found' },
-          HttpStatus.FORBIDDEN,
-        );
+        res
+          .status(403)
+          .json({ reason: 'not_found', error: 'Wallet not found.' });
+        return;
       }
 
       const attestationOptions = this.attestationService.request(user, options);
 
       session.challenge = attestationOptions.challenge;
       this.logger.debug(attestationOptions);
-
-      return attestationOptions;
+      res.json(attestationOptions);
     } catch (e) {
-      throw new HttpException(
-        { error: e.message },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      res.status(500).json({ error: e.message });
     }
   }
 
@@ -127,16 +123,17 @@ export class AttestationController {
     @Session() session: Record<string, any>,
     @Body() body: AttestationCredentialJSON & { device?: string },
     @Req() req: Request,
+    @Res() res: Response,
   ) {
     this.logger.log(`POST /attestation/response for Session: ${session.id}`);
     try {
       const username = session.wallet;
       const expectedChallenge = session.challenge;
       if (typeof expectedChallenge !== 'string') {
-        throw new HttpException(
-          { reason: 'not_found', error: 'Challenge not found' },
-          HttpStatus.NOT_FOUND
-        );
+        res
+          .status(404)
+          .json({ reason: 'not_found', error: 'Challenge not found.' });
+        return;
       }
       this.logger.debug(
         `Username: ${username} Challenge: ${expectedChallenge}`,
@@ -155,14 +152,10 @@ export class AttestationController {
         wallet: user.wallet,
         credential,
       });
-
-      return user;
+      res.json(user);
     } catch (e) {
       this.logger.error(e.message, e.stack);
-      throw new HttpException(
-        { error: e.message },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      res.status(500).json({ error: e.message });
     }
   }
 }
