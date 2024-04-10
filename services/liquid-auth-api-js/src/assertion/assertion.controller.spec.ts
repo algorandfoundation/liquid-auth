@@ -10,6 +10,7 @@ import { AssertionService } from './assertion.service';
 import { dummyUsers, dummyOptions } from '../../tests/constants';
 import { mockAuthService } from '../__mocks__/auth.service.mock';
 import { mockAssertionService } from '../__mocks__/assertion.service.mock';
+import { mockAccountLinkService } from '../__mocks__/account-link.service.mock';
 import { AppService } from '../app.service';
 import { ConfigService } from '@nestjs/config';
 
@@ -44,19 +45,16 @@ describe('AssertionController', () => {
         ConfigService,
         {
           provide: AuthService,
-          useValue: mockAuthService,
+          useValue: { ...mockAuthService },
         },
         AppService,
         {
           provide: AssertionService,
-          useValue: mockAssertionService,
+          useValue: { ...mockAssertionService },
         },
-        AssertionService,
         {
           provide: 'ACCOUNT_LINK_SERVICE',
-          useValue: {
-            emit: jest.fn(),
-          },
+          useValue: { ...mockAccountLinkService },
         },
         {
           provide: getModelToken(User.name),

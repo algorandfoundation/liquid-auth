@@ -95,7 +95,7 @@ export class AssertionController {
     }
 
     // Get options, save challenge and respond
-    const options = await this.assertionService.request(
+    const options = this.assertionService.request(
       user,
       req.params.credId,
       body,
