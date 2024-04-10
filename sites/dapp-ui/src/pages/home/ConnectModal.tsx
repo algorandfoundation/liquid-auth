@@ -40,6 +40,7 @@ async function rekeyAccountTo(signer: algosdk.Account, to: string, isRevert = fa
     const res = await algodClient.accountInformation(isRevert ? to : signer.addr).exclude('all').do();
     console.log(res)
 }
+
 export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning'}) {
     const {socket} = useSocket();
     const credentials = useCredentialStore((state)=> state.addresses);
@@ -140,7 +141,7 @@ export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondar
             >
                 <Box>
                 <Fade in={open}>
-                <Box sx={style} onClick={()=>{fakeScan(state.requestId)}}>
+                <Box sx={style}>
                     <Box sx={{
                         position: "relative"
                     }}>
