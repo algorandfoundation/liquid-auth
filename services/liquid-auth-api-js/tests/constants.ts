@@ -45,3 +45,7 @@ export const dummyOptions = {
   allowCredentials: [],
   userVerification: 'required',
 };
+
+export const dummyAttestationOptions = {
+  challenge: 'meh',
+};
