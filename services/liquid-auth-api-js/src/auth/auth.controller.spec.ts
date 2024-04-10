@@ -22,7 +22,7 @@ describe('AuthController', () => {
       providers: [
         {
           provide: AuthService,
-          useValue: mockAuthService,
+          useValue: { ...mockAuthService },
         },
         {
           provide: getModelToken(User.name),
@@ -81,7 +81,7 @@ describe('AuthController', () => {
       const session = new Session();
       const req = { body: {}, params: { id: 1 } } as any as Request;
 
-      await expect(authController.remove(session, req)).resolves.toBe({
+      await expect(authController.remove(session, req)).resolves.toEqual({
         success: true,
       });
     });
@@ -159,11 +159,11 @@ describe('AuthController', () => {
     });
 
     it('(OK) should return an empty object if the user is not found', async () => {
-      authService.init = jest.fn().mockResolvedValue(undefined);
+      authService.find = jest.fn().mockResolvedValue(undefined);
 
       const session = new Session();
 
-      await expect(authController.read(session)).resolves.toBe({});
+      await expect(authController.read(session)).resolves.toEqual({});
     });
   });
 });
