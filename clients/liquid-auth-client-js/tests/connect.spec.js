@@ -6,8 +6,6 @@ import nacl from "tweetnacl";
 import { Message } from '../lib/connect.js';
 import { fromBase64Url } from "../lib/encoding.js";
 const encoder = new TextEncoder;
-
-
 test("create instance", async () => {
     const msg = new Message("hello", "1234", 1234);
     assert(msg instanceof Message);

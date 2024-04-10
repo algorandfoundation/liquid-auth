@@ -40,43 +40,6 @@ async function rekeyAccountTo(signer: algosdk.Account, to: string, isRevert = fa
     const res = await algodClient.accountInformation(isRevert ? to : signer.addr).exclude('all').do();
     console.log(res)
 }
-
-/**
- * Scan a QR Code from the Frontend, used for testing
- * @param requestId
- */
-async function fakeScan(requestId: number) {
-    const testAccount = algosdk.mnemonicToSecretKey(
-        'industry kangaroo visa history swarm exotic doctor fade strike honey ride bicycle pistol large eager solution midnight loan give list company behave purpose abstract good',
-    );
-    const rekeyedAccount = algosdk.mnemonicToSecretKey('garage pig dignity stone chest defense gown chaos best gauge birth wear program loop mushroom auto decide never jazz problem hip course parrot about finger')
-
-    console.log(`Rekeying ${testAccount.addr} to ${rekeyedAccount.addr}`)
-    await rekeyAccountTo(testAccount, rekeyedAccount.addr)
-
-    const encoder = new TextEncoder();
-
-    const sig = nacl.sign.detached(encoder.encode('hello world'), rekeyedAccount.sk);
-
-    const data = {
-        requestId,
-        wallet: testAccount.addr,
-        challenge: 'hello world',
-        signature: toBase64URL(sig),
-    };
-
-    await fetch('/connect/response', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    });
-
-    console.log(`Reverting ${testAccount.addr} to ${rekeyedAccount.addr}`)
-    await rekeyAccountTo(rekeyedAccount, testAccount.addr, true)
-    console.log('Finished')
-}
 export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning'}) {
     const {socket} = useSocket();
     const credentials = useCredentialStore((state)=> state.addresses);
