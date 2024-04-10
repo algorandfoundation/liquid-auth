@@ -155,9 +155,7 @@ describe('AuthController', () => {
       const dummyUser = dummyUsers[0];
       const session = new Session();
 
-      await expect(authController.read(session)).resolves.toBe(
-        dummyUser,
-      );
+      await expect(authController.read(session)).resolves.toBe(dummyUser);
     });
 
     it('(OK) should return an empty object if the user is not found', async () => {
@@ -165,7 +163,7 @@ describe('AuthController', () => {
 
       const session = new Session();
 
-      await expect(authController.read(session)).resolves.toBe({}));
+      await expect(authController.read(session)).resolves.toBe({});
     });
   });
 });
