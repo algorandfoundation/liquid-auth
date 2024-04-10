@@ -1,5 +1,6 @@
 import { Controller, Get, Logger, Req, Res } from '@nestjs/common';
 import type { Response } from 'express';
+//@ts-ignore, required for jest
 import assetLinks from '../../assetlinks.json' assert { type: 'json' };
 @Controller('.well-known')
 export class AndroidController {
