@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AndroidController } from './android.controller';
+import { AndroidController } from './android.controller.js';
 
 describe('AndroidController', () => {
   let controller: AndroidController;

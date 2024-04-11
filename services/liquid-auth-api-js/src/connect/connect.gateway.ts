@@ -12,7 +12,7 @@ import {
 
 import { Logger } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service.js';
-import { RedisIoAdapter } from '../adapters/redis-io.adapter';
+import { RedisIoAdapter } from '../adapters/redis-io.adapter.js';
 @WebSocketGateway({
   cors: {
     origin: '*',

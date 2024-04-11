@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "concurrently \"npm:dev:*\"",
     "dev:api": "npm run dev --if-present --workspace @liquid/auth-api",
+    "dev:core": "npm run dev --if-present --workspace @liquid/core",
     "dev:sdk": "npm run dev --if-present --workspace @liquid/auth-client",
     "dev:ui": "npm run dev --if-present --workspace dapp-ui",
     "build": "npm run build --workspace @liquid/auth-client && npm run build --workspace @liquid/auth-api && npm run build --workspace dapp-ui",

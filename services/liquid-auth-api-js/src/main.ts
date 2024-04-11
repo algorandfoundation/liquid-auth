@@ -15,7 +15,7 @@ import MongoStore from 'connect-mongo';
 import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import { SentryFilter } from './sentry.filter.js';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+
 import { resolve } from 'path';
 import hbs from 'hbs';
 async function bootstrap() {

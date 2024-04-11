@@ -10,18 +10,8 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { Response } from 'express';
 import { AuthService } from '../auth/auth.service.js';
-import { AlgorandEncoder } from './AlgoEncoder.js';
-
-const algoEncoder = new AlgorandEncoder();
-
-const base64ToUint8Array = (encoded) => {
-  return new Uint8Array(
-    atob(encoded)
-      .split('')
-      .map((c) => c.charCodeAt(0)),
-  );
-};
 import nacl from 'tweetnacl';
+import { decodeAddress, base64ToUint8Array } from '@liquid/core/encoding';
 
 type LinkResponseDTO = {
   credId?: string;
@@ -61,7 +51,7 @@ export class ConnectController {
         `POST /connect/response for RequestId: ${requestId} Session: ${session.id} with Wallet: ${wallet}`,
       );
       // Decode Address
-      const publicKey = algoEncoder.decodeAddress(wallet);
+      const publicKey = decodeAddress(wallet);
 
       // Decode signature
       const uint8Signature = base64ToUint8Array(

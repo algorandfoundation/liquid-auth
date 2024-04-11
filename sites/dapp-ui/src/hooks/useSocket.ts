@@ -4,20 +4,19 @@ import { useEffect, useState } from 'react';
 // "undefined" means the URL will be computed from the `window.location` object
 const URL = `${window.location.origin}`;
 
-export const socket = io(URL, {autoConnect: true});
+export const socket = io(URL, { autoConnect: true });
 
-export function useSocket(){
-
+export function useSocket() {
   const [isConnected, setIsConnected] = useState(socket.connected);
 
   useEffect(() => {
     function onConnect() {
-      console.log('Connected')
+      console.log('Connected');
       setIsConnected(true);
     }
 
     function onDisconnect() {
-      console.log('Disconnected')
+      console.log('Disconnected');
       setIsConnected(false);
     }
     socket.on('connect', onConnect);
@@ -29,5 +28,5 @@ export function useSocket(){
     };
   }, []);
 
-  return { isConnected, socket}
+  return { isConnected, socket };
 }

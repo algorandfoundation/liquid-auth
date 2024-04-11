@@ -6,5 +6,6 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "skipLibCheck": true,
+    "strictNullChecks": true
   }
 }

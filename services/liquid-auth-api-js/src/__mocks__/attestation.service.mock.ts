@@ -1,4 +1,4 @@
-import { dummyAttestationOptions } from '../../tests/constants';
+import { dummyAttestationOptions } from '../../tests/constants.js';
 
 export const mockAttestationService = {
   request: jest.fn().mockReturnValue(dummyAttestationOptions),

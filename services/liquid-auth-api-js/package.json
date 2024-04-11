@@ -23,6 +23,7 @@
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org phearzero --project node-express dist && sentry-cli sourcemaps upload --org phearzero --project node-express dist"
   },
   "dependencies": {
+    "@liquid/core": "^1.0.0",
     "@nestjs/common": "^10.2.6",
     "@nestjs/config": "^3.1.1",
     "@nestjs/core": "^10.2.6",

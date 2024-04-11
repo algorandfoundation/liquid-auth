@@ -1,8 +1,7 @@
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { ServerOptions, Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
-import Redis from 'ioredis';
-import socketSessions from 'express-socket.io-session';
+import { Redis } from 'ioredis';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { RequestHandler } from 'express';
 import { ConfigService } from '@nestjs/config';

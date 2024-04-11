@@ -5,6 +5,7 @@ import UAParser from 'ua-parser-js';
 // ignore due to jest
 // @ts-ignore
 import assetLinks from '../assetlinks.json' with { type: 'json' };
+import { toBase64URL } from "@liquid/core";
 
 @Injectable()
 export class AppService {
@@ -19,13 +20,14 @@ export class AppService {
       typeof parser.getBrowser().name !== 'string'
     ) {
       const pkgName = ua.split('/')[0]
+      console.log(pkgName)
       const statement = assetLinks.filter(
         (al) => al?.target?.package_name === pkgName,
       );
       // TODO: better lookup for fingerprints using Headers
-      const octArray: unknown = statement[0].target.sha256_cert_fingerprints[0].split(':')
+      const octArray: number[] = statement[0].target.sha256_cert_fingerprints[0].split(':')
         .map((h) => parseInt(h, 16));
-      const androidHash = (octArray as Buffer).toString('base64url');
+      const androidHash = toBase64URL(new Uint8Array(octArray));
       origin = `android:apk-key-hash:${androidHash}`;
     }
     // Web Origin

@@ -1,7 +1,7 @@
 {
-  "name": "@liquid/auth-client",
+  "name": "@liquid/core",
   "version": "1.0.0",
-  "description": "Connect to Algorand Dapp",
+  "description": "Utilities for Liquid Auth JS",
   "main": "./lib/index.js",
   "type": "module",
   "exports": {
@@ -9,17 +9,17 @@
       "default": "./lib/index.js",
       "types": "./lib/index.d.ts"
     },
-    "./attestation": {
-      "default": "./lib/attestation.js",
-      "types": "./lib/attestation.d.ts"
+    "./hi-base32": {
+      "default": "./lib/hi-base32.js",
+      "types": "./lib/hi-base32.d.ts"
     },
-    "./assertion": {
-      "default": "./lib/assertion.js",
-      "types": "./lib/assertion.d.ts"
+    "./sha512": {
+      "default": "./lib/sha512.js",
+      "types": "./lib/sha512.d.ts"
     },
-    "./connect": {
-      "default": "./lib/connect.js",
-      "types": "./lib/connect.d.ts"
+    "./encoding": {
+      "default": "./lib/encoding.js",
+      "types": "./lib/encoding.d.ts"
     }
   },
   "scripts": {
@@ -31,10 +31,8 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@types/qrcode": "^1.5.5",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^7.6.0",
-    "algosdk": "^2.7.0",
     "c8": "^9.1.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
@@ -42,8 +40,6 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
-    "@liquid/core": "^1.0.0",
-    "qr-code-styling": "^1.6.0-rc.1",
     "tweetnacl": "github:awesome-algorand/tweetnacl-js"
   }
 }
