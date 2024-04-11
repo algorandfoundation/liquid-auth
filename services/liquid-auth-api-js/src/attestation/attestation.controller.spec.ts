@@ -17,12 +17,13 @@ import { mockAttestationService } from '../__mocks__/attestation.service.mock';
 import { AppService } from '../app.service';
 import { ConfigService } from '@nestjs/config';
 import { AttestationService } from './attestation.service';
+import { HttpException } from '@nestjs/common';
 
 const dummyAttestationSelectorDto = {
   authenticatorSelection: {},
 };
 
-const dummyACJSON = {
+const dummyAttestationCredentialJSON = {
   id: '',
   type: '',
   rawId: 'mreh',
@@ -102,7 +103,7 @@ describe('AttestationController', () => {
 
       await expect(
         attestationController.request(session, body, req),
-      ).rejects.toThrowError();
+      ).rejects.toThrow(HttpException);
     });
 
     it('(FAIL) should fail if it cannot find a user', async () => {
@@ -120,7 +121,7 @@ describe('AttestationController', () => {
 
       await expect(
         attestationController.request(session, body, req),
-      ).rejects.toThrowError();
+      ).rejects.toThrow(HttpException);
     });
   });
 
@@ -132,7 +133,7 @@ describe('AttestationController', () => {
       session.wallet = accFixture.accs[0].addr;
       session.challenge = accFixture.challenge;
 
-      const body = dummyACJSON;
+      const body = dummyAttestationCredentialJSON;
       const req = { get: jest.fn() } as any as Request;
 
       await expect(
@@ -145,12 +146,12 @@ describe('AttestationController', () => {
       session.wallet = accFixture.accs[0].addr;
       session.challenge = 0;
 
-      const body = dummyACJSON;
+      const body = dummyAttestationCredentialJSON;
       const req = { get: jest.fn() } as any as Request;
 
       await expect(
         attestationController.attestationResponse(session, body, req),
-      ).rejects.toThrowError();
+      ).rejects.toThrow(HttpException);
     });
   });
 });
