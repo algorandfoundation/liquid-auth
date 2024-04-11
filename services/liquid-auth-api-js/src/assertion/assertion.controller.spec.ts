@@ -1,3 +1,4 @@
+import * as crypto from 'node:crypto';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from '../auth/auth.service';
 import { Session } from '../connect/session.schema';
@@ -16,12 +17,12 @@ import { ConfigService } from '@nestjs/config';
 import { HttpException } from '@nestjs/common';
 
 // PublicKeyCredentialRequestOptions
-const dummyPKCRO = {
+const dummyPublicKeyCredentialRequestOptions = {
   challenge: Buffer.from('1234'),
 };
 
 // AssertionCredentialJSON
-const dummyACJSON = {
+const dummyAssertionCredentialJSON = {
   id: '',
   type: '',
   rawId: 'mreh',
@@ -77,7 +78,7 @@ describe('AssertionController', () => {
     it('(OK) should save the challenge', async () => {
       const session = new Session();
       const req = { body: {}, params: { credId: 1 } } as any as Request;
-      const body = dummyPKCRO;
+      const body = dummyPublicKeyCredentialRequestOptions;
 
       await expect(
         assertionController.assertionDemoRequest(session, req, body),
@@ -86,7 +87,7 @@ describe('AssertionController', () => {
     it('(FAIL) should fail if it cannot find a user', async () => {
       const session = new Session();
       const req = { body: {}, params: { credId: 1 } } as any as Request;
-      const body = dummyPKCRO;
+      const body = dummyPublicKeyCredentialRequestOptions;
 
       authService.search = jest.fn().mockResolvedValue(undefined);
 
@@ -100,7 +101,7 @@ describe('AssertionController', () => {
     it('(OK) should create a valid assertion request', async () => {
       const session = new Session();
       const req = { body: {}, params: { credId: 1 } } as any as Request;
-      const body = dummyPKCRO;
+      const body = dummyPublicKeyCredentialRequestOptions;
 
       await expect(
         assertionController.assertionRequest(session, req, body),
@@ -109,7 +110,7 @@ describe('AssertionController', () => {
     it('(FAIL) should fail if it cannot find a user', async () => {
       const session = new Session();
       const req = { body: {}, params: { credId: 1 } } as any as Request;
-      const body = dummyPKCRO;
+      const body = dummyPublicKeyCredentialRequestOptions;
 
       authService.search = jest.fn().mockResolvedValue(undefined);
 
@@ -124,12 +125,12 @@ describe('AssertionController', () => {
       const dummyUser = dummyUsers[0];
 
       const session: Record<string, any> = new Session();
-      session.challenge = 'meh';
+      session.challenge = crypto.randomBytes().toString('base64url');
 
       const req = {
         get: jest.fn().mockReturnValue('User-Agent String'),
       } as any as Request;
-      const body = dummyACJSON;
+      const body = dummyAssertionCredentialJSON;
 
       await expect(
         assertionController.assertionResponse(session, req, body),
@@ -140,7 +141,7 @@ describe('AssertionController', () => {
       session.challenge = 0;
 
       const req = {} as any as Request;
-      const body = dummyACJSON;
+      const body = dummyAssertionCredentialJSON;
 
       await expect(
         assertionController.assertionResponse(session, req, body),
@@ -148,10 +149,10 @@ describe('AssertionController', () => {
     });
     it('(FAIL) should fail if it cannot find the user', async () => {
       const session: Record<string, any> = new Session();
-      session.challenge = 0;
+      session.challenge = crypto.randomBytes(32).toString('base64url');
 
       const req = {} as any as Request;
-      const body = dummyACJSON;
+      const body = dummyAssertionCredentialJSON;
 
       authService.search = jest.fn().mockResolvedValue(undefined);
 
