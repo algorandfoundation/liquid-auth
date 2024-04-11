@@ -13,6 +13,7 @@ import { mockAssertionService } from '../__mocks__/assertion.service.mock';
 import { mockAccountLinkService } from '../__mocks__/account-link.service.mock';
 import { AppService } from '../app.service';
 import { ConfigService } from '@nestjs/config';
+import { HttpException } from '@nestjs/common';
 
 // PublicKeyCredentialRequestOptions
 const dummyPKCRO = {
@@ -91,7 +92,7 @@ describe('AssertionController', () => {
 
       await expect(
         assertionController.assertionDemoRequest(session, req, body),
-      ).rejects.toThrowError();
+      ).rejects.toThrow(HttpException);
     });
   });
 
@@ -114,7 +115,7 @@ describe('AssertionController', () => {
 
       await expect(
         assertionController.assertionRequest(session, req, body),
-      ).rejects.toThrowError();
+      ).rejects.toThrow(HttpException);
     });
   });
 
@@ -143,7 +144,7 @@ describe('AssertionController', () => {
 
       await expect(
         assertionController.assertionResponse(session, req, body),
-      ).rejects.toThrowError();
+      ).rejects.toThrow(HttpException);
     });
     it('(FAIL) should fail if it cannot find the user', async () => {
       const session: Record<string, any> = new Session();
@@ -156,7 +157,7 @@ describe('AssertionController', () => {
 
       await expect(
         assertionController.assertionResponse(session, req, body),
-      ).rejects.toThrowError();
+      ).rejects.toThrow(HttpException);
     });
   });
 });
