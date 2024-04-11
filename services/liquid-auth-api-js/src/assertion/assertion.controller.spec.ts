@@ -84,12 +84,15 @@ describe('AssertionController', () => {
         assertionController.assertionDemoRequest(session, req, body),
       ).resolves.toBe(dummyOptions);
     });
+  });
+
+  describe('Get /request/:credId search failure', () => {
+    authService.search = jest.fn().mockResolvedValue(undefined);
+
     it('(FAIL) should fail if it cannot find a user', async () => {
       const session = new Session();
       const req = { body: {}, params: { credId: 1 } } as any as Request;
       const body = dummyPublicKeyCredentialRequestOptions;
-
-      authService.search = jest.fn().mockResolvedValue(undefined);
 
       await expect(
         assertionController.assertionDemoRequest(session, req, body),
@@ -107,12 +110,15 @@ describe('AssertionController', () => {
         assertionController.assertionRequest(session, req, body),
       ).resolves.toBe(dummyOptions);
     });
+  });
+
+  describe('Post /request/:credId search failure', () => {
+    authService.search = jest.fn().mockResolvedValue(undefined);
+
     it('(FAIL) should fail if it cannot find a user', async () => {
       const session = new Session();
       const req = { body: {}, params: { credId: 1 } } as any as Request;
       const body = dummyPublicKeyCredentialRequestOptions;
-
-      authService.search = jest.fn().mockResolvedValue(undefined);
 
       await expect(
         assertionController.assertionRequest(session, req, body),
@@ -125,7 +131,7 @@ describe('AssertionController', () => {
       const dummyUser = dummyUsers[0];
 
       const session: Record<string, any> = new Session();
-      session.challenge = crypto.randomBytes().toString('base64url');
+      session.challenge = crypto.randomBytes(32).toString('base64url');
 
       const req = {
         get: jest.fn().mockReturnValue('User-Agent String'),
@@ -136,6 +142,7 @@ describe('AssertionController', () => {
         assertionController.assertionResponse(session, req, body),
       ).resolves.toBe(dummyUser);
     });
+
     it('(FAIL) should fail if the challenge is not a string', async () => {
       const session: Record<string, any> = new Session();
       session.challenge = 0;
@@ -147,14 +154,17 @@ describe('AssertionController', () => {
         assertionController.assertionResponse(session, req, body),
       ).rejects.toThrow(HttpException);
     });
+  });
+
+  describe('Post /response search failure', () => {
+    authService.search = jest.fn().mockResolvedValue(undefined);
+
     it('(FAIL) should fail if it cannot find the user', async () => {
       const session: Record<string, any> = new Session();
       session.challenge = crypto.randomBytes(32).toString('base64url');
 
       const req = {} as any as Request;
       const body = dummyAssertionCredentialJSON;
-
-      authService.search = jest.fn().mockResolvedValue(undefined);
 
       await expect(
         assertionController.assertionResponse(session, req, body),
