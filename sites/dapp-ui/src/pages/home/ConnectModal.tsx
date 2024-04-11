@@ -24,23 +24,6 @@ const style = {
     boxShadow: 24,
 };
 
-async function rekeyAccountTo(signer: algosdk.Account, to: string, isRevert = false) {
-    const algodClient = new algosdk.Algodv2('', 'https://testnet-api.algonode.cloud', '443');
-    const suggestedParams = await algodClient.getTransactionParams().do();
-    const rekeyTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-        suggestedParams,
-        from: isRevert ? to : signer.addr,
-        to: isRevert ? to : signer.addr,
-        amount: 0,
-        rekeyTo: to
-    });
-    const signedRekeyTxn = rekeyTxn.signTxn(signer.sk);
-    const { txId } = await algodClient.sendRawTransaction(signedRekeyTxn).do();
-    await algosdk.waitForConfirmation(algodClient, txId, 100);
-    const res = await algodClient.accountInformation(isRevert ? to : signer.addr).exclude('all').do();
-    console.log(res)
-}
-
 export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning'}) {
     const {socket} = useSocket();
     const credentials = useCredentialStore((state)=> state.addresses);
