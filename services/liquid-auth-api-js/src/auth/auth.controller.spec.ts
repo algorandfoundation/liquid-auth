@@ -8,6 +8,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Request, Response } from 'express';
 import { dummyUsers } from '../../tests/constants';
 import { mockAuthService } from '../__mocks__/auth.service.mock';
+import { HttpException } from '@nestjs/common';
 
 describe('AuthController', () => {
   let authController: AuthController;
@@ -51,7 +52,7 @@ describe('AuthController', () => {
         .fn()
         .mockRejectedValue(new Error('failed to retrieve users'));
 
-      await expect(authController.all()).rejects.toThrowError();
+      await expect(authController.all()).rejects.toThrow(HttpException);
     });
   });
 
@@ -72,7 +73,7 @@ describe('AuthController', () => {
 
       const session = new Session();
 
-      await expect(authController.keys(session)).rejects.toThrowError();
+      await expect(authController.keys(session)).rejects.toThrow(HttpException);
     });
   });
 
@@ -92,7 +93,7 @@ describe('AuthController', () => {
       const session = new Session();
       const req = { body: {}, params: { id: 1 } } as any as Request;
 
-      await expect(authController.remove(session, req)).rejects.toThrowError();
+      await expect(authController.remove(session, req)).rejects.toThrow(HttpException);
     });
 
     it('(FAIL) should fail when mongo db throws an error', async () => {
@@ -103,7 +104,7 @@ describe('AuthController', () => {
       const session = new Session();
       const req = { body: {}, params: { id: 1 } } as any as Request;
 
-      await expect(authController.remove(session, req)).rejects.toThrowError();
+      await expect(authController.remove(session, req)).rejects.toThrow(HttpException);
     });
 
     it('(FAIL) should fail if it cannot remove the credential', async () => {
@@ -114,7 +115,7 @@ describe('AuthController', () => {
       const session = new Session();
       const req = { body: {}, params: { id: 1 } } as any as Request;
 
-      await expect(authController.remove(session, req)).rejects.toThrowError();
+      await expect(authController.remove(session, req)).rejects.toThrow(HttpException);
     });
   });
 
@@ -146,7 +147,7 @@ describe('AuthController', () => {
       const session = new Session();
       const body = { wallet: 'mreh' };
 
-      await expect(authController.create(session, body)).rejects.toThrowError();
+      await expect(authController.create(session, body)).rejects.toThrow(HttpException);
     });
   });
 
