@@ -5,7 +5,7 @@
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
+    "allowSyntheticDefaultImports": false,
     "target": "ESNext",
     "moduleResolution": "NodeNext",
     "sourceMap": true,
@@ -21,6 +21,7 @@
     "preserveValueImports": false,
     "inlineSources": true,
     "resolveJsonModule": true,
+    "allowJs": true,
     // Set `sourceRoot` to  "/" to strip the build path prefix
     // from generated source code references.
     // This improves issue grouping in Sentry.

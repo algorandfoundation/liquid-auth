@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SignalsGateway } from './signals.gateway';
+import { SignalsGateway } from './signals.gateway.js';
 import { Server, Socket } from "socket.io";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires

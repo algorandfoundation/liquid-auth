@@ -1,4 +1,4 @@
-import * as nacl from "tweetnacl";
+import nacl from "tweetnacl";
 import { decodeAsBytes, encode } from "./hi-base32.js";
 import { createMethod } from "./sha512.js";
 const sha512_256 = createMethod(256);

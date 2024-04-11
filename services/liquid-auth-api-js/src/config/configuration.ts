@@ -15,6 +15,11 @@ export default () => ({
     username: process.env.DB_USERNAME || 'algorand',
     password: process.env.DB_PASSWORD || 'algorand',
     name: process.env.DB_NAME || 'fido',
-    atlas: process.env.DB_ATLAS === 'true'
+    atlas: process.env.DB_ATLAS === 'true',
+  },
+  algod: {
+    token: process.env.ALGOD_TOKEN || '',
+    server: process.env.ALGOD_SERVER || 'https://testnet-api.algonode.cloud',
+    port: process.env.ALGOD_PORT || '443',
   },
 });
