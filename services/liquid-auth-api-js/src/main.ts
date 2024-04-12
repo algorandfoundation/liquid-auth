@@ -60,7 +60,7 @@ async function bootstrap() {
 
   const sessionHandler = session({
     secret: 'my-secret',
-    saveUninitialized: true,
+    saveUninitialized: false,
     resave: false,
     cookie: {
       httpOnly: true,

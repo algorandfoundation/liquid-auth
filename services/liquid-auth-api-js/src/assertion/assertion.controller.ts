@@ -1,7 +1,8 @@
 import {
   Body,
   Controller,
-  Get, Inject,
+  Get,
+  Inject,
   Logger,
   Post,
   Req,
@@ -119,7 +120,7 @@ export class AssertionController {
     @Session() session: Record<string, any>,
     @Req() req: Request,
     @Res() res: Response,
-    @Body() body: AssertionCredentialJSON,
+    @Body() body: AssertionCredentialJSON & {clientExtensionResults: {liquid: {requestId: string}}},
   ) {
     this.logger.log(`POST /response for Session: ${session.id}`);
     const expectedChallenge = session.challenge;
@@ -148,10 +149,14 @@ export class AssertionController {
 
     await this.authService.update(user);
     const credential = await this.authService.findCredential(body.id);
-    console.log(credential)
+    console.log(credential);
     delete session.challenge;
     session.wallet = user.wallet;
-
+    this.client.emit<string>('auth', {
+      requestId: body.clientExtensionResults.liquid.requestId,
+      wallet: user.wallet,
+      credId: credential.credId,
+    });
     this.client.emit<string>('auth-interaction', {
       wallet: user.wallet,
       credential,

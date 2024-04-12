@@ -47,11 +47,11 @@ export class ConnectController {
     @Body()
     { requestId, wallet, challenge, signature, credId }: LinkResponseDTO,
   ) {
-      this.logger.log(
-        `POST /connect/response for RequestId: ${requestId} Session: ${session.id} with Wallet: ${wallet}`,
-      );
-      // Decode Address
-      const publicKey = decodeAddress(wallet);
+    this.logger.log(
+      `POST /connect/response for RequestId: ${requestId} Session: ${session.id} with Wallet: ${wallet}`,
+    );
+    // Decode Address
+    const publicKey = decodeAddress(wallet);
 
     // Decode signature
     const uint8Signature = base64ToUint8Array(

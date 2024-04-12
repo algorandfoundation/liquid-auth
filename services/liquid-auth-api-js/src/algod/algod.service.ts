@@ -11,4 +11,3 @@ export class AlgodService extends algosdk.Algodv2 {
     super(token, server, port);
   }
 }
-
