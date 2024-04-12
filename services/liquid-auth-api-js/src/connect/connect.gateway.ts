@@ -1,10 +1,11 @@
-import type { Handshake, Server, Socket } from 'socket.io';
+import type { Server, Socket } from 'socket.io';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
   ConnectedSocket,
   MessageBody,
-  OnGatewayConnection, OnGatewayDisconnect,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
   OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
@@ -18,7 +19,9 @@ import { RedisIoAdapter } from '../adapters/redis-io.adapter.js';
     origin: '*',
   },
 })
-export class ConnectGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class ConnectGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   private timers = new Map<string, NodeJS.Timeout>();
   private ioAdapter: RedisIoAdapter;
   private readonly logger = new Logger(ConnectGateway.name);
@@ -54,12 +57,20 @@ export class ConnectGateway implements OnGatewayInit, OnGatewayConnection, OnGat
           socket.conn.close();
           // you can also use socket.disconnect(), but in that case the client
           // will not try to reconnect
+        } else {
+          if (
+            typeof session.wallet === 'string' &&
+            socket.rooms.has(session.wallet) === false
+          ) {
+            this.logger.debug(`(*) Client Joining Room ${session.wallet}`);
+            socket.join(session.wallet);
+          }
         }
       });
     }, 200);
 
-    if(this.timers.has(request.sessionID)) {
-        clearInterval(this.timers.get(request.sessionID));
+    if (this.timers.has(request.sessionID)) {
+      clearInterval(this.timers.get(request.sessionID));
     }
 
     this.timers.set(request.sessionID, timer);
@@ -77,9 +88,11 @@ export class ConnectGateway implements OnGatewayInit, OnGatewayConnection, OnGat
 
   handleDisconnect(socket: Socket) {
     const request = socket.request as Record<string, any>;
-    this.logger.debug(`(*) Client Disconnected with Session: ${request.sessionID}`);
-    if(this.timers.has(request.sessionID)) {
-        clearInterval(this.timers.get(request.sessionID));
+    this.logger.debug(
+      `(*) Client Disconnected with Session: ${request.sessionID}`,
+    );
+    if (this.timers.has(request.sessionID)) {
+      clearInterval(this.timers.get(request.sessionID));
     }
   }
   /**
@@ -103,12 +116,12 @@ export class ConnectGateway implements OnGatewayInit, OnGatewayConnection, OnGat
     const session = await this.authService.findSession(request.sessionID);
     console.log('Session', session);
     if (session) {
-      console.log('Listening to auth messages')
+      console.log('Listening to auth messages');
       await this.ioAdapter.subClient.subscribe('auth');
 
       // Handle messages
       const obs$: Observable<any> = new Observable((observer) => {
-        const handleAuthMessage = async (channel, eventMessage)=> {
+        const handleAuthMessage = async (channel, eventMessage) => {
           console.log('Link->Message', channel, eventMessage);
           const { data } = JSON.parse(eventMessage);
           console.log(body.requestId, data.requestId, data, body);
@@ -123,12 +136,9 @@ export class ConnectGateway implements OnGatewayInit, OnGatewayConnection, OnGat
             this.ioAdapter.subClient.off('message', handleAuthMessage);
             observer.complete();
           }
-        }
+        };
 
-        this.ioAdapter.subClient.on(
-          'message',
-          handleAuthMessage,
-        );
+        this.ioAdapter.subClient.on('message', handleAuthMessage);
       });
       return obs$.pipe(
         map((obs$) => ({

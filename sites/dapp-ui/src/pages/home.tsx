@@ -3,9 +3,13 @@ import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import CardActions from '@mui/material/CardActions';
 import Card from '@mui/material/Card';
-import { ConnectModal } from './ConnectModal';
+import { ConnectModal } from '@/components/ConnectModal';
 import Button from '@mui/material/Button';
-export function GetStartedCard() {
+import { assertion } from '@liquid/auth-client';
+import { useNavigate } from 'react-router-dom';
+export function HomePage() {
+  const credId = window.localStorage.getItem('credId');
+  const navigate = useNavigate();
   return (
     <Card>
       <CardMedia
@@ -25,7 +29,7 @@ export function GetStartedCard() {
       />
       <CardContent>
         <Typography gutterBottom variant="h5" component="div">
-          Get Started (1 of 3)
+          Get Started (1 of 2)
         </Typography>
         <Typography variant="body1" color="text.secondary">
           Start by connecting a valid wallet, this is the first step in a three
@@ -35,7 +39,16 @@ export function GetStartedCard() {
       </CardContent>
       <CardActions>
         <ConnectModal color="secondary" />
-        <Button>Set Wallet</Button>
+        {credId && (
+          <Button
+            onClick={async () => {
+              await assertion(credId);
+              navigate('/peering');
+            }}
+          >
+            Login
+          </Button>
+        )}
       </CardActions>
     </Card>
   );

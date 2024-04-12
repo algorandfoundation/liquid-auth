@@ -3,20 +3,19 @@ import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
 import { CircularProgress } from '@mui/material';
-import { useEffect } from 'react';
-import { useSocket } from '../../hooks/useSocket';
+import { useEffect, useState } from 'react';
+import { useSocket } from '@/hooks/useSocket';
 import { useNavigate } from 'react-router-dom';
-import { usePeerConnection } from '../../hooks/usePeerConnection.ts';
-import {
-  useDataChannel,
-  useDataChannelMessages,
-} from '../../hooks/useDataChannel.ts';
+import { usePeerConnection } from '@/hooks/usePeerConnection';
+import { useDataChannel, useDataChannelMessages } from '@/hooks/useDataChannel';
+import { useMessageStore } from '@/store';
 
-export function WaitForPeersCard() {
+export function PeeringPage() {
   const navigate = useNavigate();
   const walletStr = window.localStorage.getItem('wallet');
+  const addMessage = useMessageStore((state) => state.addMessage);
   const wallet = walletStr ? JSON.parse(walletStr) : null;
-
+  const [credentialId, setCredentialId] = useState<string | null>(null);
   const { socket } = useSocket();
   // const address = useAddressQuery(wallet);
   const peerConnection = usePeerConnection((event) => {
@@ -31,14 +30,25 @@ export function WaitForPeersCard() {
   });
   const datachannel = useDataChannel('remote', peerConnection);
   useDataChannelMessages((event) => {
-    console.log(event);
+    addMessage({
+      type: 'remote',
+      data: JSON.parse(event.data),
+      timestamp: Date.now(),
+    });
+    const data = JSON.parse(event.data);
+    if (data?.type === 'credential') {
+      window.localStorage.setItem('credId', data.id);
+      setCredentialId(data.id);
+    }
   });
+
+  // Once we have a valid credential, continue to the connected page
   useEffect(() => {
-    if (!datachannel) return;
+    if (!datachannel || !credentialId) return;
 
     // datachannel.send('Hello World')
     navigate('/connected');
-  }, [datachannel]);
+  }, [datachannel, credentialId, navigate]);
 
   useEffect(() => {
     if (!peerConnection) return;
@@ -88,10 +98,10 @@ export function WaitForPeersCard() {
       />
       <CardContent>
         <Typography gutterBottom variant="h5" component="div">
-          Waiting for Peer Connection (2 of 3)
+          Waiting for Peer Confirmation (2 of 2)
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          <CircularProgress size={15} /> Waiting for Passkey registration for
+          <CircularProgress size={15} /> Waiting for message from peer for
           address:
         </Typography>
         <Typography variant="body2" color="text.secondary">

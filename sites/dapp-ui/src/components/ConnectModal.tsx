@@ -7,9 +7,9 @@ import { Message } from '@liquid/auth-client/connect';
 import QRCodeStyling, { Options } from 'qr-code-styling';
 import { useEffect, useState } from 'react';
 import { Fade } from '@mui/material';
-import { useSocket } from '../../hooks/useSocket';
+import { useSocket } from '../hooks/useSocket';
 import nacl from 'tweetnacl';
-import { useCredentialStore, Credential } from '../../store';
+import { useCredentialStore, Credential } from '../store';
 import { useNavigate } from 'react-router-dom';
 const style = {
   position: 'absolute' as const,

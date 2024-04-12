@@ -1,8 +1,8 @@
 import { Avatar, Badge, CircularProgress, Menu } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import React, { useState } from 'react';
-import { useSocket } from '../../hooks/useSocket.ts';
-import { useUserState } from './useUserState.ts';
+import { useSocket } from '@/hooks/useSocket.ts';
+import { useUserState } from '@/hooks/useUserState.ts';
 import { StatusCard } from './StatusCard.tsx';
 
 export function SessionMenu() {

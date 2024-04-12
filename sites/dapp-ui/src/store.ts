@@ -60,7 +60,7 @@ export const usePeerStore = create<PeerStore>((set) => ({
 }));
 
 export type Message = {
-  text: string;
+  data: any;
   type: 'local' | 'remote';
   timestamp: number;
 };
