@@ -26,7 +26,7 @@
     "dev": "tsc --watch",
     "build": "tsc",
     "preinstall": "npm run build",
-    "test": "tsc && c8 node --test ./tests/connect.test.js"
+    "test": "tsc && c8 node --test ./tests/connect.spec.js"
   },
   "author": "",
   "license": "MIT",
@@ -44,6 +44,6 @@
   "dependencies": {
     "@liquid/core": "^1.0.0",
     "qr-code-styling": "^1.6.0-rc.1",
-    "tweetnacl": "github:awesome-algorand/tweetnacl-js"
+    "tweetnacl": "^1.0.3"
   }
 }

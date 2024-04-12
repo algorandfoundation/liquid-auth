@@ -9,6 +9,8 @@
     "dev:ui": "npm run dev --if-present --workspace dapp-ui",
     "build": "npm run build --workspace @liquid/auth-client && npm run build --workspace @liquid/auth-api && npm run build --workspace dapp-ui",
     "lint": "npm run lint --if-present --ws",
+    "test": "npm run test --if-present --ws",
+    "test:cov": "npm run test:cov --if-present --ws",
     "start": "npm run start:prod --workspace @liquid/auth-api"
   },
   "workspaces": [
