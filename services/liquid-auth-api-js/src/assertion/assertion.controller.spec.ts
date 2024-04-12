@@ -73,6 +73,50 @@ describe('AssertionController', () => {
   it('should be defined', () => {
     expect(assertionController).toBeDefined();
   });
+  
+  describe('User Not Found', () => {
+    beforeEach(async () => {
+      authService.search = jest.fn().mockResolvedValue(undefined);
+    });
+
+    describe('Get /request/:credId', () => {
+      it('(FAIL) should fail if it cannot find a user', async () => {
+        const session = new Session();
+        const req = { body: {}, params: { credId: 1 } } as any as Request;
+        const body = dummyPublicKeyCredentialRequestOptions;
+
+        await expect(
+          assertionController.assertionDemoRequest(session, req, body),
+        ).rejects.toThrow(HttpException);
+      });
+    });
+
+    describe('Post /request/:credId', () => {
+      it('(FAIL) should fail if it cannot find a user', async () => {
+        const session = new Session();
+        const req = { body: {}, params: { credId: 1 } } as any as Request;
+        const body = dummyPublicKeyCredentialRequestOptions;
+
+        await expect(
+          assertionController.assertionRequest(session, req, body),
+        ).rejects.toThrow(HttpException);
+      });
+    });
+
+    describe('Post /response', () => {
+      it('(FAIL) should fail if it cannot find the user', async () => {
+        const session: Record<string, any> = new Session();
+        session.challenge = crypto.randomBytes(32).toString('base64url');
+
+        const req = {} as any as Request;
+        const body = dummyAssertionCredentialJSON;
+
+        await expect(
+          assertionController.assertionResponse(session, req, body),
+        ).rejects.toThrow(HttpException);
+      });
+    });
+  });
 
   describe('Get /request/:credId', () => {
     it('(OK) should save the challenge', async () => {
@@ -86,20 +130,6 @@ describe('AssertionController', () => {
     });
   });
 
-  describe('Get /request/:credId search failure', () => {
-    authService.search = jest.fn().mockResolvedValue(undefined);
-
-    it('(FAIL) should fail if it cannot find a user', async () => {
-      const session = new Session();
-      const req = { body: {}, params: { credId: 1 } } as any as Request;
-      const body = dummyPublicKeyCredentialRequestOptions;
-
-      await expect(
-        assertionController.assertionDemoRequest(session, req, body),
-      ).rejects.toThrow(HttpException);
-    });
-  });
-
   describe('Post /request/:credId', () => {
     it('(OK) should create a valid assertion request', async () => {
       const session = new Session();
@@ -109,20 +139,6 @@ describe('AssertionController', () => {
       await expect(
         assertionController.assertionRequest(session, req, body),
       ).resolves.toBe(dummyOptions);
-    });
-  });
-
-  describe('Post /request/:credId search failure', () => {
-    authService.search = jest.fn().mockResolvedValue(undefined);
-
-    it('(FAIL) should fail if it cannot find a user', async () => {
-      const session = new Session();
-      const req = { body: {}, params: { credId: 1 } } as any as Request;
-      const body = dummyPublicKeyCredentialRequestOptions;
-
-      await expect(
-        assertionController.assertionRequest(session, req, body),
-      ).rejects.toThrow(HttpException);
     });
   });
 
@@ -146,22 +162,6 @@ describe('AssertionController', () => {
     it('(FAIL) should fail if the challenge is not a string', async () => {
       const session: Record<string, any> = new Session();
       session.challenge = 0;
-
-      const req = {} as any as Request;
-      const body = dummyAssertionCredentialJSON;
-
-      await expect(
-        assertionController.assertionResponse(session, req, body),
-      ).rejects.toThrow(HttpException);
-    });
-  });
-
-  describe('Post /response search failure', () => {
-    authService.search = jest.fn().mockResolvedValue(undefined);
-
-    it('(FAIL) should fail if it cannot find the user', async () => {
-      const session: Record<string, any> = new Session();
-      session.challenge = crypto.randomBytes(32).toString('base64url');
 
       const req = {} as any as Request;
       const body = dummyAssertionCredentialJSON;
