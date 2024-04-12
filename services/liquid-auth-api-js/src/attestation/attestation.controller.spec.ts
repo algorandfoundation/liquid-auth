@@ -75,6 +75,30 @@ describe('AttestationController', () => {
     expect(attestationController).toBeDefined();
   });
 
+  describe('User Not Found', () => {
+    beforeEach(async () => {
+      authService.find = jest.fn().mockResolvedValue(undefined);
+    });
+
+    describe('Post/ request', () => {
+      it('(FAIL) should fail if it cannot find a user', async () => {
+        const session: Record<string, any> = new Session();
+        session.wallet = accFixture.accs[0].addr;
+
+        const body = dummyAttestationSelectorDto;
+        const req = {
+          headers: {
+            host: 'meh',
+          },
+        } as Request;
+
+        await expect(
+          attestationController.request(session, body, req),
+        ).rejects.toThrow(HttpException);
+      });
+    });
+  });
+
   describe('Post /request', () => {
     it('(OK) should create a challenge', async () => {
       const session: Record<string, any> = new Session();
@@ -100,24 +124,6 @@ describe('AttestationController', () => {
           host: 'meh',
         },
       } as Request;
-
-      await expect(
-        attestationController.request(session, body, req),
-      ).rejects.toThrow(HttpException);
-    });
-
-    it('(FAIL) should fail if it cannot find a user', async () => {
-      const session: Record<string, any> = new Session();
-      session.wallet = accFixture.accs[0].addr;
-
-      const body = dummyAttestationSelectorDto;
-      const req = {
-        headers: {
-          host: 'meh',
-        },
-      } as Request;
-
-      authService.find = jest.fn().mockResolvedValue(undefined);
 
       await expect(
         attestationController.request(session, body, req),
