@@ -8,7 +8,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Request, Response } from 'express';
 import { dummyUsers } from '../../tests/constants';
 import { mockAuthService } from '../__mocks__/auth.service.mock';
-import { HttpException } from '@nestjs/common';
+import { BadRequestException, HttpException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
 describe('AuthController', () => {
   let authController: AuthController;
@@ -93,7 +93,7 @@ describe('AuthController', () => {
       const session = new Session();
       const req = { body: {}, params: { id: 1 } } as any as Request;
 
-      await expect(authController.remove(session, req)).rejects.toThrow(HttpException);
+      await expect(authController.remove(session, req)).rejects.toThrow(NotFoundException);
     });
 
     it('(FAIL) should fail when mongo db throws an error', async () => {
@@ -104,7 +104,7 @@ describe('AuthController', () => {
       const session = new Session();
       const req = { body: {}, params: { id: 1 } } as any as Request;
 
-      await expect(authController.remove(session, req)).rejects.toThrow(HttpException);
+      await expect(authController.remove(session, req)).rejects.toThrow(NotFoundException);
     });
 
     it('(FAIL) should fail if it cannot remove the credential', async () => {
@@ -115,7 +115,7 @@ describe('AuthController', () => {
       const session = new Session();
       const req = { body: {}, params: { id: 1 } } as any as Request;
 
-      await expect(authController.remove(session, req)).rejects.toThrow(HttpException);
+      await expect(authController.remove(session, req)).rejects.toThrow(InternalServerErrorException);
     });
   });
 
@@ -147,7 +147,9 @@ describe('AuthController', () => {
       const session = new Session();
       const body = { wallet: 'mreh' };
 
-      await expect(authController.create(session, body)).rejects.toThrow(HttpException);
+      await expect(authController.create(session, body)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 

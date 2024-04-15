@@ -1,10 +1,13 @@
 import {
+    BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   HttpException,
   HttpStatus,
+  InternalServerErrorException,
+  NotFoundException,
   Post,
   Req,
   Res,
@@ -56,19 +59,17 @@ export class AuthController {
     const user = await this.authService.find(session.wallet);
 
     if (!user) {
-      throw new HttpException(
-        { error: 'User not found' },
-        HttpStatus.NOT_FOUND,
-      );
+      throw new NotFoundException({
+        error: 'User not found',
+      });
     } else {
       try {
         await this.authService.removeCredential(user, req.params.id)
         return { success: true };
       } catch (e) {
-        throw new HttpException(
-          { error: e.message },
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
+        throw new InternalServerErrorException({
+          error: e.message,
+        });
       }
     }
   }
@@ -100,20 +101,19 @@ export class AuthController {
       typeof userLoginDto.wallet !== 'string' ||
       userLoginDto.wallet.length !== 58
     ) {
-      throw new HttpException(
-        { reason: 'invalid_input', error: 'Invalid wallet' },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException({
+        reason: 'invalid_input',
+        error: 'Invalid wallet',
+      });
     } else {
       try {
         const user = await this.authService.init(userLoginDto.wallet);
         session.wallet = user.wallet;
         return user;
       } catch (e) {
-        throw new HttpException(
-          { error: e.message },
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
+        throw new InternalServerErrorException({
+          error: e.message,
+        });
       }
     }
   }
