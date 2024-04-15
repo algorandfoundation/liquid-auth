@@ -14,7 +14,7 @@ import { mockAssertionService } from '../__mocks__/assertion.service.mock';
 import { mockAccountLinkService } from '../__mocks__/account-link.service.mock';
 import { AppService } from '../app.service';
 import { ConfigService } from '@nestjs/config';
-import { HttpException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 
 // PublicKeyCredentialRequestOptions
 const dummyPublicKeyCredentialRequestOptions = {
@@ -87,7 +87,7 @@ describe('AssertionController', () => {
 
         await expect(
           assertionController.assertionDemoRequest(session, req, body),
-        ).rejects.toThrow(HttpException);
+        ).rejects.toThrow(NotFoundException);
       });
     });
 
@@ -99,7 +99,7 @@ describe('AssertionController', () => {
 
         await expect(
           assertionController.assertionRequest(session, req, body),
-        ).rejects.toThrow(HttpException);
+        ).rejects.toThrow(NotFoundException);
       });
     });
 
@@ -113,7 +113,7 @@ describe('AssertionController', () => {
 
         await expect(
           assertionController.assertionResponse(session, req, body),
-        ).rejects.toThrow(HttpException);
+        ).rejects.toThrow(ForbiddenException);
       });
     });
   });
@@ -168,7 +168,7 @@ describe('AssertionController', () => {
 
       await expect(
         assertionController.assertionResponse(session, req, body),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 });

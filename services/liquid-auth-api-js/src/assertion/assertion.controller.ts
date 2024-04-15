@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Inject,
   Logger,
+  NotFoundException,
   Post,
   Req,
   Session,
@@ -46,10 +47,10 @@ export class AssertionController {
     });
 
     if (!user) {
-      throw new HttpException(
-        { reason: 'not_found', error: 'User not found.' },
-        HttpStatus.NOT_FOUND,
-      );
+      throw new NotFoundException({
+        reason: 'not_found',
+        error: 'User not found.',
+      });
     }
 
     // Get options, save challenge and respond
@@ -88,10 +89,10 @@ export class AssertionController {
     });
 
     if (!user) {
-      throw new HttpException(
-        { reason: 'not_found', error: 'User not found.' },
-        HttpStatus.NOT_FOUND,
-      );
+      throw new NotFoundException({
+        reason: 'not_found',
+        error: 'User not found.',
+      });
     }
 
     // Get options, save challenge and respond
@@ -127,19 +128,19 @@ export class AssertionController {
     this.logger.log(`POST /response for Session: ${session.id}`);
     const expectedChallenge = session.challenge;
     if (typeof expectedChallenge !== 'string') {
-      throw new HttpException(
-        { reason: 'unauthorized', error: 'Challenge not found.' },
-        HttpStatus.UNAUTHORIZED,
-      );
+      throw new UnauthorizedException({
+        reason: 'unauthorized',
+        error: 'Challenge not found.',
+      });
     }
     const savedUser = await this.authService.search({
       'credentials.credId': body.id,
     });
     if (!savedUser) {
-      throw new HttpException(
-        { reason: 'not_found', error: 'Credential not found.' },
-        HttpStatus.FORBIDDEN,
-      );
+      throw new ForbiddenException({
+        reason: 'not_found',
+        error: 'Credential not found.',
+      });
     }
 
     const user = this.assertionService.response(
