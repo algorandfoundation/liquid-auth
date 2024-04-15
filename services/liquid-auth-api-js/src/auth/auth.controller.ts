@@ -28,7 +28,13 @@ export class AuthController {
    */
   @Get('/all')
   async all() {
-    return await this.authService.all();
+    try {
+      return await this.authService.all();
+    } catch (e) {
+      throw new InternalServerErrorException({
+        error: e.message,
+      });
+    }
   }
 
   /**

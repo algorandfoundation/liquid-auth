@@ -52,7 +52,9 @@ describe('AuthController', () => {
         .fn()
         .mockRejectedValue(new Error('failed to retrieve users'));
 
-      await expect(authController.all()).rejects.toThrow(HttpException);
+      await expect(authController.all()).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 
