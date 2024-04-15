@@ -1,11 +1,10 @@
 import {
-    BadRequestException,
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   HttpException,
-  HttpStatus,
   InternalServerErrorException,
   NotFoundException,
   Post,
@@ -41,8 +40,14 @@ export class AuthController {
   @UseGuards(AuthGuard)
   async keys(@Session() session: Record<string, any>) {
     const wallet = session.wallet;
-    const user = await this.authService.find(wallet);
-    return user || {};
+    try {
+      const user = await this.authService.find(wallet);
+      return user || {};
+    } catch (e) {
+      throw new InternalServerErrorException({
+        error: e.message,
+      });
+    }
   }
   /**
    * Delete Credential
