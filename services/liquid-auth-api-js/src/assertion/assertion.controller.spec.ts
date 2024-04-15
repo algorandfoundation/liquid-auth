@@ -18,7 +18,7 @@ import { HttpException } from '@nestjs/common';
 
 // PublicKeyCredentialRequestOptions
 const dummyPublicKeyCredentialRequestOptions = {
-  challenge: Buffer.from('1234'),
+  challenge: crypto.randomBytes(32),
 };
 
 // AssertionCredentialJSON
