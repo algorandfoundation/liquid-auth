@@ -7,6 +7,8 @@ import {
   Logger,
   HttpException,
   HttpStatus,
+  InternalServerErrorException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { AuthService } from '../auth/auth.service.js';
@@ -85,14 +87,11 @@ export class ConnectController {
           .exclude('all')
           .do();
       } catch (e) {
-        throw new HttpException(
-          'Failed to fetch Account Info',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
+        throw new InternalServerErrorException('Failed to fetch Account Info');
       }
 
       if (!accountInfo['auth-addr']) {
-        throw new HttpException('Invalid signature', HttpStatus.FORBIDDEN);
+        throw new ForbiddenException('Invalid signature');
       }
 
       const authPublicKey = algoEncoder.decodeAddress(accountInfo['auth-addr']);
@@ -105,7 +104,7 @@ export class ConnectController {
           authPublicKey,
         )
       ) {
-        throw new HttpException('Invalid signature', HttpStatus.FORBIDDEN);
+        throw new ForbiddenException('Invalid signature');
       }
     }
 
@@ -114,10 +113,7 @@ export class ConnectController {
     try {
       await this.authService.init(wallet);
     } catch (e) {
-      throw new HttpException(
-        'Failed to initialize wallet',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new InternalServerErrorException('Failed to initialize wallet');
     }
 
     const parsedRequest =

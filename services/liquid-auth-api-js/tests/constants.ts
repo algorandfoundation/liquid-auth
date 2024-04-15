@@ -1,4 +1,6 @@
+import * as crypto from 'node:crypto';
 import { AlgorandEncoder } from "../src/connect/AlgoEncoder";
+
 
 export const accFixture = {
   challenge: '1234',
@@ -47,5 +49,5 @@ export const dummyOptions = {
 };
 
 export const dummyAttestationOptions = {
-  challenge: 'meh',
+  challenge: crypto.randomBytes(32).toString('base64url'),
 };
