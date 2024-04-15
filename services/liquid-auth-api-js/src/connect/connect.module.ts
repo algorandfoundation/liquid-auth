@@ -7,6 +7,7 @@ import { Session, SessionSchema } from './session.schema.js';
 import { SessionService } from './session.service.js';
 import { AuthService } from '../auth/auth.service.js';
 import { User, UserSchema } from '../auth/auth.schema.js';
+import { AlgodService } from '../algod/algod.service.js';
 
 @Module({
   imports: [
@@ -29,6 +30,6 @@ import { User, UserSchema } from '../auth/auth.schema.js';
     ]),
   ],
   controllers: [ConnectController],
-  providers: [AuthService, SessionService, ConnectGateway],
+  providers: [AuthService, SessionService, ConnectGateway, AlgodService],
 })
 export class ConnectModule {}

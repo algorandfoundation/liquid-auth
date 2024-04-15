@@ -11,6 +11,7 @@ import {useSocket} from '../../hooks/useSocket';
 import nacl from 'tweetnacl';
 import { StateContext } from '../../Contexts';
 import { useCredentialStore, Credential } from '../../store';
+
 const style = {
     position: 'absolute' as const,
     top: '50%',
@@ -21,6 +22,7 @@ const style = {
     border: '2px solid #000',
     boxShadow: 24,
 };
+
 export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning'}) {
     const {socket} = useSocket();
     const credentials = useCredentialStore((state)=> state.addresses);
@@ -119,6 +121,7 @@ export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondar
                 aria-labelledby="modal-modal-title"
                 aria-describedby="modal-modal-description"
             >
+                <Box>
                 <Fade in={open}>
                 <Box sx={style}>
                     <Box sx={{
@@ -145,9 +148,12 @@ export function ConnectModal({color}: {color?: 'inherit' | 'primary' | 'secondar
                             transform: 'translate(-50%, -50%)',
                             top: "50%",
                         }}/>
+
                     </Box>
+
                 </Box>
                 </Fade>
+                </Box>
             </Modal>
         </div>
     );
