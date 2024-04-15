@@ -11,7 +11,6 @@ import {useSocket} from '../../hooks/useSocket';
 import nacl from 'tweetnacl';
 import { StateContext } from '../../Contexts';
 import { useCredentialStore, Credential } from '../../store';
-import algosdk from 'algosdk'
 
 const style = {
     position: 'absolute' as const,
