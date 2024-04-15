@@ -1,7 +1,7 @@
 import { DEFAULT_FETCH_OPTIONS } from './constants.js';
 import type { Account } from 'algosdk';
 import type { SignKeyPair } from 'tweetnacl';
-import { sign } from 'tweetnacl';
+import nacl from 'tweetnacl';
 import { toBase64URL, encodeAddress } from '@liquid/core/encoding';
 
 export class Message {
@@ -58,9 +58,9 @@ export class Message {
     // Seed or Secret Key
     if (key instanceof Uint8Array) {
       if (key.length === 32) {
-        keyPair = sign.keyPair.fromSeed(key);
+        keyPair = nacl.sign.keyPair.fromSeed(key);
       } else if (key.length === 64) {
-        keyPair = sign.keyPair.fromSecretKey(key);
+        keyPair = nacl.sign.keyPair.fromSecretKey(key);
       } else {
         throw new TypeError('Invalid seed or secret key');
       }
@@ -71,7 +71,7 @@ export class Message {
       typeof (key as Account).addr !== 'undefined' &&
       typeof (key as Account).addr === 'string'
     ) {
-      keyPair = sign.keyPair.fromSecretKey((key as Account).sk);
+      keyPair = nacl.sign.keyPair.fromSecretKey((key as Account).sk);
     }
 
     // NACL
@@ -86,7 +86,7 @@ export class Message {
       throw new TypeError('Invalid key');
     }
     this.signature = toBase64URL(
-      sign.detached(encoder.encode(this.challenge), keyPair.secretKey),
+      nacl.sign.detached(encoder.encode(this.challenge), keyPair.secretKey),
     );
     this.wallet = encodeAddress(keyPair.publicKey);
     return this;

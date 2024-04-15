@@ -16,7 +16,7 @@ import { AuthModule } from './auth/auth.module.js';
 // Connect/Signals
 import { ConnectModule } from './connect/connect.module.js';
 import { SignalsModule } from './signals/signals.module.js';
-import { AppController } from "./app.controller.js";
+import { AppController } from './app.controller.js';
 
 @Module({
   imports: [

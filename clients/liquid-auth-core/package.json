@@ -26,7 +26,7 @@
     "dev": "tsc --watch",
     "build": "tsc",
     "preinstall": "npm run build",
-    "test": "tsc && c8 node --test ./tests/connect.test.js"
+    "test": "tsc && c8 -r html node --test ./tests/encoding.spec.js"
   },
   "author": "",
   "license": "MIT",

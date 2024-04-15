@@ -6,7 +6,9 @@ type DataChannelState = {
 };
 export const DataChannelContext = createContext({
   dataChannel: null,
-  setDataChannel: (_: RTCDataChannel) => {},
+  setDataChannel: (_: RTCDataChannel) => {
+    console.log(_);
+  },
 } as DataChannelState);
 
 /**

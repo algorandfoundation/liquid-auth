@@ -63,7 +63,7 @@ export class AttestationService {
     credential: AttestationCredentialJSON & { device?: string },
   ) {
     const expectedOrigin = this.appService.getOrigin(ua);
-    console.log(expectedOrigin)
+    console.log(expectedOrigin);
     const expectedRPID = this.configService.get<string>('hostname');
     const verifiedAttestation = await fido2.verifyAttestationResponse({
       credential,

@@ -1,9 +1,7 @@
 import {
-  Body,
   Controller,
   Delete,
   Get,
-  Post,
   Req,
   Res,
   Session,
@@ -13,9 +11,6 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { AuthGuard } from './auth.guard.js';
 
-type LoginRequestDTO = {
-  wallet: string;
-};
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}

@@ -1,5 +1,5 @@
 import nacl from "tweetnacl";
-import { decodeAsBytes, encode } from "./hi-base32.js";
+import { decodeAsBytes, encodeBytes } from "./hi-base32.js";
 import { createMethod } from "./sha512.js";
 const sha512_256 = createMethod(256);
 const chars =
@@ -11,6 +11,8 @@ const ALGORAND_ADDRESS_LENGTH = 58;
 const HASH_BYTES_LENGTH = 32;
 export const MALFORMED_ADDRESS_ERROR_MSG = "Malformed address";
 export const ALGORAND_ADDRESS_BAD_CHECKSUM_ERROR_MSG = "Bad checksum";
+export const INVALID_BASE64URL_INPUT = "Invalid base64url input";
+
 /**
  * Bytes to Base64URL
  * @param {Uint8Array| ArrayBuffer} arr Bytes to convert to URL safe Base64
@@ -19,7 +21,6 @@ export function toBase64URL(arr: Uint8Array | ArrayBuffer): string {
   const bytes = arr instanceof Uint8Array ? arr : new Uint8Array(arr);
   const len = bytes.length;
   let base64 = "";
-
   for (let i = 0; i < len; i += 3) {
     base64 += chars[bytes[i] >> 2];
     base64 += chars[((bytes[i] & 3) << 4) | (bytes[i + 1] >> 4)];
@@ -42,9 +43,10 @@ export function toBase64URL(arr: Uint8Array | ArrayBuffer): string {
  */
 export function fromBase64Url(base64url: string): Uint8Array {
   if (typeof base64url !== "string") {
-    throw new TypeError("Must be string!");
+    throw new Error(INVALID_BASE64URL_INPUT);
   }
   return new Uint8Array(
+    // TODO: Cross-platform solution since atob is deprecated in Node
     atob(base64url.replace(/-/g, "+").replace(/_/g, "/").replace(/\s/g, ""))
       .split("")
       .map((c) => c.charCodeAt(0)),
@@ -72,7 +74,7 @@ export function encodeAddress(address: Uint8Array) {
       nacl.sign.publicKeyLength - ALGORAND_CHECKSUM_BYTE_LENGTH,
       nacl.sign.publicKeyLength,
     );
-  const addr = encode(concatArrays(address, checksum));
+  const addr = encodeBytes(concatArrays(address, checksum));
 
   return addr.toString().slice(0, ALGORAND_ADDRESS_LENGTH); // removing the extra '===='
 }
@@ -123,13 +125,4 @@ export function decodeAddress(address: string): Uint8Array {
   }
 
   return pk;
-}
-
-export function base64ToUint8Array(encoded) {
-  return new Uint8Array(
-    // TODO: Cross-platform solution since atob is deprecated in Node
-    atob(encoded)
-      .split("")
-      .map((c) => c.charCodeAt(0)),
-  );
 }
