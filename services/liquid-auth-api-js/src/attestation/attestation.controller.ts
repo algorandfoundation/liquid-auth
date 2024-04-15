@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
   Inject,
+  InternalServerErrorException,
   Logger,
   Post,
   Req,
@@ -112,10 +113,10 @@ export class AttestationController {
 
       return attestationOptions;
     } catch (e) {
-      throw new HttpException(
-        { error: e.message },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      if (e instanceof HttpException) {
+        throw e;
+      }
+      throw new InternalServerErrorException({ error: e.message });
     }
   }
 
