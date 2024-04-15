@@ -157,7 +157,7 @@ describe('AttestationController', () => {
 
       await expect(
         attestationController.attestationResponse(session, body, req),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

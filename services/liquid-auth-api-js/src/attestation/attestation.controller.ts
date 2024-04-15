@@ -8,6 +8,7 @@ import {
   Inject,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
   Post,
   Req,
   Res,
@@ -136,10 +137,10 @@ export class AttestationController {
       const username = session.wallet;
       const expectedChallenge = session.challenge;
       if (typeof expectedChallenge !== 'string') {
-        throw new HttpException(
-          { reason: 'not_found', error: 'Challenge not found' },
-          HttpStatus.NOT_FOUND
-        );
+        throw new NotFoundException({
+          reason: 'not_found',
+          error: 'Challenge not found',
+        });
       }
       this.logger.debug(
         `Username: ${username} Challenge: ${expectedChallenge}`,
@@ -162,10 +163,14 @@ export class AttestationController {
       return user;
     } catch (e) {
       this.logger.error(e.message, e.stack);
-      throw new HttpException(
-        { error: e.message },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new InternalServerErrorException({
+        error: e.message,
+      });
     }
   }
 }
