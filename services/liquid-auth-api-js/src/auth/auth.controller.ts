@@ -56,21 +56,26 @@ export class AuthController {
     @Session() session: Record<string, any>,
     @Req() req: Request,
   ) {
-    const user = await this.authService.find(session.wallet);
+    try {
+      const user = await this.authService.find(session.wallet);
 
-    if (!user) {
-      throw new NotFoundException({
-        error: 'User not found',
-      });
-    } else {
-      try {
-        await this.authService.removeCredential(user, req.params.id)
-        return { success: true };
-      } catch (e) {
-        throw new InternalServerErrorException({
-          error: e.message,
+      if (!user) {
+        throw new NotFoundException({
+          error: 'User not found',
         });
       }
+
+      await this.authService.removeCredential(user, req.params.id);
+
+      return { success: true };
+    } catch (e) {
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new InternalServerErrorException({
+        error: e.message,
+      });
     }
   }
 

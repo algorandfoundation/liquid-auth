@@ -93,7 +93,9 @@ describe('AuthController', () => {
       const session = new Session();
       const req = { body: {}, params: { id: 1 } } as any as Request;
 
-      await expect(authController.remove(session, req)).rejects.toThrow(NotFoundException);
+      await expect(authController.remove(session, req)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('(FAIL) should fail when mongo db throws an error', async () => {
@@ -104,7 +106,9 @@ describe('AuthController', () => {
       const session = new Session();
       const req = { body: {}, params: { id: 1 } } as any as Request;
 
-      await expect(authController.remove(session, req)).rejects.toThrow(NotFoundException);
+      await expect(authController.remove(session, req)).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
 
     it('(FAIL) should fail if it cannot remove the credential', async () => {
