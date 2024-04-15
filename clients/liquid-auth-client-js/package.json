@@ -25,7 +25,6 @@
   "scripts": {
     "dev": "tsc --watch",
     "build": "tsc",
-    "preinstall": "npm run build",
     "test": "tsc && node --test ./tests/connect.spec.js",
     "test:cov": "tsc && c8 node --test ./tests/connect.spec.js"
   },
@@ -45,6 +44,6 @@
   "dependencies": {
     "@liquid/core": "^1.0.0",
     "qr-code-styling": "^1.6.0-rc.1",
-    "tweetnacl": "github:awesome-algorand/tweetnacl-js"
+    "tweetnacl": "^1.0.3"
   }
 }

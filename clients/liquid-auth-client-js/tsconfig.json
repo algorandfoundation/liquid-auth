@@ -5,6 +5,7 @@
     "declaration": true,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
   }
 }

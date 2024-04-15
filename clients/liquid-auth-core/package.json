@@ -25,7 +25,6 @@
   "scripts": {
     "dev": "tsc --watch",
     "build": "tsc",
-    "preinstall": "npm run build",
     "test": "tsc && c8 -r html node --test ./tests/encoding.spec.js"
   },
   "author": "",
@@ -40,6 +39,6 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
-    "tweetnacl": "github:awesome-algorand/tweetnacl-js"
+    "tweetnacl": "^1.0.3"
   }
 }
