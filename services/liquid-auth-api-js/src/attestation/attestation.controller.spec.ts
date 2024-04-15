@@ -17,7 +17,7 @@ import { mockAttestationService } from '../__mocks__/attestation.service.mock';
 import { AppService } from '../app.service';
 import { ConfigService } from '@nestjs/config';
 import { AttestationService } from './attestation.service';
-import { HttpException } from '@nestjs/common';
+import { ForbiddenException, HttpException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 
 const dummyAttestationSelectorDto = {
   authenticatorSelection: {},
@@ -94,7 +94,7 @@ describe('AttestationController', () => {
 
         await expect(
           attestationController.request(session, body, req),
-        ).rejects.toThrow(HttpException);
+        ).rejects.toThrow(ForbiddenException);
       });
     });
   });
@@ -127,7 +127,7 @@ describe('AttestationController', () => {
 
       await expect(
         attestationController.request(session, body, req),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 
