@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpException,
   HttpStatus,
@@ -11,6 +12,7 @@ import {
   Req,
   Res,
   Session,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import type { AttestationCredentialJSON } from '@simplewebauthn/typescript-types';
@@ -92,18 +94,18 @@ export class AttestationController {
     try {
       const wallet = session.wallet;
       if (!wallet) {
-        throw new HttpException(
-          { reason: 'unauthorized', error: 'Wallet not connected' },
-          HttpStatus.UNAUTHORIZED,
-        );
+        throw new UnauthorizedException({
+          reason: 'unauthorized',
+          error: 'Wallet not connected',
+        });
       }
 
       const user = await this.authService.find(wallet);
       if (!user) {
-        throw new HttpException(
-          { reason: 'not_found', error: 'Wallet not found' },
-          HttpStatus.FORBIDDEN,
-        );
+        throw new ForbiddenException({
+          reason: 'not_found',
+          error: 'Wallet not found',
+        });
       }
 
       const attestationOptions = this.attestationService.request(user, options);
