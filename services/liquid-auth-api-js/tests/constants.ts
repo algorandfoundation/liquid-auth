@@ -3,7 +3,7 @@ import { AlgorandEncoder } from "../src/connect/AlgoEncoder";
 
 
 export const accFixture = {
-  challenge: '1234',
+  challenge: crypto.randomBytes(32).toString('base64url'),
   accs: [
     {
       addr: 'B7WYCZ6HRBGCH452D24TYAK7BXKNCHEXY2X7S7FWZXMHDVTDOARAOURJEU',
