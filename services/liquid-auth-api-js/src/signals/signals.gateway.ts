@@ -16,30 +16,30 @@ export class SignalsGateway {
   server: Server;
   private readonly logger = new Logger(SignalsGateway.name);
 
-  @SubscribeMessage('call-candidate')
+  @SubscribeMessage('offer-candidate')
   onCallCandidate(
     @MessageBody()
-    data: { candidate: string; sdpMid: string; sdpMLineIndex: number },
+      data: { candidate: string; sdpMid: string; sdpMLineIndex: number },
     @ConnectedSocket() client: Socket,
   ) {
-    this.logger.debug(`(call-candidate): ${JSON.stringify(data)}`);
+    this.logger.debug(`(offer-candidate): ${JSON.stringify(data)}`);
     const request = client.request as Record<string, any>;
     const session = request.session as Record<string, any>;
-    this.server.in(session.wallet).emit('call-candidate', data);
+    this.server.in(session.wallet).emit('offer-candidate', data);
   }
-  @SubscribeMessage('call-description')
+  @SubscribeMessage('offer-description')
   onCallDescription(
     @MessageBody() data: string,
     @ConnectedSocket() client: Socket,
   ) {
-    this.logger.log(`(call-description): ${data}`);
+    this.logger.log(`(offer-description): ${data}`);
 
     // Session from the initial Handshake
     const request = client.request as Record<string, any>;
     const session = request.session as Record<string, any>;
 
     // Send description to all clients in the public key's room
-    this.server.in(session.wallet).emit('call-description', data);
+    this.server.in(session.wallet).emit('offer-description', data);
   }
   @SubscribeMessage('answer-description')
   onAnswerDescription(
@@ -54,7 +54,7 @@ export class SignalsGateway {
   @SubscribeMessage('answer-candidate')
   onAnswerCandidate(
     @MessageBody()
-    data: { candidate: string; sdpMid: string; sdpMLineIndex: number },
+      data: { candidate: string; sdpMid: string; sdpMLineIndex: number },
     @ConnectedSocket() client: Socket,
   ) {
     this.logger.debug(`(answer-candidate): ${JSON.stringify(data)}`);
