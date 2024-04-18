@@ -1,17 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SignalsGateway } from './signals.gateway.js';
 import { Server, Socket } from 'socket.io';
+import session from "express-session";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const candidateFixture = require('./__fixtures__/candidate.fixture.json');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const sdpFixtures = require('./__fixtures__/sdp.fixtures.json');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const sessionFixtures = require('../__fixtures__/session.fixtures.json');
 
 const clientFixture = {
   request: {
-    session: {
-      wallet: 'AVALIDWALLETADDRESS',
-    },
+    session: sessionFixtures.authorized,
   },
 } as unknown as Socket;
 
@@ -37,23 +38,23 @@ describe('SignalsGateway', () => {
     gateway = module.get<SignalsGateway>(SignalsGateway);
     gateway.server = new Server();
   });
-  it('should signal a call-description', () => {
+  it('should signal a offer-description', () => {
     gateway.onCallDescription(sdpFixtures.call, clientFixture);
     expect(gateway.server.in).toHaveBeenCalledWith(
       (clientFixture.request as any).session.wallet,
     );
     expect(gateway.server.emit).toHaveBeenCalledWith(
-      'call-description',
+      'offer-description',
       sdpFixtures.call,
     );
   });
-  it('should signal a call-candidate', () => {
+  it('should signal a offer-candidate', () => {
     gateway.onCallCandidate(candidateFixture, clientFixture);
     expect(gateway.server.in).toHaveBeenCalledWith(
       (clientFixture.request as any).session.wallet,
     );
     expect(gateway.server.emit).toHaveBeenCalledWith(
-      'call-candidate',
+      'offer-candidate',
       candidateFixture,
     );
   });
