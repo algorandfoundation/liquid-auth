@@ -19,7 +19,7 @@ export class SignalsGateway {
   @SubscribeMessage('offer-candidate')
   onCallCandidate(
     @MessageBody()
-      data: { candidate: string; sdpMid: string; sdpMLineIndex: number },
+    data: { candidate: string; sdpMid: string; sdpMLineIndex: number },
     @ConnectedSocket() client: Socket,
   ) {
     this.logger.debug(`(offer-candidate): ${JSON.stringify(data)}`);
@@ -54,7 +54,7 @@ export class SignalsGateway {
   @SubscribeMessage('answer-candidate')
   onAnswerCandidate(
     @MessageBody()
-      data: { candidate: string; sdpMid: string; sdpMLineIndex: number },
+    data: { candidate: string; sdpMid: string; sdpMLineIndex: number },
     @ConnectedSocket() client: Socket,
   ) {
     this.logger.debug(`(answer-candidate): ${JSON.stringify(data)}`);

@@ -25,7 +25,10 @@
   "scripts": {
     "dev": "tsc --watch",
     "build": "tsc",
-    "test": "tsc && c8 -r html node --test ./tests/encoding.spec.js"
+    "build:docs": "typedoc --plugin typedoc-plugin-markdown --out docs src",
+    "lint": "eslint --fix src",
+    "test": "tsc && node --test ./tests/*.spec.js",
+    "test:cov": "tsc && c8 node --test ./tests/*.spec.js"
   },
   "author": "",
   "license": "MIT",
@@ -36,6 +39,9 @@
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",
+    "eslint-plugin-tsdoc": "^0.2.17",
+    "typedoc": "^0.25.13",
+    "typedoc-plugin-markdown": "^4.0.0-next.55",
     "typescript": "^5.4.5"
   },
   "dependencies": {

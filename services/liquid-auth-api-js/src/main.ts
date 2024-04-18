@@ -16,8 +16,6 @@ import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import { SentryFilter } from './sentry.filter.js';
 
-import { resolve } from 'path';
-import hbs from 'hbs';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'debug', 'log', 'verbose'],
@@ -56,8 +54,6 @@ async function bootstrap() {
     ttl: 20000,
   });
 
-  app.enableCors();
-
   const sessionHandler = session({
     secret: 'my-secret',
     saveUninitialized: true,
@@ -74,10 +70,6 @@ async function bootstrap() {
 
   app.useWebSocketAdapter(redisIoAdapter);
 
-  app.useStaticAssets(resolve('./public'));
-  app.setBaseViewsDir(resolve('./views'));
-  app.setViewEngine('html');
-  app.engine('html', hbs.__express);
   await app.listen(process.env.PORT || 3000);
 }
 

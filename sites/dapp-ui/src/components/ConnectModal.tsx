@@ -2,15 +2,11 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Modal from '@mui/material/Modal';
-import { toBase64URL } from '@liquid/core/encoding';
-import { Message } from '@liquid/auth-client/connect';
-import QRCodeStyling, { Options } from 'qr-code-styling';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Fade } from '@mui/material';
-import { useSocket } from '../hooks/useSocket';
-import nacl from 'tweetnacl';
-import { useCredentialStore, Credential } from '../store';
 import { useNavigate } from 'react-router-dom';
+import { useSignalClient } from '@/hooks/useSignalClient.ts';
+import { SignalClient } from '@liquid/auth-client/signal';
 const style = {
   position: 'absolute' as const,
   top: '50%',
@@ -22,6 +18,12 @@ const style = {
   border: '2px solid #000',
   boxShadow: 24,
 };
+
+/**
+ * Connect Modal
+ * @param color
+ * @todo: Make into a component that can be used in providers
+ */
 export function ConnectModal({
   color,
 }: {
@@ -34,119 +36,45 @@ export function ConnectModal({
     | 'info'
     | 'warning';
 }) {
+  const { client, dataChannel } = useSignalClient();
   const navigate = useNavigate();
-  const { socket } = useSocket();
-  const credentials = useCredentialStore((state) => state.addresses);
-  const save = useCredentialStore((state) => state.update);
-  const [state] = useState({
-    requestId: Math.random(),
-    challenge: toBase64URL(nacl.randomBytes(nacl.sign.seedLength)),
-  });
-  const qrOpts = {
-    width: 500,
-    height: 500,
-    data: 'algorand://',
-    margin: 25,
-    imageOptions: { hideBackgroundDots: true, imageSize: 0.4, margin: 15 },
-    dotsOptions: {
-      type: 'extra-rounded',
-      gradient: {
-        type: 'radial',
-        rotation: 0,
-        colorStops: [
-          { offset: 0, color: '#9966ff' },
-          { offset: 1, color: '#332257' },
-        ],
-      },
-    },
-    backgroundOptions: { color: '#ffffff', gradient: null },
-    image: '/logo.png',
-    cornersSquareOptions: {
-      type: '',
-      color: '#000000',
-      gradient: {
-        type: 'linear',
-        rotation: 0,
-        colorStops: [
-          { offset: 0, color: '#332257' },
-          { offset: 1, color: '#040908' },
-        ],
-      },
-    },
-    cornersDotOptions: {
-      type: 'dot',
-      color: '#000000',
-      gradient: {
-        type: 'linear',
-        rotation: 0,
-        colorStops: [
-          { offset: 0, color: '#000000' },
-          { offset: 1, color: '#000000' },
-        ],
-      },
-    },
-  };
-  useEffect(() => {
-    socket.on('link', (data) => {
-      console.log(data);
-    });
-  }, [socket]);
+  const [requestId] = useState(SignalClient.generateRequestId());
+
   const [open, setOpen] = React.useState(false);
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    socket.emit(
-      'link',
-      { requestId: state.requestId },
-      async ({
-        data,
-      }: {
-        data: { credId?: string; requestId: string | number; wallet: string };
-      }) => {
-        let newCredentials: Credential[] = [];
-        if (typeof credentials[data.wallet] !== 'undefined') {
-          newCredentials = credentials[data.wallet].credentials;
-        }
-        save({ name: data.wallet, credentials: [...newCredentials] });
-        window.localStorage.setItem('wallet', JSON.stringify(data.wallet));
-        if (typeof data.credId !== 'undefined') {
-          console.log(data.credId);
-          window.localStorage.setItem('credId', data.credId);
-          navigate('/peering');
-        } else {
-          navigate('/peering');
-        }
-      },
-    );
-  }, [open]);
-
   const [barcode, setBarcode] = React.useState('/qr-loading.png');
-  const handleOpen = () => {
-    setBarcode('/qr-loading.png');
-    const message = new Message(
-      window.location.origin,
-      state.challenge,
-      state.requestId,
-    );
 
-    // JSON encoding
-    qrOpts.data = `${message}`;
-    console.log(qrOpts.data);
-    const qrCode = new QRCodeStyling(qrOpts as unknown as Options);
-    qrCode.getRawData('png').then((blob) => {
-      if (!blob) throw TypeError('Could not get qrcode blob');
-      setBarcode(URL.createObjectURL(blob));
-      setOpen(true);
+  const handleOpen = async () => {
+    setBarcode('/qr-loading.png');
+    client.once('data-channel', () => {
+      navigate('/connected');
     });
-    // message.toBarcode({color: {light: "#00000000"}}).then(setBarcode)
+    client
+      .peer(requestId, 'offer', {
+        iceServers: [
+          {
+            urls: [
+              'stun:stun.l.google.com:19302',
+              'stun:stun1.l.google.com:19302',
+              'stun:stun2.l.google.com:19302',
+            ],
+          },
+        ],
+        iceCandidatePoolSize: 10,
+      })
+      .catch((e) => {
+        console.error(e);
+        client.close();
+        setOpen(false);
+      });
+    setBarcode(await client.qrCode());
     setOpen(true);
   };
   const handleClose = () => setOpen(false);
-
+  const hasDataChannel =
+    (dataChannel && dataChannel?.readyState === 'open') || false;
   return (
     <div>
-      <Button onClick={handleOpen} color={color}>
+      <Button disabled={hasDataChannel} onClick={handleOpen} color={color}>
         Connect
       </Button>
       <Modal

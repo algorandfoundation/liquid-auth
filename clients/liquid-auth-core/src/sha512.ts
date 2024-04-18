@@ -1,4 +1,3 @@
-// @ts-nocheck
 /*
  * [js-sha512]{@link https://github.com/emn178/js-sha512}
  *
@@ -46,7 +45,7 @@ const K = [
 
 const OUTPUT_TYPES = ["hex", "array", "digest", "arrayBuffer"];
 
-const blocks = [];
+const blocks: number[] = [];
 
 const isArray = Array.isArray;
 const isView = ArrayBuffer.isView;
@@ -71,7 +70,7 @@ const formatMessage = function (
   return [message, false];
 };
 
-const createOutputMethod = function (outputType, bits) {
+const createOutputMethod = function (outputType, bits) : (message) => typeof Sha512 {
   return function (message) {
     return new (Sha512 as any)(bits, true).update(message)[outputType]();
   };
@@ -81,39 +80,20 @@ export const createMethod = function (bits): {
   array: (d: Uint8Array) => Uint8Array;
 } {
   const method = createOutputMethod("hex", bits);
+  //@ts-expect-error, create does exits on the prototype
   method.create = function () {
     return new (Sha512 as any)(bits);
   };
+  //@ts-expect-error, update does exits on the prototype
   method.update = function (message) {
+    //@ts-expect-error, this is a valid return
     return method.create().update(message);
   };
   for (let i = 0; i < OUTPUT_TYPES.length; ++i) {
     const type = OUTPUT_TYPES[i];
     method[type] = createOutputMethod(type, bits);
   }
-  return method;
-};
-
-const createHmacOutputMethod = function (outputType, bits) {
-  return function (key, message) {
-    return new (HmacSha512 as any)(key, bits, true)
-      .update(message)
-      [outputType]();
-  };
-};
-
-const createHmacMethod = function (bits) {
-  const method = createHmacOutputMethod("hex", bits);
-  method.create = function (key) {
-    return new (HmacSha512 as any)(key, bits);
-  };
-  method.update = function (key, message) {
-    return method.create(key).update(message);
-  };
-  for (let i = 0; i < OUTPUT_TYPES.length; ++i) {
-    const type = OUTPUT_TYPES[i];
-    method[type] = createHmacOutputMethod(type, bits);
-  }
+  //@ts-expect-error, this is a valid return
   return method;
 };
 
@@ -123,7 +103,7 @@ const createHmacMethod = function (bits) {
  * @param sharedMemory
  * @constructor
  */
-function Sha512(bits, sharedMemory) {
+function Sha512(bits?: number, sharedMemory?) {
   if (sharedMemory) {
     blocks[0] =
       blocks[1] =
@@ -1251,11 +1231,11 @@ Sha512.prototype.copyTo = function (hash) {
 };
 
 function HmacSha512(key, bits, sharedMemory) {
-  var i;
+  var i: number;
   const result = formatMessage(key);
   key = result[0];
   if (result[1]) {
-    const bytes = [];
+    const bytes: number[] = [];
     const length = key.length;
     let index = 0;
     let code;
@@ -1286,8 +1266,8 @@ function HmacSha512(key, bits, sharedMemory) {
     key = new Sha512(bits, true).update(key).array();
   }
 
-  const oKeyPad = [];
-  const iKeyPad = [];
+  const oKeyPad: number[] = [];
+  const iKeyPad: number[] = [];
   for (var i = 0; i < 128; ++i) {
     const b = key[i] || 0;
     oKeyPad[i] = 0x5c ^ b;

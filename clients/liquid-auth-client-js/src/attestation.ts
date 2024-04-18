@@ -1,7 +1,12 @@
+/**
+ * This module is only for browser and currently not used in the project.
+ * However, it could be useful for extension wallets or other browser-based wallets.
+ */
 import { fromBase64Url, toBase64URL } from '@liquid/core/encoding';
 import { DEFAULT_FETCH_OPTIONS } from './constants.js';
+import { isValidResponse } from './errors.js';
 
-const DEFAULT_ATTESTATION_OPTIONS = {
+export const DEFAULT_ATTESTATION_OPTIONS = {
   attestationType: 'none',
   authenticatorSelection: {
     authenticatorAttachment: 'platform',
@@ -44,22 +49,6 @@ function encodeAttestationCredential(
   };
 }
 
-/**
- * Decoding an Encoded Attestation Credential
- * @param credential - Encoded Attestation Credential
- */
-function decodeAttestationCredential(credential: EncodedAttestationCredential) {
-  return {
-    id: credential.id,
-    rawId: fromBase64Url(credential.rawId),
-    type: credential.type,
-    response: {
-      clientDataJSON: fromBase64Url(credential.response.clientDataJSON),
-      attestationObject: fromBase64Url(credential.response.attestationObject),
-    },
-  };
-}
-
 function decodeAttestationOptions(options) {
   const attestationOptions = { ...options };
   attestationOptions.user.id = fromBase64Url(options.user.id);
@@ -79,6 +68,7 @@ function decodeAttestationOptions(options) {
  *
  * @param origin
  * @param options
+ * @todo: Generate Typed JSON-RPC clients from Swagger/OpenAPI
  */
 export async function fetchAttestationRequest(
   origin: string,
@@ -95,6 +85,7 @@ export async function fetchAttestationRequest(
  *
  * @param origin
  * @param credential
+ * @todo: Generate Typed JSON-RPC clients from Swagger/OpenAPI
  */
 export async function fetchAttestationResponse(
   origin: string,
@@ -103,6 +94,9 @@ export async function fetchAttestationResponse(
   return await fetch(`${origin}/attestation/response`, {
     ...DEFAULT_FETCH_OPTIONS,
     body: JSON.stringify(credential),
+  }).then((r) => {
+    if (!isValidResponse(r)) throw new Error(r.statusText);
+    return r.json();
   });
 }
 
@@ -114,7 +108,6 @@ export async function fetchAttestationResponse(
  * - The server creates a challenge and sends it to the client
  * - The client creates a credential and sends it to the server
  *
- * @return {Promise<Response>}
  */
 export async function attestation(
   origin: string,
@@ -123,7 +116,10 @@ export async function attestation(
   const encodedAttestationOptions = await fetchAttestationRequest(
     origin,
     options,
-  ).then(async (r) => await r.json());
+  ).then((r) => {
+    if (!isValidResponse(r)) throw new Error(r.statusText);
+    return r.json();
+  });
 
   if (typeof encodedAttestationOptions.error !== 'undefined') {
     throw new Error(encodedAttestationOptions.error);

@@ -7,5 +7,6 @@
     "moduleResolution": "NodeNext",
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
+    "allowJs": true
   }
 }
