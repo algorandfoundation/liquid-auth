@@ -70,7 +70,10 @@ const formatMessage = function (
   return [message, false];
 };
 
-const createOutputMethod = function (outputType, bits) : (message) => typeof Sha512 {
+const createOutputMethod = function (
+  outputType,
+  bits,
+): (message) => typeof Sha512 {
   return function (message) {
     return new (Sha512 as any)(bits, true).update(message)[outputType]();
   };

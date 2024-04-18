@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SignalsGateway } from './signals.gateway.js';
 import { Server, Socket } from 'socket.io';
-import session from "express-session";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const candidateFixture = require('./__fixtures__/candidate.fixture.json');
