@@ -710,13 +710,6 @@ declare module 'astro:content' {
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
-"server/attestation.md": {
-	id: "server/attestation.md";
-  slug: "server/attestation";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
 "server/introduction.md": {
 	id: "server/introduction.md";
   slug: "server/introduction";

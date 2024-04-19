@@ -25,4 +25,4 @@ POST an Authenticator Assertion Response to the REST API
 
 ## Source
 
-[clients/liquid-auth-client-js/src/assertion.ts:97](https://github.com/algorandfoundation/liquid-auth/blob/10c59840d062554c79d275cbb41957b40edae1ed/clients/liquid-auth-client-js/src/assertion.ts#L97)
+[clients/liquid-auth-client-js/src/assertion.ts:97](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/assertion.ts#L97)

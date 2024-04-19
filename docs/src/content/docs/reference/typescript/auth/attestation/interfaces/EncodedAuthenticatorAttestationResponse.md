@@ -17,7 +17,7 @@ title: "EncodedAuthenticatorAttestationResponse"
 
 #### Source
 
-[clients/liquid-auth-client-js/src/attestation.ts:20](https://github.com/algorandfoundation/liquid-auth/blob/10c59840d062554c79d275cbb41957b40edae1ed/clients/liquid-auth-client-js/src/attestation.ts#L20)
+[clients/liquid-auth-client-js/src/attestation.ts:20](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/attestation.ts#L20)
 
 ***
 
@@ -27,7 +27,7 @@ title: "EncodedAuthenticatorAttestationResponse"
 
 #### Source
 
-[clients/liquid-auth-client-js/src/attestation.ts:19](https://github.com/algorandfoundation/liquid-auth/blob/10c59840d062554c79d275cbb41957b40edae1ed/clients/liquid-auth-client-js/src/attestation.ts#L19)
+[clients/liquid-auth-client-js/src/attestation.ts:19](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/attestation.ts#L19)
 
 ***
 
@@ -37,7 +37,7 @@ title: "EncodedAuthenticatorAttestationResponse"
 
 #### Source
 
-[clients/liquid-auth-client-js/src/attestation.ts:21](https://github.com/algorandfoundation/liquid-auth/blob/10c59840d062554c79d275cbb41957b40edae1ed/clients/liquid-auth-client-js/src/attestation.ts#L21)
+[clients/liquid-auth-client-js/src/attestation.ts:21](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/attestation.ts#L21)
 
 ***
 
@@ -47,4 +47,4 @@ title: "EncodedAuthenticatorAttestationResponse"
 
 #### Source
 
-[clients/liquid-auth-client-js/src/attestation.ts:22](https://github.com/algorandfoundation/liquid-auth/blob/10c59840d062554c79d275cbb41957b40edae1ed/clients/liquid-auth-client-js/src/attestation.ts#L22)
+[clients/liquid-auth-client-js/src/attestation.ts:22](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/attestation.ts#L22)

@@ -1,14 +1,27 @@
 ---
 title: Introduction
 category: Service
+prev: false
 ---
 
-The service is a Nest.js express application with a Socket.io gateway.
-It can be run in one of two ways, Proxy or Standalone.
+Built as a **Nest.js** application with a **Socket.io** gateway. 
+The service can be run in one of two ways, **Standalone** or **Reverse Proxy**.
+In either mode, the service's primary responsibility is registering and authenticating [PublicKeyCredentials]().
 
-## Proxy
+## Features
 
-The proxy mode is the default mode for the service.
-It is designed to be run in front of a service and proxy requests to it.
+### FIDO2 Liquid Extension
 
-All unmatched requests will be forwarded to the `PROXY_URL` environment variable.
+The service can be used to register or authenticate [PublicKeyCredentials]().
+The credential can also be bound to a cryptographic keypair outside of the authenticators' control using the
+[FIDO2 Liquid Extension]()
+
+During the registration process, the Liquid Extension can be used to check for a valid signature from the authenticator. 
+The extension also supports elevating a remote session to the same level of trust as a local session.
+
+Find out more in the service's [registration guide](/guides/registration) and [authentication guide](/guides/authentication).
+
+
+### WebRTC Signaling Service
+
+Once more than one session is authorized, the service can be used as a signaling service for [WebRTC]() connections.

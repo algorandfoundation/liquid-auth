@@ -39,7 +39,7 @@ AttestationApi
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/api.ts:59](https://github.com/algorandfoundation/liquid-auth/blob/10c59840d062554c79d275cbb41957b40edae1ed/clients/liquid-auth-client-js/src/client/api.ts#L59)
+[clients/liquid-auth-client-js/src/client/api.ts:59](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/api.ts#L59)
 
 ## Methods
 
@@ -69,7 +69,7 @@ AttestationApi
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/api.ts:652](https://github.com/algorandfoundation/liquid-auth/blob/10c59840d062554c79d275cbb41957b40edae1ed/clients/liquid-auth-client-js/src/client/api.ts#L652)
+[clients/liquid-auth-client-js/src/client/api.ts:652](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/api.ts#L652)
 
 ***
 
@@ -99,4 +99,4 @@ AttestationApi
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/api.ts:663](https://github.com/algorandfoundation/liquid-auth/blob/10c59840d062554c79d275cbb41957b40edae1ed/clients/liquid-auth-client-js/src/client/api.ts#L663)
+[clients/liquid-auth-client-js/src/client/api.ts:663](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/api.ts#L663)

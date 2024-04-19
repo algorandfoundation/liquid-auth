@@ -22,7 +22,7 @@ Do not edit the file manually.
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/configuration.ts:18](https://github.com/algorandfoundation/liquid-auth/blob/10c59840d062554c79d275cbb41957b40edae1ed/clients/liquid-auth-client-js/src/client/configuration.ts#L18)
+[clients/liquid-auth-client-js/src/client/configuration.ts:18](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/configuration.ts#L18)
 
 ***
 
@@ -32,7 +32,7 @@ Do not edit the file manually.
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/configuration.ts:15](https://github.com/algorandfoundation/liquid-auth/blob/10c59840d062554c79d275cbb41957b40edae1ed/clients/liquid-auth-client-js/src/client/configuration.ts#L15)
+[clients/liquid-auth-client-js/src/client/configuration.ts:15](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/configuration.ts#L15)
 
 ***
 
@@ -42,7 +42,7 @@ Do not edit the file manually.
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/configuration.ts:19](https://github.com/algorandfoundation/liquid-auth/blob/10c59840d062554c79d275cbb41957b40edae1ed/clients/liquid-auth-client-js/src/client/configuration.ts#L19)
+[clients/liquid-auth-client-js/src/client/configuration.ts:19](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/configuration.ts#L19)
 
 ***
 
@@ -52,7 +52,7 @@ Do not edit the file manually.
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/configuration.ts:17](https://github.com/algorandfoundation/liquid-auth/blob/10c59840d062554c79d275cbb41957b40edae1ed/clients/liquid-auth-client-js/src/client/configuration.ts#L17)
+[clients/liquid-auth-client-js/src/client/configuration.ts:17](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/configuration.ts#L17)
 
 ***
 
@@ -62,4 +62,4 @@ Do not edit the file manually.
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/configuration.ts:16](https://github.com/algorandfoundation/liquid-auth/blob/10c59840d062554c79d275cbb41957b40edae1ed/clients/liquid-auth-client-js/src/client/configuration.ts#L16)
+[clients/liquid-auth-client-js/src/client/configuration.ts:16](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/configuration.ts#L16)

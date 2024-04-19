@@ -22,6 +22,7 @@ export default defineConfig({
           },
         ]),
         authTypeDoc({
+          tsdoc: {},
           sidebar: {
             label: '@liquid/auth-client'
           },
@@ -81,14 +82,35 @@ export default defineConfig({
       },
         {
           label: "Server",
-          autogenerate: { directory: 'server' }
+          collapsed: true,
+          items: [
+            {
+              "label": "Introduction",
+              "link": "/server/introduction"
+            },
+            {
+              "label": "Configuration",
+              "link": "/server/configuration"
+            },
+            {
+              "label": "Proxy",
+              "link": "/server/proxy"
+            },
+            {
+              "label": "Deploying",
+              "link": "/server/deploying"
+            }
+          ],
+          // autogenerate: { directory: 'server' }
         },
         {
           label: "Clients",
+          collapsed: true,
           autogenerate: { directory: 'clients' }
         },
         {
           label: "Reference",
+          collapsed: true,
           items: [
             authCoreTypeDocSidebarGroup,
             coreTypeDocSidebarGroup,
