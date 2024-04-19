@@ -13,14 +13,28 @@ import { AuthService } from '../auth/auth.service.js';
 import { AlgodService } from '../algod/algod.service.js';
 import nacl from 'tweetnacl';
 import { decodeAddress, fromBase64Url } from '@liquid/core/encoding';
+import { ApiBody, ApiOkResponse, ApiOperation, ApiProperty } from "@nestjs/swagger";
 
-type LinkResponseDTO = {
+type LinkResponseDTOType = {
   credId?: string;
-  requestId: string | number;
+  requestId?: string | number;
   wallet: string;
   challenge: string;
   signature: string;
 };
+
+class LinkResponseDTO implements LinkResponseDTOType {
+  @ApiProperty()
+  credId?: string;
+  @ApiProperty()
+  requestId?: string | number;
+  @ApiProperty()
+  wallet: string;
+  @ApiProperty()
+  challenge: string;
+  @ApiProperty()
+  signature: string;
+}
 
 @Controller('connect')
 export class ConnectController {
@@ -40,8 +54,18 @@ export class ConnectController {
    * @param session
    * @param requestId
    * @param wallet
+   * @deprecated
    */
   @Post('response')
+  @ApiOperation({
+    description: `
+# Yo yo
+Can I get a decend documentation out of here?
+    `,
+    summary: 'Submit a response from a ConnectQR Scan and login to service'
+  })
+  @ApiBody({ type: LinkResponseDTO })
+  @ApiOkResponse({ description: 'Successfully attested public key' })
   async linkWalletResponse(
     @Session() session: Record<string, any>,
     @Body()

@@ -10,26 +10,28 @@ import {
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { AuthGuard } from './auth.guard.js';
+import {
+  ApiResponse,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiSecurity,
+  ApiCookieAuth, ApiOperation
+} from "@nestjs/swagger";
+import { User } from "./auth.schema.js";
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
-  /**
-   * Debugging Route that shows all Users
-   * @param res
-   */
-  @Get('/all')
-  async all(@Res() res: Response) {
-    res.json(await this.authService.all());
-  }
-
   /**
    * Display user keys
    *
    * @param session
    * @param res
    */
-  @Get('/keys')
+  @Get('/user')
+  @ApiResponse({ status: 200, description: 'Get the current user', type: User })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  @ApiCookieAuth()
   @UseGuards(AuthGuard)
   async keys(@Session() session: Record<string, any>, @Res() res: Response) {
     const wallet = session.wallet;
@@ -45,6 +47,9 @@ export class AuthController {
    */
   @Delete('/keys/:id')
   @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Delete Credential' })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  @ApiCookieAuth()
   async remove(
     @Session() session: Record<string, any>,
     @Req() req: Request,

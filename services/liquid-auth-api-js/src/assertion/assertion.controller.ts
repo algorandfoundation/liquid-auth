@@ -10,15 +10,26 @@ import {
   Session,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import type {
-  AssertionCredentialJSON,
-  PublicKeyCredentialRequestOptions,
-} from '@simplewebauthn/typescript-types';
 
+import {AssertionCredentialJSON, PublicKeyCredentialRequestOptions} from './assertion.dto.js'
 import { AuthService } from '../auth/auth.service.js';
 import { AssertionService } from './assertion.service.js';
 import { ClientProxy } from '@nestjs/microservices';
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path'
+import {
+  ApiBody,
+  ApiForbiddenResponse,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiUnauthorizedResponse
+} from "@nestjs/swagger";
+import { User } from "../auth/auth.schema.js";
+const filePath = join(process.cwd(), './src/assertion');
+const requestDescription = readFileSync(join(filePath, 'assertion.controller.post.request.md')).toString();
+const responseDescription = readFileSync(join(filePath, 'assertion.controller.post.response.md')).toString();
 @Controller('assertion')
 export class AssertionController {
   private readonly logger = new Logger(AssertionController.name);
@@ -27,37 +38,6 @@ export class AssertionController {
     private assertionService: AssertionService,
     private authService: AuthService,
   ) {}
-
-  /**
-   * Hard Coded Request Assertion Options for demo
-   */
-  @Get('/request/:credId')
-  async assertionDemoRequest(
-    @Session() session: Record<string, any>,
-    @Req() req: Request,
-    @Res() res: Response,
-    @Body() body?: PublicKeyCredentialRequestOptions,
-  ) {
-    this.logger.log(
-      `GET /request/${req.params.credId} for Session: ${session.id}`,
-    );
-    const user = await this.authService.search({
-      'credentials.credId': req.params.credId,
-    });
-
-    if (!user) {
-      res.status(404).json({ reason: 'not_found', error: 'User not found.' });
-      return;
-    }
-
-    // Get options, save challenge and respond
-    const options = this.assertionService.request(
-      user,
-      req.params.credId,
-      body,
-    );
-    res.json(options);
-  }
   /**
    * Request Assertion
    *
@@ -73,6 +53,10 @@ export class AssertionController {
    * @param [body] - Standard Public Key Request Options
    */
   @Post('/request/:credId')
+  @ApiOperation({ summary: 'Assertion Request', description: requestDescription })
+  @ApiParam({ name: 'credId', description: 'Credential ID', required: true })
+  @ApiResponse({ status: 201, description: 'Successfully created options', type: PublicKeyCredentialRequestOptions })
+  @ApiResponse({ status: 404, description: 'Not Found' })
   async assertionRequest(
     @Session() session: Record<string, any>,
     @Req() req: Request,
@@ -116,6 +100,11 @@ export class AssertionController {
    * @param body - Assertion Credential JSON
    */
   @Post('/response')
+  @ApiOperation({ summary: 'Assertion Response', description: responseDescription })
+  @ApiBody({ type: AssertionCredentialJSON })
+  @ApiResponse({ status: 201, description: 'Successfully attested public key', type: User })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
   async assertionResponse(
     @Session() session: Record<string, any>,
     @Req() req: Request,

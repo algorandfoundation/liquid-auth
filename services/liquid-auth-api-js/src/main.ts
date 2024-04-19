@@ -15,6 +15,7 @@ import MongoStore from 'connect-mongo';
 import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import { SentryFilter } from './sentry.filter.js';
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -40,6 +41,14 @@ async function bootstrap() {
     const { httpAdapter } = app.get(HttpAdapterHost);
     app.useGlobalFilters(new SentryFilter(httpAdapter));
   }
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Liquid Auth API')
+    .setDescription('Authentication API')
+    .setVersion('1.0')
+    .addCookieAuth('connect.sid')
+    .build();
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('docs', app, document);
   const username = config.get('database.username');
   const host = config.get('database.host');
   const password = config.get('database.password');

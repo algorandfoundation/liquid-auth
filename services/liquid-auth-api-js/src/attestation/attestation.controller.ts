@@ -19,6 +19,7 @@ import { AttestationService } from './attestation.service.js';
 import type { AttestationSelectorDto } from './attestation.dto.js';
 import { AuthGuard } from '../auth/auth.guard.js';
 import { ClientProxy } from '@nestjs/microservices';
+import { ApiOperation } from "@nestjs/swagger";
 
 @Controller('attestation')
 @UseGuards(AuthGuard)
@@ -29,43 +30,6 @@ export class AttestationController {
     private attestationService: AttestationService,
     private authService: AuthService,
   ) {}
-  /**
-   * Hard Coded Request Attestation Options
-   *
-   * for demonstrations
-   * @deprecated
-   */
-  @Get('/request/:walletId')
-  async demoRequest(
-    @Session() session: Record<string, any>,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
-    this.logger.log(
-      `GET /attestation/request/${req.params.walletId} for Session: ${session.id}`,
-    );
-    try {
-      const wallet = req.params.walletId;
-
-      const user = await this.authService.find(wallet);
-      if (!user) {
-        res.redirect(307, '/');
-      } else {
-        const attestationOptions = this.attestationService.request(user, {
-          attestationType: 'none',
-          authenticatorSelection: {
-            authenticatorAttachment: 'platform',
-            userVerification: 'required',
-            requireResidentKey: false,
-          },
-        });
-
-        res.json(attestationOptions);
-      }
-    } catch (e) {
-      res.status(500).json({ error: e.message });
-    }
-  }
   /**
    * Request Attestation Options
    *
@@ -78,6 +42,7 @@ export class AttestationController {
    * @param res - Express Response
    */
   @Post('/request')
+  @ApiOperation({summary: 'Attestation Request Options'})
   async request(
     @Session() session: Record<string, any>,
     @Body() options: AttestationSelectorDto, // TODO: Update to use internal Options

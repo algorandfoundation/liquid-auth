@@ -6,6 +6,9 @@
   "private": true,
   "type": "module",
   "license": "MIT",
+  "files": [
+    "./src/**/*.md"
+  ],
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -31,6 +34,7 @@
     "@nestjs/mongoose": "^10.0.1",
     "@nestjs/platform-express": "^10.2.6",
     "@nestjs/platform-socket.io": "^10.2.7",
+    "@nestjs/swagger": "^7.3.1",
     "@nestjs/websockets": "^10.2.7",
     "@sentry/node": "^7.74.1",
     "@sentry/profiling-node": "^1.2.1",
@@ -100,10 +104,10 @@
       "**/*.(t|j)s"
     ],
     "coveragePathIgnorePatterns": [
-        "/node_modules/",
-        "/test/",
-        "/dist/",
-        "/src/main.ts"
+      "/node_modules/",
+      "/test/",
+      "/dist/",
+      "/src/main.ts"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
