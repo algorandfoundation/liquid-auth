@@ -19,9 +19,10 @@ import { AttestationService } from './attestation.service.js';
 import type { AttestationSelectorDto } from './attestation.dto.js';
 import { AuthGuard } from '../auth/auth.guard.js';
 import { ClientProxy } from '@nestjs/microservices';
-import { ApiOperation } from "@nestjs/swagger";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
 
 @Controller('attestation')
+@ApiTags('attestation')
 @UseGuards(AuthGuard)
 export class AttestationController {
   private readonly logger = new Logger(AttestationController.name);
@@ -42,7 +43,7 @@ export class AttestationController {
    * @param res - Express Response
    */
   @Post('/request')
-  @ApiOperation({summary: 'Attestation Request Options'})
+  @ApiOperation({summary: 'Attestation Request'})
   async request(
     @Session() session: Record<string, any>,
     @Body() options: AttestationSelectorDto, // TODO: Update to use internal Options
@@ -83,6 +84,7 @@ export class AttestationController {
    * Register a Key
    */
   @Post('/response')
+  @ApiOperation({ summary: 'Attestation Response' })
   async attestationResponse(
     @Session() session: Record<string, any>,
     @Body() body: AttestationCredentialJSON & { device?: string },

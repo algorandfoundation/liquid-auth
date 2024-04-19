@@ -319,33 +319,11 @@ export interface User {
     credentials: Array<Credential>;
 }
 /**
- * DefaultApi - fetch parameter creator
+ * AssertionApi - fetch parameter creator
  * @export
  */
-export const DefaultApiFetchParamCreator = function (configuration?: Configuration) {
+export const AssertionApiFetchParamCreator = function (configuration?: Configuration) {
     return {
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        androidControllerAssetLinks(options: any = {}): FetchArgs {
-            const localVarPath = `/.well-known/assetlinks.json`;
-            const localVarUrlObj = url.parse(localVarPath, true);
-            const localVarRequestOptions = Object.assign({ method: 'GET' }, options);
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            localVarUrlObj.query = Object.assign({}, localVarUrlObj.query, localVarQueryParameter, options.query);
-            // fix override query string Detail: https://stackoverflow.com/a/7517673/1077943
-            delete localVarUrlObj.search;
-            localVarRequestOptions.headers = Object.assign({}, localVarHeaderParameter, options.headers);
-
-            return {
-                url: url.format(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
         /**
          * # POST Assertion Request  This endpoint is used to request assertion options from the FIDO2 service. 
          * @summary Assertion Request
@@ -416,8 +394,129 @@ export const DefaultApiFetchParamCreator = function (configuration?: Configurati
                 options: localVarRequestOptions,
             };
         },
+    }
+};
+
+/**
+ * AssertionApi - functional programming interface
+ * @export
+ */
+export const AssertionApiFp = function(configuration?: Configuration) {
+    return {
+        /**
+         * # POST Assertion Request  This endpoint is used to request assertion options from the FIDO2 service. 
+         * @summary Assertion Request
+         * @param {PublicKeyCredentialRequestOptions} body 
+         * @param {any} credId Credential ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        assertionControllerAssertionRequest(body: PublicKeyCredentialRequestOptions, credId: any, options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<PublicKeyCredentialRequestOptions> {
+            const localVarFetchArgs = AssertionApiFetchParamCreator(configuration).assertionControllerAssertionRequest(body, credId, options);
+            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
+                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
+                    if (response.status >= 200 && response.status < 300) {
+                        return response.json();
+                    } else {
+                        throw response;
+                    }
+                });
+            };
+        },
+        /**
+         * # POST Assertion Response  This endpoint is used to request assertion options from the FIDO2 service. 
+         * @summary Assertion Response
+         * @param {AssertionCredentialJSON} body 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        assertionControllerAssertionResponse(body: AssertionCredentialJSON, options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<User> {
+            const localVarFetchArgs = AssertionApiFetchParamCreator(configuration).assertionControllerAssertionResponse(body, options);
+            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
+                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
+                    if (response.status >= 200 && response.status < 300) {
+                        return response.json();
+                    } else {
+                        throw response;
+                    }
+                });
+            };
+        },
+    }
+};
+
+/**
+ * AssertionApi - factory interface
+ * @export
+ */
+export const AssertionApiFactory = function (configuration?: Configuration, fetch?: FetchAPI, basePath?: string) {
+    return {
+        /**
+         * # POST Assertion Request  This endpoint is used to request assertion options from the FIDO2 service. 
+         * @summary Assertion Request
+         * @param {PublicKeyCredentialRequestOptions} body 
+         * @param {any} credId Credential ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        assertionControllerAssertionRequest(body: PublicKeyCredentialRequestOptions, credId: any, options?: any) {
+            return AssertionApiFp(configuration).assertionControllerAssertionRequest(body, credId, options)(fetch, basePath);
+        },
+        /**
+         * # POST Assertion Response  This endpoint is used to request assertion options from the FIDO2 service. 
+         * @summary Assertion Response
+         * @param {AssertionCredentialJSON} body 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        assertionControllerAssertionResponse(body: AssertionCredentialJSON, options?: any) {
+            return AssertionApiFp(configuration).assertionControllerAssertionResponse(body, options)(fetch, basePath);
+        },
+    };
+};
+
+/**
+ * AssertionApi - object-oriented interface
+ * @export
+ * @class AssertionApi
+ * @extends {BaseAPI}
+ */
+export class AssertionApi extends BaseAPI {
+    /**
+     * # POST Assertion Request  This endpoint is used to request assertion options from the FIDO2 service. 
+     * @summary Assertion Request
+     * @param {PublicKeyCredentialRequestOptions} body 
+     * @param {any} credId Credential ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AssertionApi
+     */
+    public assertionControllerAssertionRequest(body: PublicKeyCredentialRequestOptions, credId: any, options?: any) {
+        return AssertionApiFp(this.configuration).assertionControllerAssertionRequest(body, credId, options)(this.fetch, this.basePath);
+    }
+
+    /**
+     * # POST Assertion Response  This endpoint is used to request assertion options from the FIDO2 service. 
+     * @summary Assertion Response
+     * @param {AssertionCredentialJSON} body 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AssertionApi
+     */
+    public assertionControllerAssertionResponse(body: AssertionCredentialJSON, options?: any) {
+        return AssertionApiFp(this.configuration).assertionControllerAssertionResponse(body, options)(this.fetch, this.basePath);
+    }
+
+}
+/**
+ * AttestationApi - fetch parameter creator
+ * @export
+ */
+export const AttestationApiFetchParamCreator = function (configuration?: Configuration) {
+    return {
         /**
          * 
+         * @summary Attestation Response
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -440,7 +539,7 @@ export const DefaultApiFetchParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @summary Attestation Request Options
+         * @summary Attestation Request
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -461,8 +560,120 @@ export const DefaultApiFetchParamCreator = function (configuration?: Configurati
                 options: localVarRequestOptions,
             };
         },
+    }
+};
+
+/**
+ * AttestationApi - functional programming interface
+ * @export
+ */
+export const AttestationApiFp = function(configuration?: Configuration) {
+    return {
         /**
          * 
+         * @summary Attestation Response
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        attestationControllerAttestationResponse(options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+            const localVarFetchArgs = AttestationApiFetchParamCreator(configuration).attestationControllerAttestationResponse(options);
+            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
+                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
+                    if (response.status >= 200 && response.status < 300) {
+                        return response;
+                    } else {
+                        throw response;
+                    }
+                });
+            };
+        },
+        /**
+         * 
+         * @summary Attestation Request
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        attestationControllerRequest(options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+            const localVarFetchArgs = AttestationApiFetchParamCreator(configuration).attestationControllerRequest(options);
+            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
+                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
+                    if (response.status >= 200 && response.status < 300) {
+                        return response;
+                    } else {
+                        throw response;
+                    }
+                });
+            };
+        },
+    }
+};
+
+/**
+ * AttestationApi - factory interface
+ * @export
+ */
+export const AttestationApiFactory = function (configuration?: Configuration, fetch?: FetchAPI, basePath?: string) {
+    return {
+        /**
+         * 
+         * @summary Attestation Response
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        attestationControllerAttestationResponse(options?: any) {
+            return AttestationApiFp(configuration).attestationControllerAttestationResponse(options)(fetch, basePath);
+        },
+        /**
+         * 
+         * @summary Attestation Request
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        attestationControllerRequest(options?: any) {
+            return AttestationApiFp(configuration).attestationControllerRequest(options)(fetch, basePath);
+        },
+    };
+};
+
+/**
+ * AttestationApi - object-oriented interface
+ * @export
+ * @class AttestationApi
+ * @extends {BaseAPI}
+ */
+export class AttestationApi extends BaseAPI {
+    /**
+     * 
+     * @summary Attestation Response
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AttestationApi
+     */
+    public attestationControllerAttestationResponse(options?: any) {
+        return AttestationApiFp(this.configuration).attestationControllerAttestationResponse(options)(this.fetch, this.basePath);
+    }
+
+    /**
+     * 
+     * @summary Attestation Request
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AttestationApi
+     */
+    public attestationControllerRequest(options?: any) {
+        return AttestationApiFp(this.configuration).attestationControllerRequest(options)(this.fetch, this.basePath);
+    }
+
+}
+/**
+ * AuthApi - fetch parameter creator
+ * @export
+ */
+export const AuthApiFetchParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @summary Get User
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -493,6 +704,7 @@ export const DefaultApiFetchParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @summary Log Out
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -515,6 +727,7 @@ export const DefaultApiFetchParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @summary Get Session
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -566,9 +779,196 @@ export const DefaultApiFetchParamCreator = function (configuration?: Configurati
                 options: localVarRequestOptions,
             };
         },
+    }
+};
+
+/**
+ * AuthApi - functional programming interface
+ * @export
+ */
+export const AuthApiFp = function(configuration?: Configuration) {
+    return {
         /**
-         *  # Yo yo Can I get a decend documentation out of here?     
-         * @summary Submit a response from a ConnectQR Scan and login to service
+         * 
+         * @summary Get User
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authControllerKeys(options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<User> {
+            const localVarFetchArgs = AuthApiFetchParamCreator(configuration).authControllerKeys(options);
+            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
+                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
+                    if (response.status >= 200 && response.status < 300) {
+                        return response.json();
+                    } else {
+                        throw response;
+                    }
+                });
+            };
+        },
+        /**
+         * 
+         * @summary Log Out
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authControllerLogout(options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+            const localVarFetchArgs = AuthApiFetchParamCreator(configuration).authControllerLogout(options);
+            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
+                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
+                    if (response.status >= 200 && response.status < 300) {
+                        return response;
+                    } else {
+                        throw response;
+                    }
+                });
+            };
+        },
+        /**
+         * 
+         * @summary Get Session
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authControllerRead(options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+            const localVarFetchArgs = AuthApiFetchParamCreator(configuration).authControllerRead(options);
+            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
+                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
+                    if (response.status >= 200 && response.status < 300) {
+                        return response;
+                    } else {
+                        throw response;
+                    }
+                });
+            };
+        },
+        /**
+         * 
+         * @summary Delete Credential
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authControllerRemove(options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+            const localVarFetchArgs = AuthApiFetchParamCreator(configuration).authControllerRemove(options);
+            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
+                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
+                    if (response.status >= 200 && response.status < 300) {
+                        return response;
+                    } else {
+                        throw response;
+                    }
+                });
+            };
+        },
+    }
+};
+
+/**
+ * AuthApi - factory interface
+ * @export
+ */
+export const AuthApiFactory = function (configuration?: Configuration, fetch?: FetchAPI, basePath?: string) {
+    return {
+        /**
+         * 
+         * @summary Get User
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authControllerKeys(options?: any) {
+            return AuthApiFp(configuration).authControllerKeys(options)(fetch, basePath);
+        },
+        /**
+         * 
+         * @summary Log Out
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authControllerLogout(options?: any) {
+            return AuthApiFp(configuration).authControllerLogout(options)(fetch, basePath);
+        },
+        /**
+         * 
+         * @summary Get Session
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authControllerRead(options?: any) {
+            return AuthApiFp(configuration).authControllerRead(options)(fetch, basePath);
+        },
+        /**
+         * 
+         * @summary Delete Credential
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authControllerRemove(options?: any) {
+            return AuthApiFp(configuration).authControllerRemove(options)(fetch, basePath);
+        },
+    };
+};
+
+/**
+ * AuthApi - object-oriented interface
+ * @export
+ * @class AuthApi
+ * @extends {BaseAPI}
+ */
+export class AuthApi extends BaseAPI {
+    /**
+     * 
+     * @summary Get User
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AuthApi
+     */
+    public authControllerKeys(options?: any) {
+        return AuthApiFp(this.configuration).authControllerKeys(options)(this.fetch, this.basePath);
+    }
+
+    /**
+     * 
+     * @summary Log Out
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AuthApi
+     */
+    public authControllerLogout(options?: any) {
+        return AuthApiFp(this.configuration).authControllerLogout(options)(this.fetch, this.basePath);
+    }
+
+    /**
+     * 
+     * @summary Get Session
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AuthApi
+     */
+    public authControllerRead(options?: any) {
+        return AuthApiFp(this.configuration).authControllerRead(options)(this.fetch, this.basePath);
+    }
+
+    /**
+     * 
+     * @summary Delete Credential
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AuthApi
+     */
+    public authControllerRemove(options?: any) {
+        return AuthApiFp(this.configuration).authControllerRemove(options)(this.fetch, this.basePath);
+    }
+
+}
+/**
+ * ConnectApi - fetch parameter creator
+ * @export
+ */
+export const ConnectApiFetchParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Submit a response from a ConnectQR Scan and login to service
+         * @summary Connect (deprecated)
          * @param {LinkResponseDTO} body 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -602,180 +1002,20 @@ export const DefaultApiFetchParamCreator = function (configuration?: Configurati
 };
 
 /**
- * DefaultApi - functional programming interface
+ * ConnectApi - functional programming interface
  * @export
  */
-export const DefaultApiFp = function(configuration?: Configuration) {
+export const ConnectApiFp = function(configuration?: Configuration) {
     return {
         /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        androidControllerAssetLinks(options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
-            const localVarFetchArgs = DefaultApiFetchParamCreator(configuration).androidControllerAssetLinks(options);
-            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
-                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-                    if (response.status >= 200 && response.status < 300) {
-                        return response;
-                    } else {
-                        throw response;
-                    }
-                });
-            };
-        },
-        /**
-         * # POST Assertion Request  This endpoint is used to request assertion options from the FIDO2 service. 
-         * @summary Assertion Request
-         * @param {PublicKeyCredentialRequestOptions} body 
-         * @param {any} credId Credential ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        assertionControllerAssertionRequest(body: PublicKeyCredentialRequestOptions, credId: any, options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<PublicKeyCredentialRequestOptions> {
-            const localVarFetchArgs = DefaultApiFetchParamCreator(configuration).assertionControllerAssertionRequest(body, credId, options);
-            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
-                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-                    if (response.status >= 200 && response.status < 300) {
-                        return response.json();
-                    } else {
-                        throw response;
-                    }
-                });
-            };
-        },
-        /**
-         * # POST Assertion Response  This endpoint is used to request assertion options from the FIDO2 service. 
-         * @summary Assertion Response
-         * @param {AssertionCredentialJSON} body 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        assertionControllerAssertionResponse(body: AssertionCredentialJSON, options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<User> {
-            const localVarFetchArgs = DefaultApiFetchParamCreator(configuration).assertionControllerAssertionResponse(body, options);
-            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
-                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-                    if (response.status >= 200 && response.status < 300) {
-                        return response.json();
-                    } else {
-                        throw response;
-                    }
-                });
-            };
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        attestationControllerAttestationResponse(options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
-            const localVarFetchArgs = DefaultApiFetchParamCreator(configuration).attestationControllerAttestationResponse(options);
-            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
-                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-                    if (response.status >= 200 && response.status < 300) {
-                        return response;
-                    } else {
-                        throw response;
-                    }
-                });
-            };
-        },
-        /**
-         * 
-         * @summary Attestation Request Options
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        attestationControllerRequest(options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
-            const localVarFetchArgs = DefaultApiFetchParamCreator(configuration).attestationControllerRequest(options);
-            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
-                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-                    if (response.status >= 200 && response.status < 300) {
-                        return response;
-                    } else {
-                        throw response;
-                    }
-                });
-            };
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        authControllerKeys(options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<User> {
-            const localVarFetchArgs = DefaultApiFetchParamCreator(configuration).authControllerKeys(options);
-            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
-                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-                    if (response.status >= 200 && response.status < 300) {
-                        return response.json();
-                    } else {
-                        throw response;
-                    }
-                });
-            };
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        authControllerLogout(options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
-            const localVarFetchArgs = DefaultApiFetchParamCreator(configuration).authControllerLogout(options);
-            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
-                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-                    if (response.status >= 200 && response.status < 300) {
-                        return response;
-                    } else {
-                        throw response;
-                    }
-                });
-            };
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        authControllerRead(options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
-            const localVarFetchArgs = DefaultApiFetchParamCreator(configuration).authControllerRead(options);
-            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
-                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-                    if (response.status >= 200 && response.status < 300) {
-                        return response;
-                    } else {
-                        throw response;
-                    }
-                });
-            };
-        },
-        /**
-         * 
-         * @summary Delete Credential
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        authControllerRemove(options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
-            const localVarFetchArgs = DefaultApiFetchParamCreator(configuration).authControllerRemove(options);
-            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
-                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-                    if (response.status >= 200 && response.status < 300) {
-                        return response;
-                    } else {
-                        throw response;
-                    }
-                });
-            };
-        },
-        /**
-         *  # Yo yo Can I get a decend documentation out of here?     
-         * @summary Submit a response from a ConnectQR Scan and login to service
+         * Submit a response from a ConnectQR Scan and login to service
+         * @summary Connect (deprecated)
          * @param {LinkResponseDTO} body 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         connectControllerLinkWalletResponse(body: LinkResponseDTO, options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
-            const localVarFetchArgs = DefaultApiFetchParamCreator(configuration).connectControllerLinkWalletResponse(body, options);
+            const localVarFetchArgs = ConnectApiFetchParamCreator(configuration).connectControllerLinkWalletResponse(body, options);
             return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
                 return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
                     if (response.status >= 200 && response.status < 300) {
@@ -790,217 +1030,137 @@ export const DefaultApiFp = function(configuration?: Configuration) {
 };
 
 /**
- * DefaultApi - factory interface
+ * ConnectApi - factory interface
  * @export
  */
-export const DefaultApiFactory = function (configuration?: Configuration, fetch?: FetchAPI, basePath?: string) {
+export const ConnectApiFactory = function (configuration?: Configuration, fetch?: FetchAPI, basePath?: string) {
     return {
         /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        androidControllerAssetLinks(options?: any) {
-            return DefaultApiFp(configuration).androidControllerAssetLinks(options)(fetch, basePath);
-        },
-        /**
-         * # POST Assertion Request  This endpoint is used to request assertion options from the FIDO2 service. 
-         * @summary Assertion Request
-         * @param {PublicKeyCredentialRequestOptions} body 
-         * @param {any} credId Credential ID
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        assertionControllerAssertionRequest(body: PublicKeyCredentialRequestOptions, credId: any, options?: any) {
-            return DefaultApiFp(configuration).assertionControllerAssertionRequest(body, credId, options)(fetch, basePath);
-        },
-        /**
-         * # POST Assertion Response  This endpoint is used to request assertion options from the FIDO2 service. 
-         * @summary Assertion Response
-         * @param {AssertionCredentialJSON} body 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        assertionControllerAssertionResponse(body: AssertionCredentialJSON, options?: any) {
-            return DefaultApiFp(configuration).assertionControllerAssertionResponse(body, options)(fetch, basePath);
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        attestationControllerAttestationResponse(options?: any) {
-            return DefaultApiFp(configuration).attestationControllerAttestationResponse(options)(fetch, basePath);
-        },
-        /**
-         * 
-         * @summary Attestation Request Options
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        attestationControllerRequest(options?: any) {
-            return DefaultApiFp(configuration).attestationControllerRequest(options)(fetch, basePath);
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        authControllerKeys(options?: any) {
-            return DefaultApiFp(configuration).authControllerKeys(options)(fetch, basePath);
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        authControllerLogout(options?: any) {
-            return DefaultApiFp(configuration).authControllerLogout(options)(fetch, basePath);
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        authControllerRead(options?: any) {
-            return DefaultApiFp(configuration).authControllerRead(options)(fetch, basePath);
-        },
-        /**
-         * 
-         * @summary Delete Credential
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        authControllerRemove(options?: any) {
-            return DefaultApiFp(configuration).authControllerRemove(options)(fetch, basePath);
-        },
-        /**
-         *  # Yo yo Can I get a decend documentation out of here?     
-         * @summary Submit a response from a ConnectQR Scan and login to service
+         * Submit a response from a ConnectQR Scan and login to service
+         * @summary Connect (deprecated)
          * @param {LinkResponseDTO} body 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         connectControllerLinkWalletResponse(body: LinkResponseDTO, options?: any) {
-            return DefaultApiFp(configuration).connectControllerLinkWalletResponse(body, options)(fetch, basePath);
+            return ConnectApiFp(configuration).connectControllerLinkWalletResponse(body, options)(fetch, basePath);
         },
     };
 };
 
 /**
- * DefaultApi - object-oriented interface
+ * ConnectApi - object-oriented interface
  * @export
- * @class DefaultApi
+ * @class ConnectApi
  * @extends {BaseAPI}
  */
-export class DefaultApi extends BaseAPI {
+export class ConnectApi extends BaseAPI {
     /**
-     * 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public androidControllerAssetLinks(options?: any) {
-        return DefaultApiFp(this.configuration).androidControllerAssetLinks(options)(this.fetch, this.basePath);
-    }
-
-    /**
-     * # POST Assertion Request  This endpoint is used to request assertion options from the FIDO2 service. 
-     * @summary Assertion Request
-     * @param {PublicKeyCredentialRequestOptions} body 
-     * @param {any} credId Credential ID
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public assertionControllerAssertionRequest(body: PublicKeyCredentialRequestOptions, credId: any, options?: any) {
-        return DefaultApiFp(this.configuration).assertionControllerAssertionRequest(body, credId, options)(this.fetch, this.basePath);
-    }
-
-    /**
-     * # POST Assertion Response  This endpoint is used to request assertion options from the FIDO2 service. 
-     * @summary Assertion Response
-     * @param {AssertionCredentialJSON} body 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public assertionControllerAssertionResponse(body: AssertionCredentialJSON, options?: any) {
-        return DefaultApiFp(this.configuration).assertionControllerAssertionResponse(body, options)(this.fetch, this.basePath);
-    }
-
-    /**
-     * 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public attestationControllerAttestationResponse(options?: any) {
-        return DefaultApiFp(this.configuration).attestationControllerAttestationResponse(options)(this.fetch, this.basePath);
-    }
-
-    /**
-     * 
-     * @summary Attestation Request Options
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public attestationControllerRequest(options?: any) {
-        return DefaultApiFp(this.configuration).attestationControllerRequest(options)(this.fetch, this.basePath);
-    }
-
-    /**
-     * 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public authControllerKeys(options?: any) {
-        return DefaultApiFp(this.configuration).authControllerKeys(options)(this.fetch, this.basePath);
-    }
-
-    /**
-     * 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public authControllerLogout(options?: any) {
-        return DefaultApiFp(this.configuration).authControllerLogout(options)(this.fetch, this.basePath);
-    }
-
-    /**
-     * 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public authControllerRead(options?: any) {
-        return DefaultApiFp(this.configuration).authControllerRead(options)(this.fetch, this.basePath);
-    }
-
-    /**
-     * 
-     * @summary Delete Credential
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public authControllerRemove(options?: any) {
-        return DefaultApiFp(this.configuration).authControllerRemove(options)(this.fetch, this.basePath);
-    }
-
-    /**
-     *  # Yo yo Can I get a decend documentation out of here?     
-     * @summary Submit a response from a ConnectQR Scan and login to service
+     * Submit a response from a ConnectQR Scan and login to service
+     * @summary Connect (deprecated)
      * @param {LinkResponseDTO} body 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof DefaultApi
+     * @memberof ConnectApi
      */
     public connectControllerLinkWalletResponse(body: LinkResponseDTO, options?: any) {
-        return DefaultApiFp(this.configuration).connectControllerLinkWalletResponse(body, options)(this.fetch, this.basePath);
+        return ConnectApiFp(this.configuration).connectControllerLinkWalletResponse(body, options)(this.fetch, this.basePath);
+    }
+
+}
+/**
+ * WellKnownApi - fetch parameter creator
+ * @export
+ */
+export const WellKnownApiFetchParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @summary Android Asset Links
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        androidControllerAssetLinks(options: any = {}): FetchArgs {
+            const localVarPath = `/.well-known/assetlinks.json`;
+            const localVarUrlObj = url.parse(localVarPath, true);
+            const localVarRequestOptions = Object.assign({ method: 'GET' }, options);
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarUrlObj.query = Object.assign({}, localVarUrlObj.query, localVarQueryParameter, options.query);
+            // fix override query string Detail: https://stackoverflow.com/a/7517673/1077943
+            delete localVarUrlObj.search;
+            localVarRequestOptions.headers = Object.assign({}, localVarHeaderParameter, options.headers);
+
+            return {
+                url: url.format(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * WellKnownApi - functional programming interface
+ * @export
+ */
+export const WellKnownApiFp = function(configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @summary Android Asset Links
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        androidControllerAssetLinks(options?: any): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+            const localVarFetchArgs = WellKnownApiFetchParamCreator(configuration).androidControllerAssetLinks(options);
+            return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
+                return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
+                    if (response.status >= 200 && response.status < 300) {
+                        return response;
+                    } else {
+                        throw response;
+                    }
+                });
+            };
+        },
+    }
+};
+
+/**
+ * WellKnownApi - factory interface
+ * @export
+ */
+export const WellKnownApiFactory = function (configuration?: Configuration, fetch?: FetchAPI, basePath?: string) {
+    return {
+        /**
+         * 
+         * @summary Android Asset Links
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        androidControllerAssetLinks(options?: any) {
+            return WellKnownApiFp(configuration).androidControllerAssetLinks(options)(fetch, basePath);
+        },
+    };
+};
+
+/**
+ * WellKnownApi - object-oriented interface
+ * @export
+ * @class WellKnownApi
+ * @extends {BaseAPI}
+ */
+export class WellKnownApi extends BaseAPI {
+    /**
+     * 
+     * @summary Android Asset Links
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WellKnownApi
+     */
+    public androidControllerAssetLinks(options?: any) {
+        return WellKnownApiFp(this.configuration).androidControllerAssetLinks(options)(this.fetch, this.basePath);
     }
 
 }

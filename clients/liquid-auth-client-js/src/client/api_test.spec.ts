@@ -15,15 +15,12 @@ import { Configuration } from "./configuration.js"
 
 const config: Configuration = {}
 
-describe("DefaultApi", () => {
-  let instance: api.DefaultApi
+describe("AssertionApi", () => {
+  let instance: api.AssertionApi
   beforeEach(function() {
-    instance = new api.DefaultApi(config)
+    instance = new api.AssertionApi(config)
   });
 
-  test("androidControllerAssetLinks", () => {
-    return expect(instance.androidControllerAssetLinks({})).resolves.toBe(null)
-  })
   test("assertionControllerAssertionRequest", () => {
     const body: api.PublicKeyCredentialRequestOptions = undefined
     const credId: any = undefined
@@ -33,12 +30,28 @@ describe("DefaultApi", () => {
     const body: api.AssertionCredentialJSON = undefined
     return expect(instance.assertionControllerAssertionResponse(body, {})).resolves.toBe(null)
   })
+})
+
+describe("AttestationApi", () => {
+  let instance: api.AttestationApi
+  beforeEach(function() {
+    instance = new api.AttestationApi(config)
+  });
+
   test("attestationControllerAttestationResponse", () => {
     return expect(instance.attestationControllerAttestationResponse({})).resolves.toBe(null)
   })
   test("attestationControllerRequest", () => {
     return expect(instance.attestationControllerRequest({})).resolves.toBe(null)
   })
+})
+
+describe("AuthApi", () => {
+  let instance: api.AuthApi
+  beforeEach(function() {
+    instance = new api.AuthApi(config)
+  });
+
   test("authControllerKeys", () => {
     return expect(instance.authControllerKeys({})).resolves.toBe(null)
   })
@@ -51,9 +64,28 @@ describe("DefaultApi", () => {
   test("authControllerRemove", () => {
     return expect(instance.authControllerRemove({})).resolves.toBe(null)
   })
+})
+
+describe("ConnectApi", () => {
+  let instance: api.ConnectApi
+  beforeEach(function() {
+    instance = new api.ConnectApi(config)
+  });
+
   test("connectControllerLinkWalletResponse", () => {
     const body: api.LinkResponseDTO = undefined
     return expect(instance.connectControllerLinkWalletResponse(body, {})).resolves.toBe(null)
+  })
+})
+
+describe("WellKnownApi", () => {
+  let instance: api.WellKnownApi
+  beforeEach(function() {
+    instance = new api.WellKnownApi(config)
+  });
+
+  test("androidControllerAssetLinks", () => {
+    return expect(instance.androidControllerAssetLinks({})).resolves.toBe(null)
   })
 })
 

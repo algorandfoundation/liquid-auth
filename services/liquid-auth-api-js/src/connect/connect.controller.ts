@@ -13,7 +13,7 @@ import { AuthService } from '../auth/auth.service.js';
 import { AlgodService } from '../algod/algod.service.js';
 import nacl from 'tweetnacl';
 import { decodeAddress, fromBase64Url } from '@liquid/core/encoding';
-import { ApiBody, ApiOkResponse, ApiOperation, ApiProperty } from "@nestjs/swagger";
+import { ApiBody, ApiOkResponse, ApiOperation, ApiProperty, ApiTags } from "@nestjs/swagger";
 
 type LinkResponseDTOType = {
   credId?: string;
@@ -37,6 +37,7 @@ class LinkResponseDTO implements LinkResponseDTOType {
 }
 
 @Controller('connect')
+@ApiTags('connect')
 export class ConnectController {
   private readonly logger = new Logger(ConnectController.name);
 
@@ -58,11 +59,8 @@ export class ConnectController {
    */
   @Post('response')
   @ApiOperation({
-    description: `
-# Yo yo
-Can I get a decend documentation out of here?
-    `,
-    summary: 'Submit a response from a ConnectQR Scan and login to service'
+    description: 'Submit a response from a ConnectQR Scan and login to service',
+    summary: 'Connect (deprecated)'
   })
   @ApiBody({ type: LinkResponseDTO })
   @ApiOkResponse({ description: 'Successfully attested public key' })

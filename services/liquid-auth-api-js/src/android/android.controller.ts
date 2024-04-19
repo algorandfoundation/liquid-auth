@@ -2,7 +2,9 @@ import { Controller, Get, Logger, Req, Res } from '@nestjs/common';
 import type { Response } from 'express';
 //@ts-ignore, required for jest
 import assetLinks from '../../assetlinks.json' assert { type: 'json' };
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
 @Controller('.well-known')
+@ApiTags('.well-known')
 export class AndroidController {
   private readonly logger = new Logger(AndroidController.name);
 
@@ -14,6 +16,7 @@ export class AndroidController {
    * @param res
    *
    */
+  @ApiOperation({ summary: 'Asset Links' })
   @Get('/assetlinks.json')
   assetLinks(@Req() req: Request, @Res() res: Response) {
     this.logger.debug(

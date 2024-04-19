@@ -23,7 +23,7 @@ import {
   ApiForbiddenResponse,
   ApiOperation,
   ApiParam,
-  ApiResponse,
+  ApiResponse, ApiTags,
   ApiUnauthorizedResponse
 } from "@nestjs/swagger";
 import { User } from "../auth/auth.schema.js";
@@ -31,6 +31,7 @@ const filePath = join(process.cwd(), './src/assertion');
 const requestDescription = readFileSync(join(filePath, 'assertion.controller.post.request.md')).toString();
 const responseDescription = readFileSync(join(filePath, 'assertion.controller.post.response.md')).toString();
 @Controller('assertion')
+@ApiTags('assertion')
 export class AssertionController {
   private readonly logger = new Logger(AssertionController.name);
   constructor(
@@ -55,6 +56,7 @@ export class AssertionController {
   @Post('/request/:credId')
   @ApiOperation({ summary: 'Assertion Request', description: requestDescription })
   @ApiParam({ name: 'credId', description: 'Credential ID', required: true })
+  @ApiBody({ type: PublicKeyCredentialRequestOptions })
   @ApiResponse({ status: 201, description: 'Successfully created options', type: PublicKeyCredentialRequestOptions })
   @ApiResponse({ status: 404, description: 'Not Found' })
   async assertionRequest(
