@@ -1,0 +1,23 @@
+---
+const title = 'Web3 meets real world';
+const titleEmph = 'Authentication';
+
+const descPartOne = 'Enabled by FIDO2/WebAuthn Liquid Auth unlocks the power of everyday authenication syustems and bridges it to elliptic curves.';
+const descPartTwo = 'Give your users an unmatched UX'
+---
+<div class="h-full flex justify-center items-center relative isolate">
+  <div class="absolute inset-x-0 -top-120 -z-10 transform-gpu overflow-hidden lg:top-120" aria-hidden="true">
+    <img src="./waves_left.svg" class="relative h-[60rem] lg:h-auto -left-40 rotate-90 lg:rotate-0  lg:left-[calc(50%-39rem)]" />
+  </div>
+  <div class="mx-auto max-w-5xl py-32 sm:py-48 lg:py-56">
+    <div class="text-center">
+      <h1 class="text-8xl font-poppins font-bold tracking-tight text-white">{title}</h1>
+      <h1 class="mt-4 text-8xl font-poppins font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-liquid-blue to-liquid-alt-purple to-60%">{titleEmph}</h1>
+      <p class="mt-6 mb-10 max-w-xl mx-auto font-poppins text-xl leading-8 text-gray-300">{descPartOne}<br>{descPartTwo}</p>
+      <a href="/docs" class="lg:hidden px-6 py-2 text-2xl font-poppins uppercase rounded-full leading-6 bg-liquid-purple text-white">Check out the Docs</a>
+    </div>
+  </div>
+  <div class="absolute inset-x-0 -bottom-40 lg:bottom-[unset] lg:top-40 -z-10 transform-gpu overflow-hidden" aria-hidden="true">
+    <img src="./waves_right.svg" class="relative h-[60rem] lg:h-auto -right-60 lg:right-[unset] lg:left-[calc(50%+30rem)] lg:-translate-x-1/2 -scale-x-100 lg:scale-x-100" />
+  </div>
+</div>
