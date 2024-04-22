@@ -34,15 +34,31 @@ WebAuthn requires a secure context (HTTPS) to work and this will not allow you t
 Sign up for a free account at [ngrok](https://ngrok.com/) and install the ngrok package.
 Configure a Static Domain for your ngrok account and update the [.env](services/liquid-auth-api-js/README.md) file with the following keys with the values from ngrok:
 
+
+#### Configure NGROK
+
+```bash
+cp ./ngrok.template.yml ngrok.yml
+```
+
+Make sure to update the `authtoken` and `domain` in the `ngrok.yml` file with your ngrok details.
+
+```yaml
+version: 2
+authtoken: <NGROK_AUTH_TOKEN>
+tunnels:
+  website:
+    addr: 5173
+    proto: http
+    domain: <STATIC_DOMAIN>
+
+```
+
+#### Update the Service's .docker.env file
+
 ```bash
 HOSTNAME=example-static-domain.ngrok-free.app
 ORIGIN=https://example-static-domain.ngrok-free.app
-```
-
-#### Run the ngrok proxy
-
-```bash
-ngrok http --domain=example-static-domain.ngrok-free.app 5173
 ```
 
 #### Start services
@@ -51,11 +67,6 @@ Run the following command to start the backend:
 
 ```bash
 docker-compose up -d
-```
-
-#### Run the Demo App 
-```bash
-npm run dev:ui
 ```
 
 Navigate to the ngrok URL in your browser to test the FIDO2 feature.
