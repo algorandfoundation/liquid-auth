@@ -12,9 +12,10 @@ import { ColorModeContext } from './Contexts';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import { SessionMenu } from './components/user/SessionMenu.tsx';
-import { MessageSnackbar } from './components/Snackbar.tsx';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useSignalClient } from '@/hooks/useSignalClient.ts';
 export default function Layout({ children }: PropsWithChildren) {
+  const { dataChannel } = useSignalClient();
   const location = useLocation();
   const navigate = useNavigate();
   const colorMode = useContext(ColorModeContext);
@@ -23,8 +24,9 @@ export default function Layout({ children }: PropsWithChildren) {
   const bubbleStyle = {
     backgroundColor: isDarkMode ? 'white' : 'black',
   };
-  const breadcrumbs = ['/', '/peering', '/connected', '/registered'];
+  const breadcrumbs = ['/', '/connected'];
   const index = breadcrumbs.indexOf(location.pathname);
+  console.log(index);
   return (
     <>
       <AppBar
@@ -38,6 +40,7 @@ export default function Layout({ children }: PropsWithChildren) {
           </Typography>
           <IconButton
             onClick={() => {
+              console.log('navigate to ', breadcrumbs[index - 1]);
               index > 0 && navigate(breadcrumbs[index - 1]);
             }}
             aria-label="delete"
@@ -52,7 +55,7 @@ export default function Layout({ children }: PropsWithChildren) {
                 navigate(breadcrumbs[index + 1]);
             }}
             aria-label="delete"
-            disabled={index === breadcrumbs.length - 1}
+            disabled={index === breadcrumbs.length - 1 || dataChannel === null}
             color="inherit"
           >
             <NavigateNextIcon />
@@ -77,10 +80,7 @@ export default function Layout({ children }: PropsWithChildren) {
         maxWidth="md"
         sx={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'auto' }}
       >
-        <Box sx={{ my: 4, flex: 1 }}>
-          {children}
-          <MessageSnackbar />
-        </Box>
+        <Box sx={{ my: 4, flex: 1 }}>{children}</Box>
       </Container>
       <div className="ocean">
         <div className="bubble bubble--1" style={bubbleStyle}></div>

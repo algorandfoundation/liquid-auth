@@ -3,10 +3,12 @@ import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import CardActions from '@mui/material/CardActions';
 import Card from '@mui/material/Card';
-import { ConnectModal } from '@/components/ConnectModal';
 import Button from '@mui/material/Button';
-import { assertion } from '@liquid/auth-client';
+
 import { useNavigate } from 'react-router-dom';
+import { ConnectModal } from '@/components/ConnectModal';
+import { assertion } from '@liquid/auth-client/assertion';
+
 export function HomePage() {
   const credId = window.localStorage.getItem('credId');
   const navigate = useNavigate();
@@ -42,7 +44,7 @@ export function HomePage() {
         {credId && (
           <Button
             onClick={async () => {
-              await assertion(credId);
+              await assertion(window.origin, credId);
               navigate('/peering');
             }}
           >

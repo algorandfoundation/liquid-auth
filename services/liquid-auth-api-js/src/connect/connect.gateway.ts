@@ -95,6 +95,7 @@ export class ConnectGateway
       clearInterval(this.timers.get(request.sessionID));
     }
   }
+
   /**
    * On Link Connection, wait for the wallet to connect
    * @param client

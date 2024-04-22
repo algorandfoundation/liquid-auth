@@ -16,5 +16,7 @@
         "plugin:prettier/recommended"
     ],
     "rules": {
+        "@typescript-eslint/no-explicit-any": "warn",
+        "no-var": "warn"
     }
 }

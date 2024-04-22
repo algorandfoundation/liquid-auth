@@ -1,15 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
-import {
-  ColorModeContext,
-  DataChannelContext,
-  PeerConnectionContext,
-  SnackbarContext,
-  StateContext,
-} from './Contexts';
+import { ColorModeContext } from './Contexts';
 import Layout from './Layout';
-
-import { HomePage } from './pages/home.tsx';
 import { createTheme, CssBaseline } from '@mui/material';
 import { DEFAULT_THEME } from './theme.tsx';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
@@ -17,29 +9,18 @@ import { ThemeProvider } from '@emotion/react';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 import { createHashRouter, RouterProvider } from 'react-router-dom';
-import { PeeringPage } from './pages/peering.tsx';
-import ConnectedPage from './pages/connected.tsx';
+import { HomePage, ConnectedPage } from '@/pages';
 import { Algodv2 } from 'algosdk';
-import { AlgodContext } from './hooks/useAlgod.ts';
+import { AlgodContext } from '@/hooks';
+import { SignalClientContext } from '@/hooks/useSignalClient.ts';
+import { LinkMessage, SignalClient } from '@liquid/auth-client/signal';
 const queryClient = new QueryClient();
 
 const algod = new Algodv2(
-  process.env.VITE_ALGOD_TOKEN || '',
-  process.env.VITE_ALGOD_SERVER || 'https://testnet-api.algonode.cloud',
-  process.env.VITE_ALGOD_PORT || 443,
+  import.meta.env.VITE_ALGOD_TOKEN || '',
+  import.meta.env.VITE_ALGOD_SERVER || 'https://testnet-api.algonode.cloud',
+  import.meta.env.VITE_ALGOD_PORT || 443,
 );
-const DEFAULT_CONFIG: RTCConfiguration = {
-  iceServers: [
-    {
-      urls: [
-        'stun:stun.l.google.com:19302',
-        'stun:stun1.l.google.com:19302',
-        'stun:stun2.l.google.com:19302',
-      ],
-    },
-  ],
-  iceCandidatePoolSize: 10,
-};
 
 const router = createHashRouter([
   {
@@ -47,14 +28,6 @@ const router = createHashRouter([
     element: (
       <Layout>
         <HomePage />
-      </Layout>
-    ),
-  },
-  {
-    path: '/peering',
-    element: (
-      <Layout>
-        <PeeringPage />
       </Layout>
     ),
   },
@@ -68,15 +41,8 @@ const router = createHashRouter([
   },
 ]);
 export default function ProviderApp() {
-  const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState('');
-  const [state, setState] = useState('peering');
   const [dataChannel, setDataChannel] = useState<RTCDataChannel | null>(null);
 
-  const peerConnection = useMemo(
-    () => new RTCPeerConnection(DEFAULT_CONFIG),
-    [],
-  );
   const [mode, setMode] = useState<'light' | 'dark'>(
     window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
       ? 'dark'
@@ -105,30 +71,65 @@ export default function ProviderApp() {
       }),
     [mode],
   );
-  console.log(theme, DEFAULT_THEME.palette);
+
+  const [client, setClient] = useState<SignalClient | null>(
+    new SignalClient(window.origin),
+  );
+  const [status, setStatus] = useState<'connected' | 'disconnected'>(
+    'disconnected',
+  );
+  useEffect(() => {
+    if (!client) return;
+    function handleDataChannel(dc: RTCDataChannel) {
+      console.log('SignalClient datachannel', dc);
+      setDataChannel(dc);
+    }
+    client.on('data-channel', handleDataChannel);
+    function handleSocketConnect() {
+      console.log('Socket Connect');
+      setStatus('connected');
+    }
+    client.on('connect', handleSocketConnect);
+    function handleLinkMessage(msg: LinkMessage) {
+      window.localStorage.setItem('wallet', JSON.stringify(msg.wallet));
+    }
+    client.on('link-message', handleLinkMessage);
+
+    function handleSocketDisconnect() {
+      console.log('Socket Disconnect');
+      setStatus('disconnected');
+    }
+    client.on('disconnect', handleSocketDisconnect);
+    return () => {
+      console.log('removing emitters');
+      client.off('link-message', handleLinkMessage);
+      client.off('data-channel', handleDataChannel);
+      client.off('connect', handleSocketConnect);
+      client.off('disconnect', handleSocketDisconnect);
+    };
+  }, [client]);
   return (
-    <AlgodContext.Provider value={{ algod }}>
-      <QueryClientProvider client={queryClient}>
-        <SnackbarContext.Provider
-          value={{ open, setOpen, message, setMessage }}
-        >
-          <StateContext.Provider value={{ state, setState }}>
-            <ColorModeContext.Provider value={colorMode}>
-              <ThemeProvider theme={theme}>
-                <CssBaseline />
-                <PeerConnectionContext.Provider value={{ peerConnection }}>
-                  <DataChannelContext.Provider
-                    value={{ dataChannel, setDataChannel }}
-                  >
-                    <RouterProvider router={router} />
-                  </DataChannelContext.Provider>
-                </PeerConnectionContext.Provider>
-                <ReactQueryDevtools initialIsOpen={false} />
-              </ThemeProvider>
-            </ColorModeContext.Provider>
-          </StateContext.Provider>
-        </SnackbarContext.Provider>
-      </QueryClientProvider>
-    </AlgodContext.Provider>
+    <SignalClientContext.Provider
+      value={{
+        client,
+        setClient,
+        status,
+        setStatus,
+        dataChannel,
+        setDataChannel,
+      }}
+    >
+      <AlgodContext.Provider value={{ algod }}>
+        <QueryClientProvider client={queryClient}>
+          <ColorModeContext.Provider value={colorMode}>
+            <ThemeProvider theme={theme}>
+              <CssBaseline />
+              <RouterProvider router={router} />
+              <ReactQueryDevtools initialIsOpen={false} />
+            </ThemeProvider>
+          </ColorModeContext.Provider>
+        </QueryClientProvider>
+      </AlgodContext.Provider>
+    </SignalClientContext.Provider>
   );
 }

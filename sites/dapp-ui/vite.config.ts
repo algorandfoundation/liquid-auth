@@ -1,51 +1,26 @@
+import 'dotenv/config'
 import { defineConfig, splitVendorChunkPlugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
 import react from '@vitejs/plugin-react-swc';
-import { rename } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { mkdirp } from 'mkdirp';
 
-const API_DIR = resolve(
-  __dirname,
-  '..',
-  '..',
-  'services',
-  'liquid-auth-api-js',
-);
-const PUBLIC_DIR = resolve(API_DIR, 'public');
-const VIEW_DIR = resolve(API_DIR, 'views');
-console.log(API_DIR);
+const DEFAULT_PROXY_URL = 'http://localhost:3000';
+const DEFAULT_WSS_PROXY_URL = 'ws://localhost:3000';
+
 export default defineConfig({
-  // base: '/app',
   server: {
-    hmr: {
-      port: 8000,
-      host: 'localhost',
-    },
-    // proxy: {
-    //     '^/auth/.*': 'http://localhost:3000',
-    //     '^/connect/.*': 'http://localhost:3000',
-    //     '^/attestation/.*': 'http://localhost:3000',
-    //     '^/assertion/.*': 'http://localhost:3000',
-    //     '/socket.io': {
-    //         target: 'ws://localhost:3000',
-    //         ws: true,
-    //     },
-    // }
-  },
-  build: {
-    // rollupOptions: {
-    //     output: {
-    //         manualChunks: {
-    //             // 'algorand': ['tweetnacl', 'algosdk'],
-    //             'socket.io': ['socket.io-client'],
-    //             'react': ['react', 'react-dom', '@tanstack/react-query'],
-    //             'material': ['@mui/material', '@mui/icons-material']
-    //         }
-    //     }
-    // },
-    outDir: PUBLIC_DIR,
+    proxy: {
+        '^/auth/.*': process.env.PROXY_URL || DEFAULT_PROXY_URL,
+        '^/.well-known/.*': process.env.PROXY_URL || DEFAULT_PROXY_URL,
+        '^/connect/.*': process.env.PROXY_URL || DEFAULT_PROXY_URL,
+        '^/attestation/.*': process.env.PROXY_URL || DEFAULT_PROXY_URL,
+        '^/assertion/.*': process.env.PROXY_URL || DEFAULT_PROXY_URL,
+        '/socket.io': {
+            target: process.env.WSS_PROXY_SERVER || DEFAULT_WSS_PROXY_URL,
+            ws: true,
+        },
+    }
   },
   resolve: {
     alias: {
@@ -113,19 +88,5 @@ export default defineConfig({
     splitVendorChunkPlugin(),
     ViteImageOptimizer(),
     react(),
-    {
-      name: 'move-index-file',
-      closeBundle: async () => {
-        await mkdirp(VIEW_DIR);
-        try {
-          await rename(
-            resolve(PUBLIC_DIR, 'index.html'),
-            resolve(VIEW_DIR, 'index.html'),
-          );
-        } catch (e) {
-          console.log('Skipping');
-        }
-      },
-    },
   ],
 });

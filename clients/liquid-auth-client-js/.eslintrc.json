@@ -9,12 +9,14 @@
         "sourceType": "module"
     },
     "plugins": [
-        "@typescript-eslint/eslint-plugin"
+        "@typescript-eslint/eslint-plugin",
+        "eslint-plugin-tsdoc"
     ],
     "extends": [
         "plugin:@typescript-eslint/recommended",
         "plugin:prettier/recommended"
     ],
     "rules": {
+        "@typescript-eslint/no-explicit-any": "warn"
     }
 }

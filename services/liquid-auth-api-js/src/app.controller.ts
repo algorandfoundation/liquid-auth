@@ -1,10 +1,6 @@
 import { Controller, Get, Logger, Req, Res, Session } from '@nestjs/common';
 import type { Response } from 'express';
 
-// ignore due to jest
-// @ts-ignore
-import assetLinks from '../assetlinks.json' with { type: 'json' };
-
 @Controller()
 export class AppController {
   private readonly logger = new Logger(AppController.name);

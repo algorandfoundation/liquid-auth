@@ -1,14 +1,18 @@
 import { Avatar, Badge, CircularProgress, Menu } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
-import React, { useState } from 'react';
-import { useSocket } from '@/hooks/useSocket.ts';
+import React, { useEffect, useState } from 'react';
 import { useUserState } from '@/hooks/useUserState.ts';
 import { StatusCard } from './StatusCard.tsx';
+import { useSignalClient } from '@/hooks/useSignalClient.ts';
 
 export function SessionMenu() {
   const state = useUserState();
-  const { isConnected } = useSocket();
-
+  const { status, dataChannel } = useSignalClient();
+  const hasDataChannel = !!dataChannel && dataChannel.readyState === 'open';
+  const isConnected = status === 'connected';
+  const [badgeColor, setBadgeColor] = useState<'error' | 'success' | 'warning'>(
+    'error',
+  );
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -17,6 +21,16 @@ export function SessionMenu() {
   const handleClose = () => {
     setAnchorEl(null);
   };
+
+  // Update badge color based on connection status
+  useEffect(() => {
+    if (isConnected && hasDataChannel) {
+      setBadgeColor('success');
+    }
+    if (isConnected && !hasDataChannel) {
+      setBadgeColor('warning');
+    }
+  }, [dataChannel, isConnected]);
 
   return (
     <>
@@ -27,7 +41,7 @@ export function SessionMenu() {
         aria-label="menu"
         onClick={handleClick}
       >
-        <Badge variant="dot" color={isConnected ? 'success' : 'error'}>
+        <Badge variant="dot" color={badgeColor}>
           <Avatar alt="Liquid Auth" src="/logo-background.svg" />
         </Badge>
       </IconButton>
@@ -59,7 +73,7 @@ export function SessionMenu() {
         {state.isLoading && <CircularProgress />}
         {state.isFetched && (
           <StatusCard
-            socket={{ isConnected }}
+            socket={{ isConnected, hasDataChannel }}
             session={state.data.session}
             user={state.data.user}
           />

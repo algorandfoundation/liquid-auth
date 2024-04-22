@@ -1,9 +1,21 @@
+/**
+ * This module is deprecated
+ */
 import { DEFAULT_FETCH_OPTIONS } from './constants.js';
 import type { Account } from 'algosdk';
 import type { SignKeyPair } from 'tweetnacl';
 import nacl from 'tweetnacl';
 import { toBase64URL, encodeAddress } from '@liquid/core/encoding';
+import {
+  INVALID_INPUT_MESSAGE,
+  isValidResponse,
+  UNSIGNED_MESSAGE,
+} from './errors.js';
 
+/**
+ * @todo: Refactor auth message to FIDO extension
+ * @deprecated
+ */
 export class Message {
   /**
    * Origin of the Request
@@ -50,6 +62,7 @@ export class Message {
    * Sign Message with Wallet Key
    *
    * @param key
+   * @deprecated
    */
   sign(key: string | Account | Uint8Array | SignKeyPair): this {
     const encoder = new TextEncoder();
@@ -117,19 +130,36 @@ export class Message {
   }
 }
 
+/**
+ *
+ * @deprecated
+ * @param origin
+ * @param requestId
+ */
 export async function fetchConnectRequest(origin: string, requestId: number) {
+  if (typeof origin !== 'string' || typeof requestId !== 'number')
+    throw new TypeError(INVALID_INPUT_MESSAGE);
   return await fetch(`${origin}/connect/request`, {
     ...DEFAULT_FETCH_OPTIONS,
     body: JSON.stringify({ requestId }),
   });
 }
+
+/**
+ * @deprecated
+ * @param msg
+ */
 export async function fetchConnectResponse(msg: Message) {
+  if (!(msg instanceof Message)) throw new TypeError(INVALID_INPUT_MESSAGE);
   if (typeof msg.signature === 'undefined') {
-    throw new TypeError('Message must be signed!');
+    throw new TypeError(UNSIGNED_MESSAGE);
   }
   return await fetch('/connect/response', {
     ...DEFAULT_FETCH_OPTIONS,
     body: JSON.stringify(msg),
+  }).then((r) => {
+    if (!isValidResponse(r)) throw new Error(r.statusText);
+    return r.json();
   });
 }
 
@@ -138,12 +168,19 @@ export async function fetchConnectResponse(msg: Message) {
  * @param origin
  * @param requestId
  * @param key
+ * @deprecated
  */
 export async function connect(
   origin: string,
   requestId: number,
   key: string | Account | Uint8Array | SignKeyPair,
 ) {
+  if (
+    typeof origin !== 'string' ||
+    typeof requestId !== 'number' ||
+    typeof key === 'undefined'
+  )
+    throw new TypeError(INVALID_INPUT_MESSAGE);
   const msg = await Message.fromResponse(
     await fetchConnectRequest(origin, requestId),
   );

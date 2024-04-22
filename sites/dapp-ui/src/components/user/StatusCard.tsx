@@ -9,6 +9,7 @@ import { User } from './types.ts';
 export type ProfileCardProps = {
   socket: {
     isConnected: boolean;
+    hasDataChannel: boolean;
   };
   session: {
     wallet?: string;

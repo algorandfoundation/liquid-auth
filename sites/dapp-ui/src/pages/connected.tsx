@@ -1,9 +1,5 @@
-import {
-  useDataChannel,
-  useDataChannelMessages,
-} from '../hooks/useDataChannel.ts';
-import { PeerConnectionContext } from '../hooks/usePeerConnection.ts';
-import { useContext, useEffect, useState } from 'react';
+import { useDataChannel } from '@/hooks/useDataChannel.ts';
+import { useEffect, useState } from 'react';
 import Button from '@mui/material/Button';
 import {
   Transaction,
@@ -12,20 +8,21 @@ import {
   makePaymentTxnWithSuggestedParamsFromObject,
 } from 'algosdk';
 import { toBase64URL, fromBase64Url } from '@liquid/core/encoding';
-import { useAlgod } from '../hooks/useAlgod.ts';
-import { useAccountInfo } from '../hooks/useAccountInfo.ts';
+import { useAlgod } from '@/hooks/useAlgod.ts';
+import { useAccountInfo } from '@/hooks/useAccountInfo.ts';
 import FormControl from '@mui/material/FormControl';
 import { Box, CircularProgress, Input, Slider } from '@mui/material';
 import Typography from '@mui/material/Typography';
 import { useMessageStore } from '../store.ts';
+import { useNavigate } from 'react-router-dom';
 
-export default function ConnectedPage() {
+export function ConnectedPage() {
+  const navigate = useNavigate();
   const algod = useAlgod();
   const walletStr = window.localStorage.getItem('wallet');
   const wallet = walletStr ? JSON.parse(walletStr) : null;
   const [txn, setTxn] = useState<Transaction | null>(null);
-  const { peerConnection } = useContext(PeerConnectionContext);
-  const datachannel = useDataChannel('remote', peerConnection);
+  // const datachannel = useDataChannel('remote', peerConnection);
   const accountInfo = useAccountInfo(wallet, 3000);
   const [from, setFrom] = useState<string>(wallet);
   const [to, setTo] = useState<string>(wallet);
@@ -37,7 +34,8 @@ export default function ConnectedPage() {
   const addMessage = useMessageStore((state) => state.addMessage);
   const messages = useMessageStore((state) => state.messages);
   // Receive response
-  useDataChannelMessages((event) => {
+  const datachannel = useDataChannel((event) => {
+    console.log(event.data);
     addMessage({
       type: 'remote',
       data: JSON.parse(event.data),
@@ -80,6 +78,10 @@ export default function ConnectedPage() {
     datachannel?.send(JSON.stringify(txnMessage));
     setIsWaitingForSignature(true);
   }, [txn, datachannel, isWaitingForSignature]);
+
+  useEffect(() => {
+    if (!datachannel) navigate('/');
+  }, [datachannel]);
 
   if (accountInfo.data && accountInfo.data.amount === 0) {
     return (

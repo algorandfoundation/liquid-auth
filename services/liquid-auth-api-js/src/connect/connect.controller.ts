@@ -12,7 +12,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { AuthService } from '../auth/auth.service.js';
 import { AlgodService } from '../algod/algod.service.js';
 import nacl from 'tweetnacl';
-import { decodeAddress, base64ToUint8Array } from '@liquid/core/encoding';
+import { decodeAddress, fromBase64Url } from '@liquid/core/encoding';
 
 type LinkResponseDTO = {
   credId?: string;
@@ -54,9 +54,7 @@ export class ConnectController {
     const publicKey = decodeAddress(wallet);
 
     // Decode signature
-    const uint8Signature = base64ToUint8Array(
-      signature.replace(/-/g, '+').replace(/_/g, '/').replace(/\s/g, ''),
-    );
+    const uint8Signature = fromBase64Url(signature);
 
     // Validate Signature
     const encoder = new TextEncoder();
