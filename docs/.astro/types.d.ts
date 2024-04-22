@@ -136,6 +136,13 @@ declare module 'astro:content' {
 
 	type ContentEntryMap = {
 		"docs": {
+"clients/Kotlin/full-example.md": {
+	id: "clients/Kotlin/full-example.md";
+  slug: "clients/kotlin/full-example";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
 "clients/Kotlin/introduction.md": {
 	id: "clients/Kotlin/introduction.md";
   slug: "clients/kotlin/introduction";
@@ -706,6 +713,20 @@ declare module 'astro:content' {
 "reference/typescript/core/sha512/variables/sha512_256.md": {
 	id: "reference/typescript/core/sha512/variables/sha512_256.md";
   slug: "reference/typescript/core/sha512/variables/sha512_256";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"server/configuration.md": {
+	id: "server/configuration.md";
+  slug: "server/configuration";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"server/deploying.md": {
+	id: "server/deploying.md";
+  slug: "server/deploying";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">

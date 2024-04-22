@@ -21,7 +21,7 @@ User
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/api.ts:319](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/api.ts#L319)
+[clients/liquid-auth-client-js/src/client/api.ts:319](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/api.ts#L319)
 
 ***
 
@@ -35,7 +35,7 @@ User
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/api.ts:307](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/api.ts#L307)
+[clients/liquid-auth-client-js/src/client/api.ts:307](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/api.ts#L307)
 
 ***
 
@@ -49,4 +49,4 @@ User
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/api.ts:313](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/api.ts#L313)
+[clients/liquid-auth-client-js/src/client/api.ts:313](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/api.ts#L313)

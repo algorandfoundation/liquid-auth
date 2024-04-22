@@ -17,7 +17,7 @@ title: "EncodedAttestationCredential"
 
 #### Source
 
-[clients/liquid-auth-client-js/src/attestation.ts:26](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/attestation.ts#L26)
+[clients/liquid-auth-client-js/src/attestation.ts:26](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/attestation.ts#L26)
 
 ***
 
@@ -27,7 +27,7 @@ title: "EncodedAttestationCredential"
 
 #### Source
 
-[clients/liquid-auth-client-js/src/attestation.ts:29](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/attestation.ts#L29)
+[clients/liquid-auth-client-js/src/attestation.ts:29](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/attestation.ts#L29)
 
 ***
 
@@ -37,7 +37,7 @@ title: "EncodedAttestationCredential"
 
 #### Source
 
-[clients/liquid-auth-client-js/src/attestation.ts:28](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/attestation.ts#L28)
+[clients/liquid-auth-client-js/src/attestation.ts:28](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/attestation.ts#L28)
 
 ***
 
@@ -47,4 +47,4 @@ title: "EncodedAttestationCredential"
 
 #### Source
 
-[clients/liquid-auth-client-js/src/attestation.ts:27](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/attestation.ts#L27)
+[clients/liquid-auth-client-js/src/attestation.ts:27](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/attestation.ts#L27)

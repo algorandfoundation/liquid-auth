@@ -21,7 +21,7 @@ LinkResponseDTO
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/api.ts:245](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/api.ts#L245)
+[clients/liquid-auth-client-js/src/client/api.ts:245](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/api.ts#L245)
 
 ***
 
@@ -35,7 +35,7 @@ LinkResponseDTO
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/api.ts:227](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/api.ts#L227)
+[clients/liquid-auth-client-js/src/client/api.ts:227](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/api.ts#L227)
 
 ***
 
@@ -49,7 +49,7 @@ LinkResponseDTO
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/api.ts:233](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/api.ts#L233)
+[clients/liquid-auth-client-js/src/client/api.ts:233](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/api.ts#L233)
 
 ***
 
@@ -63,7 +63,7 @@ LinkResponseDTO
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/api.ts:251](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/api.ts#L251)
+[clients/liquid-auth-client-js/src/client/api.ts:251](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/api.ts#L251)
 
 ***
 
@@ -77,4 +77,4 @@ LinkResponseDTO
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/api.ts:239](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/api.ts#L239)
+[clients/liquid-auth-client-js/src/client/api.ts:239](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/api.ts#L239)

@@ -31,7 +31,7 @@ title: "SignalClient"
 
 #### Source
 
-[clients/liquid-auth-client-js/src/signal.ts:99](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/signal.ts#L99)
+[clients/liquid-auth-client-js/src/signal.ts:99](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/signal.ts#L99)
 
 ## Properties
 
@@ -41,7 +41,7 @@ title: "SignalClient"
 
 #### Source
 
-[clients/liquid-auth-client-js/src/signal.ts:90](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/signal.ts#L90)
+[clients/liquid-auth-client-js/src/signal.ts:90](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/signal.ts#L90)
 
 ***
 
@@ -51,7 +51,7 @@ title: "SignalClient"
 
 #### Source
 
-[clients/liquid-auth-client-js/src/signal.ts:92](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/signal.ts#L92)
+[clients/liquid-auth-client-js/src/signal.ts:92](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/signal.ts#L92)
 
 ***
 
@@ -61,7 +61,7 @@ title: "SignalClient"
 
 #### Source
 
-[clients/liquid-auth-client-js/src/signal.ts:87](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/signal.ts#L87)
+[clients/liquid-auth-client-js/src/signal.ts:87](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/signal.ts#L87)
 
 ***
 
@@ -123,7 +123,7 @@ node\_modules/eventemitter3/index.d.ts:45
 
 #### Source
 
-[clients/liquid-auth-client-js/src/signal.ts:266](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/signal.ts#L266)
+[clients/liquid-auth-client-js/src/signal.ts:266](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/signal.ts#L266)
 
 ***
 
@@ -194,7 +194,7 @@ Await for a link message for a given requestId
 
 #### Source
 
-[clients/liquid-auth-client-js/src/signal.ts:229](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/signal.ts#L229)
+[clients/liquid-auth-client-js/src/signal.ts:229](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/signal.ts#L229)
 
 ***
 
@@ -378,7 +378,7 @@ Send the nonce to the server and listen to a specified type.
 
 #### Source
 
-[clients/liquid-auth-client-js/src/signal.ts:159](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/signal.ts#L159)
+[clients/liquid-auth-client-js/src/signal.ts:159](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/signal.ts#L159)
 
 ***
 
@@ -394,7 +394,7 @@ Create QR Code
 
 #### Source
 
-[clients/liquid-auth-client-js/src/signal.ts:124](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/signal.ts#L124)
+[clients/liquid-auth-client-js/src/signal.ts:124](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/signal.ts#L124)
 
 ***
 
@@ -470,7 +470,7 @@ node\_modules/eventemitter3/index.d.ts:63
 
 #### Source
 
-[clients/liquid-auth-client-js/src/signal.ts:254](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/signal.ts#L254)
+[clients/liquid-auth-client-js/src/signal.ts:254](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/signal.ts#L254)
 
 ***
 
@@ -484,4 +484,4 @@ node\_modules/eventemitter3/index.d.ts:63
 
 #### Source
 
-[clients/liquid-auth-client-js/src/signal.ts:116](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/signal.ts#L116)
+[clients/liquid-auth-client-js/src/signal.ts:116](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/signal.ts#L116)

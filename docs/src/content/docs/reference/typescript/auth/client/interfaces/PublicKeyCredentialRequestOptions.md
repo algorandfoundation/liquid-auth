@@ -21,7 +21,7 @@ PublicKeyCredentialRequestOptions
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/api.ts:264](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/api.ts#L264)
+[clients/liquid-auth-client-js/src/client/api.ts:264](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/api.ts#L264)
 
 ***
 
@@ -35,7 +35,7 @@ PublicKeyCredentialRequestOptions
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/api.ts:270](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/api.ts#L270)
+[clients/liquid-auth-client-js/src/client/api.ts:270](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/api.ts#L270)
 
 ***
 
@@ -49,7 +49,7 @@ PublicKeyCredentialRequestOptions
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/api.ts:276](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/api.ts#L276)
+[clients/liquid-auth-client-js/src/client/api.ts:276](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/api.ts#L276)
 
 ***
 
@@ -63,7 +63,7 @@ PublicKeyCredentialRequestOptions
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/api.ts:282](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/api.ts#L282)
+[clients/liquid-auth-client-js/src/client/api.ts:282](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/api.ts#L282)
 
 ***
 
@@ -77,7 +77,7 @@ PublicKeyCredentialRequestOptions
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/api.ts:288](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/api.ts#L288)
+[clients/liquid-auth-client-js/src/client/api.ts:288](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/api.ts#L288)
 
 ***
 
@@ -91,4 +91,4 @@ PublicKeyCredentialRequestOptions
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/api.ts:294](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/api.ts#L294)
+[clients/liquid-auth-client-js/src/client/api.ts:294](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/api.ts#L294)

@@ -21,7 +21,7 @@ title: "Configuration"
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/configuration.ts:58](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/configuration.ts#L58)
+[clients/liquid-auth-client-js/src/client/configuration.ts:58](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/configuration.ts#L58)
 
 ## Properties
 
@@ -45,7 +45,7 @@ Configuration
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/configuration.ts:49](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/configuration.ts#L49)
+[clients/liquid-auth-client-js/src/client/configuration.ts:49](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/configuration.ts#L49)
 
 ***
 
@@ -65,7 +65,7 @@ Configuration
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/configuration.ts:28](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/configuration.ts#L28)
+[clients/liquid-auth-client-js/src/client/configuration.ts:28](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/configuration.ts#L28)
 
 ***
 
@@ -81,7 +81,7 @@ Configuration
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/configuration.ts:56](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/configuration.ts#L56)
+[clients/liquid-auth-client-js/src/client/configuration.ts:56](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/configuration.ts#L56)
 
 ***
 
@@ -97,7 +97,7 @@ Configuration
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/configuration.ts:42](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/configuration.ts#L42)
+[clients/liquid-auth-client-js/src/client/configuration.ts:42](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/configuration.ts#L42)
 
 ***
 
@@ -113,4 +113,4 @@ Configuration
 
 #### Source
 
-[clients/liquid-auth-client-js/src/client/configuration.ts:35](https://github.com/algorandfoundation/liquid-auth/blob/cec82e963bc03c2622fd80036d3c488643177b1a/clients/liquid-auth-client-js/src/client/configuration.ts#L35)
+[clients/liquid-auth-client-js/src/client/configuration.ts:35](https://github.com/algorandfoundation/liquid-auth/blob/8878aa0007608386baa019f80c46f90dd8baec70/clients/liquid-auth-client-js/src/client/configuration.ts#L35)
