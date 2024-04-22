@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:tools="http://schemas.android.com/tools" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:android="http://schemas.android.com/apk/res/android">
+    <data>
+        <variable name="viewModel" type="foundation.algorand.demo.MainViewModel"/>
+    </data>
+<androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/mainLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context="foundation.algorand.demo.MainActivity">
+
+    <Button
+            android:text="Connect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/connectButton"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+
+
+    <TextView
+            android:text="@{@string/wallet(viewModel.account.address)}"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:id="@+id/walletAddress"
+            app:layout_constraintTop_toBottomOf="@+id/connectButton"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+
+    />
+    <TextView
+            android:text="@{@string/origin(viewModel.message.origin)}"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:id="@+id/originTextView"
+            app:layout_constraintTop_toBottomOf="@+id/walletAddress"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+
+    />
+    <TextView
+            android:text="@{@string/session(viewModel.session)}"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:id="@+id/sessionTextView"
+            app:layout_constraintTop_toBottomOf="@+id/originTextView"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+
+    />
+    <TextView
+            android:text="@{@string/credential(viewModel.credential.id)}"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:id="@+id/credentialTextView"
+            app:layout_constraintTop_toBottomOf="@+id/sessionTextView"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+
+    />
+    <TextView
+            android:text="@{@string/count(viewModel.count)}"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:id="@+id/credentialCounterTextView"
+            app:layout_constraintTop_toBottomOf="@+id/credentialTextView"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+
+    />
+    <Button
+            android:text="Disconnect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/disconnectButton"
+            android:visibility="invisible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+    />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+</layout>
