@@ -1,15 +1,18 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Inject,
   Logger,
+  NotFoundException,
+
   Post,
   Req,
-  Res,
   Session,
+  UnauthorizedException,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 import type {
   AssertionCredentialJSON,
   PublicKeyCredentialRequestOptions,
@@ -35,7 +38,6 @@ export class AssertionController {
   async assertionDemoRequest(
     @Session() session: Record<string, any>,
     @Req() req: Request,
-    @Res() res: Response,
     @Body() body?: PublicKeyCredentialRequestOptions,
   ) {
     this.logger.log(
@@ -46,8 +48,10 @@ export class AssertionController {
     });
 
     if (!user) {
-      res.status(404).json({ reason: 'not_found', error: 'User not found.' });
-      return;
+      throw new NotFoundException({
+        reason: 'not_found',
+        error: 'User not found.',
+      });
     }
 
     // Get options, save challenge and respond
@@ -56,7 +60,8 @@ export class AssertionController {
       req.params.credId,
       body,
     );
-    res.json(options);
+
+    return options;
   }
   /**
    * Request Assertion
@@ -69,14 +74,12 @@ export class AssertionController {
    *
    * @param session - Express Session
    * @param req - Express Request
-   * @param res - Express Response
    * @param [body] - Standard Public Key Request Options
    */
   @Post('/request/:credId')
   async assertionRequest(
     @Session() session: Record<string, any>,
     @Req() req: Request,
-    @Res() res: Response,
     @Body() body?: PublicKeyCredentialRequestOptions,
   ) {
     this.logger.log(
@@ -87,8 +90,10 @@ export class AssertionController {
     });
 
     if (!user) {
-      res.status(404).json({ reason: 'not_found', error: 'User not found.' });
-      return;
+      throw new NotFoundException({
+        reason: 'not_found',
+        error: 'User not found.',
+      });
     }
 
     // Get options, save challenge and respond
@@ -99,7 +104,8 @@ export class AssertionController {
     );
 
     session.challenge = options.challenge;
-    res.json(options);
+
+    return options;
   }
 
   /**
@@ -112,32 +118,30 @@ export class AssertionController {
    *
    * @param session - Express Session
    * @param req - Express Request
-   * @param res - Express Response
    * @param body - Assertion Credential JSON
    */
   @Post('/response')
   async assertionResponse(
     @Session() session: Record<string, any>,
     @Req() req: Request,
-    @Res() res: Response,
     @Body() body: AssertionCredentialJSON & {clientExtensionResults: {liquid: {requestId: string}}},
   ) {
     this.logger.log(`POST /response for Session: ${session.id}`);
     const expectedChallenge = session.challenge;
     if (typeof expectedChallenge !== 'string') {
-      res
-        .status(401)
-        .json({ reason: 'unauthorized', error: 'Challenge not found.' });
-      return;
+      throw new UnauthorizedException({
+        reason: 'unauthorized',
+        error: 'Challenge not found.',
+      });
     }
     const savedUser = await this.authService.search({
       'credentials.credId': body.id,
     });
     if (!savedUser) {
-      res
-        .status(403)
-        .json({ reason: 'not_found', error: 'Credential not found.' });
-      return;
+      throw new ForbiddenException({
+        reason: 'not_found',
+        error: 'Credential not found.',
+      });
     }
 
     const user = this.assertionService.response(
@@ -149,7 +153,7 @@ export class AssertionController {
 
     await this.authService.update(user);
     const credential = await this.authService.findCredential(body.id);
-    console.log(credential);
+    console.log(credential)
     delete session.challenge;
     session.wallet = user.wallet;
     this.client.emit<string>('auth', {
@@ -162,6 +166,6 @@ export class AssertionController {
       credential,
     });
 
-    res.json(user);
+    return user;
   }
 }
