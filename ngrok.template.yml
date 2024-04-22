@@ -1,7 +1,0 @@
-version: 2
-authtoken: <NGROK_AUTH_TOKEN>
-tunnels:
-  website:
-    addr: liquid-demo:5173
-    proto: https
-    domain: <NGROK_STATIC_DOMAIN>

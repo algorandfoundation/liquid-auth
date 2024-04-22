@@ -11,8 +11,6 @@ This project holds the standard FIDO2 api endpoints and the Proof of Knowledge f
 The api is a stateful session-based architecture with endpoint guards. 
 A user must prove ownership of a private key to associate PublicKeyCredentials
 
-
-
 ## Getting started
 
 ### Prerequisites
@@ -27,16 +25,6 @@ git clone git@github.com:algorandfoundation/liquid-auth.git && cd liquid-auth
 
 #### Install package dependencies
 
-```bash
-npm install
-```
-
-#### Build Dependencies
-
-```bash
-npm run build
-```
-
 WebAuthn requires a secure context (HTTPS) to work and this will not allow you to test the FIDO2 feature in your local machine.
 
 ### NGROK
@@ -47,12 +35,9 @@ Configure a Static Domain for your ngrok account and update the [.env](services/
 
 #### Configure NGROK
 
-```bash
-cp ./ngrok.template.yml ngrok.yml
-```
+Add a `ngrok.yml` configuration to the root directory.
 
-Make sure to update the `authtoken` and `domain` in the `ngrok.yml` file with your ngrok details.
-
+##### Example Configuration
 ```yaml
 version: 2
 authtoken: <NGROK_AUTH_TOKEN>
@@ -63,6 +48,7 @@ tunnels:
     domain: <NGROK_STATIC_DOMAIN>
 
 ```
+*Make sure to update the `authtoken` and `domain` in the `ngrok.yml` file with your ngrok details.*
 
 #### Update the Service's .docker.env file
 
@@ -71,7 +57,7 @@ HOSTNAME=<NGROK_STATIC_DOMAIN>
 ORIGIN=https://<NGROK_STATIC_DOMAIN>
 ```
 
-#### Start services
+### Start services
 
 Run the following command to start the backend:
 
@@ -84,7 +70,7 @@ Navigate to the ngrok URL in your browser to test the FIDO2 feature.
 
 ## Using the app
 
-#### Install the [Android client]() to your device and navigate to https://nest-fido2.onrender.com/.
+#### Install the [Android client](https://github.com/awesome-algorand/android-authentication-client) to your device.
 
 ![Step-1.png](.docs%2FStep-1.png)
 
