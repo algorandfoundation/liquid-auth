@@ -58,17 +58,17 @@ version: 2
 authtoken: <NGROK_AUTH_TOKEN>
 tunnels:
   website:
-    addr: 5173
+    addr: liquid-demo:5173
     proto: http
-    domain: <STATIC_DOMAIN>
+    domain: <NGROK_STATIC_DOMAIN>
 
 ```
 
 #### Update the Service's .docker.env file
 
 ```bash
-HOSTNAME=example-static-domain.ngrok-free.app
-ORIGIN=https://example-static-domain.ngrok-free.app
+HOSTNAME=<NGROK_STATIC_DOMAIN>
+ORIGIN=https://<NGROK_STATIC_DOMAIN>
 ```
 
 #### Start services
