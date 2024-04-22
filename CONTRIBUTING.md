@@ -21,10 +21,10 @@ git clone git@github.com:algorandfoundation/liquid-auth.git && cd liquid-auth
 npm install
 ```
 
-#### Start services
+#### Build Dependencies
 
 ```bash
-docker-compose up -d
+npm run build
 ```
 
 WebAuthn requires a secure context (HTTPS) to work and this will not allow you to test the FIDO2 feature in your local machine.
@@ -42,12 +42,20 @@ ORIGIN=https://example-static-domain.ngrok-free.app
 #### Run the ngrok proxy
 
 ```bash
-ngrok http --domain=example-static-domain.ngrok-free.app 3000
+ngrok http --domain=example-static-domain.ngrok-free.app 5173
 ```
 
-#### Run the Authentication Service 
+#### Start services
+
+Run the following command to start the backend:
+
 ```bash
-npm run dev
+docker-compose up -d
+```
+
+#### Run the Demo App 
+```bash
+npm run dev:ui
 ```
 
 Navigate to the ngrok URL in your browser to test the FIDO2 feature.

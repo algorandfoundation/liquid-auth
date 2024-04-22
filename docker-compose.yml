@@ -1,6 +1,16 @@
 version: '3.4'
 
 services:
+  liquid-auth:
+    build: .
+    restart: always
+    env_file:
+      - .env.docker
+    ports:
+      - "3000:3000"
+    depends_on:
+      - redis
+      - mongo
   redis:
     image: redis
     restart: always
@@ -36,4 +46,3 @@ services:
       - "ip=redis dbname=0"
 volumes:
   mongo:
-  nginx:
