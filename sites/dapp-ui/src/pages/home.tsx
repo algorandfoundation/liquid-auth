@@ -5,13 +5,13 @@ import CardActions from '@mui/material/CardActions';
 import Card from '@mui/material/Card';
 import Button from '@mui/material/Button';
 
-import { useNavigate } from 'react-router-dom';
 import { ConnectModal } from '@/components/ConnectModal';
 import { assertion } from '@liquid/auth-client/assertion';
+import { useState } from "react";
 
 export function HomePage() {
   const credId = window.localStorage.getItem('credId');
-  const navigate = useNavigate();
+  const [showLogin, setShowLogin] = useState(typeof credId === 'string' || false);
   return (
     <Card>
       <CardMedia
@@ -41,11 +41,11 @@ export function HomePage() {
       </CardContent>
       <CardActions>
         <ConnectModal color="secondary" />
-        {credId && (
+        {showLogin && credId && (
           <Button
             onClick={async () => {
               await assertion(window.origin, credId);
-              navigate('/peering');
+              setShowLogin(false);
             }}
           >
             Login

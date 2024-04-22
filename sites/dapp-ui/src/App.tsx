@@ -14,6 +14,7 @@ import { Algodv2 } from 'algosdk';
 import { AlgodContext } from '@/hooks';
 import { SignalClientContext } from '@/hooks/useSignalClient.ts';
 import { LinkMessage, SignalClient } from '@liquid/auth-client/signal';
+import { useAddressStore } from "@/store";
 const queryClient = new QueryClient();
 
 const algod = new Algodv2(
@@ -42,7 +43,7 @@ const router = createHashRouter([
 ]);
 export default function ProviderApp() {
   const [dataChannel, setDataChannel] = useState<RTCDataChannel | null>(null);
-
+  const setAddress = useAddressStore((state: any) => state.setAddress);
   const [mode, setMode] = useState<'light' | 'dark'>(
     window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
       ? 'dark'
@@ -91,7 +92,7 @@ export default function ProviderApp() {
     }
     client.on('connect', handleSocketConnect);
     function handleLinkMessage(msg: LinkMessage) {
-      window.localStorage.setItem('wallet', JSON.stringify(msg.wallet));
+      setAddress(msg.wallet);
     }
     client.on('link-message', handleLinkMessage);
 
