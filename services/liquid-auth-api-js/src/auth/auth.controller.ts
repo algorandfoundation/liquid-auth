@@ -16,8 +16,17 @@ import {
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { AuthGuard } from './auth.guard.js';
+import {
+  ApiResponse,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiSecurity,
+  ApiCookieAuth, ApiOperation, ApiTags
+} from "@nestjs/swagger";
+import { User } from "./auth.schema.js";
 
 @Controller('auth')
+@ApiTags('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
   /**
@@ -39,7 +48,11 @@ export class AuthController {
    *
    * @param session
    */
-  @Get('/keys')
+  @Get('/user')
+  @ApiOperation({ summary: 'Get User' })
+  @ApiResponse({ status: 200, description: 'Get the current user', type: User })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  @ApiCookieAuth()
   @UseGuards(AuthGuard)
   async keys(@Session() session: Record<string, any>) {
     const wallet = session.wallet;
@@ -60,6 +73,9 @@ export class AuthController {
    */
   @Delete('/keys/:id')
   @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Delete Credential' })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  @ApiCookieAuth()
   async remove(
     @Session() session: Record<string, any>,
     @Req() req: Request,
@@ -88,6 +104,7 @@ export class AuthController {
   }
 
   @Get('/logout')
+  @ApiOperation({ summary: 'Log Out' })
   logout(@Session() session: Record<string, any>, @Res() res: Response) {
     delete session.wallet;
     delete session.active;
@@ -100,6 +117,7 @@ export class AuthController {
    * @param session
    */
   @Get('/session')
+  @ApiOperation({ summary: 'Get Session' })
   async read(@Session() session: Record<string, any>) {
     const user = await this.authService.find(session.wallet);
     return (

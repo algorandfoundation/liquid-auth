@@ -26,8 +26,10 @@ import { AttestationExtension, AttestationSelectorDto } from "./attestation.dto.
 import { AuthGuard } from '../auth/auth.guard.js';
 import { ClientProxy } from '@nestjs/microservices';
 import { fromBase64Url } from "@liquid/core";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
 
 @Controller('attestation')
+@ApiTags('attestation')
 export class AttestationController {
   private readonly logger = new Logger(AttestationController.name);
   constructor(
@@ -46,6 +48,7 @@ export class AttestationController {
    * @param req - Express Request
    */
   @Post('/request')
+  @ApiOperation({summary: 'Attestation Request'})
   async request(
     @Session() session: Record<string, any>,
     @Body() options: AttestationSelectorDto,
@@ -68,6 +71,7 @@ export class AttestationController {
    * Register a Key
    */
   @Post('/response')
+  @ApiOperation({ summary: 'Attestation Response' })
   async attestationResponse(
     @Session() session: Record<string, any>,
     @Body() body: AttestationCredentialJSON & { clientExtensionResults: AttestationExtension},

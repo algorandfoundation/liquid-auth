@@ -1,0 +1,304 @@
+openapi: 3.0.0
+paths:
+  /.well-known/assetlinks.json:
+    get:
+      operationId: AndroidController_assetLinks
+      summary: Android Asset Links
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+        - .well-known
+  /auth/user:
+    get:
+      operationId: AuthController_keys
+      summary: Get User
+      parameters: []
+      responses:
+        '200':
+          description: Get the current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '403':
+          description: Forbidden
+      tags:
+        - auth
+      security:
+        - cookie: []
+  /auth/keys/{id}:
+    delete:
+      operationId: AuthController_remove
+      summary: Delete Credential
+      parameters: []
+      responses:
+        '403':
+          description: Forbidden
+      tags:
+        - auth
+      security:
+        - cookie: []
+  /auth/logout:
+    get:
+      operationId: AuthController_logout
+      summary: Log Out
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+        - auth
+  /auth/session:
+    get:
+      operationId: AuthController_read
+      summary: Get Session
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+        - auth
+  /attestation/request:
+    post:
+      operationId: AttestationController_request
+      summary: Attestation Request
+      parameters: []
+      responses:
+        '201':
+          description: ''
+      tags:
+        - attestation
+  /attestation/response:
+    post:
+      operationId: AttestationController_attestationResponse
+      summary: Attestation Response
+      parameters: []
+      responses:
+        '201':
+          description: ''
+      tags:
+        - attestation
+  /assertion/request/{credId}:
+    post:
+      operationId: AssertionController_assertionRequest
+      summary: Assertion Request
+      description: >
+        # POST Assertion Request
+
+
+        This endpoint is used to request assertion options from the FIDO2
+        service.
+      parameters:
+        - name: credId
+          required: true
+          in: path
+          description: Credential ID
+          schema: {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicKeyCredentialRequestOptions'
+      responses:
+        '201':
+          description: Successfully created options
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicKeyCredentialRequestOptions'
+        '404':
+          description: Not Found
+      tags:
+        - assertion
+  /assertion/response:
+    post:
+      operationId: AssertionController_assertionResponse
+      summary: Assertion Response
+      description: >
+        # POST Assertion Response
+
+
+        This endpoint is used to request assertion options from the FIDO2
+        service.
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssertionCredentialJSON'
+      responses:
+        '201':
+          description: Successfully attested public key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      tags:
+        - assertion
+  /connect/response:
+    post:
+      operationId: ConnectController_linkWalletResponse
+      summary: Connect (deprecated)
+      description: Submit a response from a ConnectQR Scan and login to service
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkResponseDTO'
+      responses:
+        '200':
+          description: Successfully attested public key
+      tags:
+        - connect
+info:
+  title: Liquid Auth API
+  description: Authentication API
+  version: '1.0'
+  contact: {}
+tags: []
+servers: []
+components:
+  securitySchemes:
+    cookie:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+  schemas:
+    Credential:
+      type: object
+      properties:
+        device:
+          type: string
+        publicKey:
+          type: string
+        credId:
+          type: string
+        prevCounter:
+          type: number
+      required:
+        - device
+        - publicKey
+        - credId
+        - prevCounter
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        wallet:
+          type: string
+        credentials:
+          type: array
+          items:
+            $ref: '#/components/schemas/Credential'
+      required:
+        - id
+        - wallet
+        - credentials
+    AuthenticationExtensionsClientInputs:
+      type: object
+      properties:
+        appid:
+          type: string
+        appidExclude:
+          type: string
+        uvm:
+          type: boolean
+        credProps:
+          type: boolean
+        hmacCreateSecret:
+          type: boolean
+        liquid:
+          type: boolean
+      required:
+        - appid
+        - appidExclude
+        - uvm
+        - credProps
+        - hmacCreateSecret
+        - liquid
+    PublicKeyCredentialRequestOptions:
+      type: object
+      properties:
+        allowCredentials:
+          type: array
+          items:
+            type: string
+        challenge:
+          type: object
+        extensions:
+          $ref: '#/components/schemas/AuthenticationExtensionsClientInputs'
+        rpId:
+          type: string
+        timeout:
+          type: number
+        userVerification:
+          type: string
+      required:
+        - allowCredentials
+        - challenge
+        - extensions
+        - rpId
+        - timeout
+        - userVerification
+    AuthenticatorAssertionResponseJSON:
+      type: object
+      properties:
+        authenticatorData:
+          type: string
+        clientDataJSON:
+          type: string
+        signature:
+          type: string
+        userHandle:
+          type: string
+      required:
+        - authenticatorData
+        - clientDataJSON
+        - signature
+        - userHandle
+    AssertionCredentialJSON:
+      type: object
+      properties:
+        id:
+          type: string
+        rawId:
+          type: string
+        response:
+          $ref: '#/components/schemas/AuthenticatorAssertionResponseJSON'
+        type:
+          type: string
+      required:
+        - id
+        - rawId
+        - response
+        - type
+    LinkResponseDTO:
+      type: object
+      properties:
+        credId:
+          type: string
+        requestId:
+          type: object
+        wallet:
+          type: string
+        challenge:
+          type: string
+        signature:
+          type: string
+      required:
+        - credId
+        - requestId
+        - wallet
+        - challenge
+        - signature

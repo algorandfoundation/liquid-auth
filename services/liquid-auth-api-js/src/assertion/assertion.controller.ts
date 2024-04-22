@@ -13,16 +13,28 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import type {
-  AssertionCredentialJSON,
-  PublicKeyCredentialRequestOptions,
-} from '@simplewebauthn/typescript-types';
 
+import {AssertionCredentialJSON, PublicKeyCredentialRequestOptions} from './assertion.dto.js'
 import { AuthService } from '../auth/auth.service.js';
 import { AssertionService } from './assertion.service.js';
 import { ClientProxy } from '@nestjs/microservices';
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path'
+import {
+  ApiBody,
+  ApiForbiddenResponse,
+  ApiOperation,
+  ApiParam,
+  ApiResponse, ApiTags,
+  ApiUnauthorizedResponse
+} from "@nestjs/swagger";
+import { User } from "../auth/auth.schema.js";
+const filePath = join(process.cwd(), './src/assertion');
+const requestDescription = readFileSync(join(filePath, 'assertion.controller.post.request.md')).toString();
+const responseDescription = readFileSync(join(filePath, 'assertion.controller.post.response.md')).toString();
 @Controller('assertion')
+@ApiTags('assertion')
 export class AssertionController {
   private readonly logger = new Logger(AssertionController.name);
   constructor(
@@ -77,6 +89,11 @@ export class AssertionController {
    * @param [body] - Standard Public Key Request Options
    */
   @Post('/request/:credId')
+  @ApiOperation({ summary: 'Assertion Request', description: requestDescription })
+  @ApiParam({ name: 'credId', description: 'Credential ID', required: true })
+  @ApiBody({ type: PublicKeyCredentialRequestOptions })
+  @ApiResponse({ status: 201, description: 'Successfully created options', type: PublicKeyCredentialRequestOptions })
+  @ApiResponse({ status: 404, description: 'Not Found' })
   async assertionRequest(
     @Session() session: Record<string, any>,
     @Req() req: Request,
@@ -121,6 +138,11 @@ export class AssertionController {
    * @param body - Assertion Credential JSON
    */
   @Post('/response')
+  @ApiOperation({ summary: 'Assertion Response', description: responseDescription })
+  @ApiBody({ type: AssertionCredentialJSON })
+  @ApiResponse({ status: 201, description: 'Successfully attested public key', type: User })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
   async assertionResponse(
     @Session() session: Record<string, any>,
     @Req() req: Request,
