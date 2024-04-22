@@ -5,7 +5,7 @@ import fido2 from '@simplewebauthn/server';
 import { AttestationSelectorDto } from './attestation.dto.js';
 import { User } from '../auth/auth.schema.js';
 import type { AttestationCredentialJSON } from '@simplewebauthn/typescript-types';
-import { base64ToUint8Array, decodeAddress, fromBase64Url } from "@liquid/core";
+import { decodeAddress, fromBase64Url } from "@liquid/core";
 import nacl from "tweetnacl";
 @Injectable()
 export class AttestationService {
