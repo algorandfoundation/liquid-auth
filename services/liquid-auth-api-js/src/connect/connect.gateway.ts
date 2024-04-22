@@ -53,6 +53,7 @@ export class ConnectGateway
       session.reload((err) => {
         // console.log('Reloaded session')
         if (err) {
+          console.log(err)
           // forces the client to reconnect
           socket.conn.close();
           // you can also use socket.disconnect(), but in that case the client

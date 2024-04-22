@@ -326,6 +326,10 @@ class MainActivity : AppCompatActivity() {
             userAgent,
             credential.id
         ).await()
+        val session = Cookie.fromResponse(response)
+        session?.let {
+            setSession(Cookie.getID(it))
+        }
         val publicKeyCredentialRequestOptions = response.body!!.toPublicKeyCredentialRequestOptions()
         val pendingIntent = fido2Client!!.getSignPendingIntent(publicKeyCredentialRequestOptions).await()
         assertionIntentLauncher.launch(IntentSenderRequest.Builder(pendingIntent).build())
@@ -380,13 +384,24 @@ class MainActivity : AppCompatActivity() {
                         } else {
                             viewModel.setCount(0)
                         }
-                        val credMessage = JSONObject()
-                        credMessage.put("device", android.os.Build.MODEL)
-                        credMessage.put("origin", viewModel.message.value!!.origin)
-                        credMessage.put("id", credential.id)
-                        credMessage.put("prevCounter", viewModel.count.value!!)
-                        credMessage.put("type", "credential")
-                        connectApi.peerApi!!.send(credMessage.toString())
+                        val msg = viewModel.message.value!!
+                        val keyPair = KeyPairs.getKeyPair(viewModel.account.value!!.toMnemonic())
+                        // Connect to the service and if the message is unsigned, pass in a keypair
+                        connectApi.connect(application, msg, {
+                            Log.d(TAG, "onStateChange($it)")
+                            if(it === "OPEN"){
+                                Log.d(TAG, "Sending Credential")
+                                val credMessage = JSONObject()
+                                credMessage.put("device", android.os.Build.MODEL)
+                                credMessage.put("origin", msg.origin)
+                                credMessage.put("id", credential.id)
+                                credMessage.put("prevCounter", viewModel.count.value!!)
+                                credMessage.put("type", "credential")
+                                connectApi.peerApi!!.send(credMessage.toString())
+                            }
+                        }) {
+                            handleMessages(msg, it, keyPair)
+                        }
                     }
                 }
             }

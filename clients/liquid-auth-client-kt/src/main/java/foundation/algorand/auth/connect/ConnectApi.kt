@@ -60,7 +60,7 @@ class ConnectApi @Inject constructor(
         peerApi = PeerApi(context)
         peerApi?.createPeerConnection({ iceCandidate ->
             Log.d(TAG, "onIceOfferCandidate($iceCandidate)")
-            socket?.emit("call-candidate", iceCandidate.toJSON())
+            socket?.emit("offer-candidate", iceCandidate.toJSON())
         })
 
         // Handle SDP Answers
@@ -82,7 +82,7 @@ class ConnectApi @Inject constructor(
         // Create the Peering Offer
         peerApi?.createOffer {
             Log.d(TAG, "createOffer(${it?.description})")
-            socket!!.emit("call-description", it?.description.toString())
+            socket!!.emit("offer-description", it?.description.toString())
         }
     }
     /**

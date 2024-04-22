@@ -3,7 +3,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { MongooseModule } from '@nestjs/mongoose';
 
 // Connect
-import { ConnectController } from './connect.controller.js';
 import { ConnectGateway } from './connect.gateway.js';
 // Auth
 import { AuthService } from '../auth/auth.service.js';
@@ -31,7 +30,6 @@ import { AlgodService } from '../algod/algod.service.js';
       },
     ]),
   ],
-  controllers: [ConnectController],
   providers: [AuthService, ConnectGateway, AlgodService],
 })
 export class ConnectModule {}

@@ -26,7 +26,7 @@ export default function Layout({ children }: PropsWithChildren) {
   };
   const breadcrumbs = ['/', '/connected'];
   const index = breadcrumbs.indexOf(location.pathname);
-  console.log(index);
+
   return (
     <>
       <AppBar
