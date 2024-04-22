@@ -1,13 +1,19 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
+  HttpException,
+  HttpStatus,
   Inject,
+  InternalServerErrorException,
   Logger,
+  NotFoundException,
   Post,
   Req,
   Res,
   Session,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import type { AttestationCredentialJSON } from '@simplewebauthn/typescript-types';
@@ -37,6 +43,7 @@ export class AttestationController {
    *
    * @param session - Express Session
    * @param options - Attestation Selector DTO
+   * @param req - Express Request
    */
   @Post('/request')
   async request(
@@ -65,17 +72,16 @@ export class AttestationController {
     @Session() session: Record<string, any>,
     @Body() body: AttestationCredentialJSON & { clientExtensionResults: AttestationExtension},
     @Req() req: Request,
-    @Res() res: Response,
   ) {
     this.logger.log(`POST /attestation/response for Session: ${session.id}`);
     try {
       const username = session.liquidExtension;
       const expectedChallenge = session.challenge;
       if (typeof expectedChallenge !== 'string') {
-        res
-          .status(404)
-          .json({ reason: 'not_found', error: 'Challenge not found.' });
-        return;
+        throw new NotFoundException({
+          reason: 'not_found',
+          error: 'Challenge not found',
+        });
       }
       this.logger.debug(
         `Username: ${username} Challenge: ${expectedChallenge}`,
@@ -110,11 +116,18 @@ export class AttestationController {
         wallet: user.wallet,
         credential,
       });
-      return res.json(user);
+
+      return user;
     } catch (e) {
-      console.log(e)
       this.logger.error(e.message, e.stack);
-      res.status(500).json({ error: e.message });
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new InternalServerErrorException({
+        error: e.message,
+      });
     }
   }
 }
