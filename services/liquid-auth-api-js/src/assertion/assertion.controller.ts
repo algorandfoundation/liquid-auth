@@ -44,38 +44,6 @@ export class AssertionController {
   ) {}
 
   /**
-   * Hard Coded Request Assertion Options for demo
-   */
-  @Get('/request/:credId')
-  async assertionDemoRequest(
-    @Session() session: Record<string, any>,
-    @Req() req: Request,
-    @Body() body?: PublicKeyCredentialRequestOptions,
-  ) {
-    this.logger.log(
-      `GET /request/${req.params.credId} for Session: ${session.id}`,
-    );
-    const user = await this.authService.search({
-      'credentials.credId': req.params.credId,
-    });
-
-    if (!user) {
-      throw new NotFoundException({
-        reason: 'not_found',
-        error: 'User not found.',
-      });
-    }
-
-    // Get options, save challenge and respond
-    const options = this.assertionService.request(
-      user,
-      req.params.credId,
-      body,
-    );
-
-    return options;
-  }
-  /**
    * Request Assertion
    *
    * @remarks
@@ -175,18 +143,16 @@ export class AssertionController {
 
     await this.authService.update(user);
     const credential = await this.authService.findCredential(body.id);
-    console.log(credential)
+
     delete session.challenge;
     session.wallet = user.wallet;
-    this.client.emit<string>('auth', {
-      requestId: body.clientExtensionResults.liquid.requestId,
-      wallet: user.wallet,
-      credId: credential.credId,
-    });
-    this.client.emit<string>('auth-interaction', {
-      wallet: user.wallet,
-      credential,
-    });
+    if(typeof body?.clientExtensionResults?.liquid?.requestId !== 'undefined'){
+      this.client.emit<string>('auth', {
+        requestId: body.clientExtensionResults.liquid.requestId,
+        wallet: user.wallet,
+        credId: credential.credId,
+      });
+    }
 
     return user;
   }

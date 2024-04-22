@@ -171,9 +171,6 @@ export class SignalClient extends EventEmitter {
       this.type = type === 'offer' ? 'answer' : 'offer';
       // Wait for a link message
       await this.link(requestId);
-      this.socket.disconnect();
-      this.socket.connect();
-      console.log('linked!');
       // Listen for Local Candidates
       this.peerClient.onicecandidate = (event) => {
         if (event.candidate) {
