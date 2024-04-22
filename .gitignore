@@ -1,4 +1,5 @@
 swagger-codegen-cli.jar
+ngrok.yml
 
 .data
 .idea

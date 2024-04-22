@@ -1,6 +1,42 @@
 version: '3.4'
 
 services:
+  liquid-auth:
+    build: .
+    restart: always
+    env_file:
+      - .env.docker
+    ports:
+      - "3000:3000"
+    depends_on:
+      - redis
+      - mongo
+      - ngrok
+  liquid-demo:
+    build:
+      context: .
+      dockerfile: Vite.Dockerfile
+    ports:
+      - "5173:5173"
+    restart: always
+    environment:
+      - PROXY_URL=http://liquid-auth:3000
+      - WSS_PROXY_SERVER=ws://liquid-auth:3000
+    depends_on:
+      - liquid-auth
+      - ngrok
+  ngrok:
+    image: ngrok/ngrok:latest
+    restart: unless-stopped
+    command:
+      - "start"
+      - "--all"
+      - "--config"
+      - "/etc/ngrok.yml"
+    volumes:
+      - ./ngrok.yml:/etc/ngrok.yml
+    ports:
+      - 4040:4040
   redis:
     image: redis
     restart: always
@@ -36,4 +72,3 @@ services:
       - "ip=redis dbname=0"
 volumes:
   mongo:
-  nginx:
