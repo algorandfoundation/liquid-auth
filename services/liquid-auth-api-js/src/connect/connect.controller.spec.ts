@@ -6,6 +6,7 @@ import { Session } from '../auth/session.schema.js';
 import { accFixture } from '../../tests/constants.js';
 import { mockAuthService } from '../__mocks__/auth.service.mock.js';
 import { mockAccountLinkService } from '../__mocks__/account-link.service.mock.js';
+import { ForbiddenException } from '@nestjs/common';
 
 describe('ConnectController', () => {
   let connectController: ConnectController;
@@ -75,7 +76,7 @@ describe('ConnectController', () => {
 
       await expect(
         connectController.linkWalletResponse(session, linkResponseDTO),
-      ).rejects.toThrowError();
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('(CREATED) should return undefined when a valid account & auth address signature requests to connect', async () => {
