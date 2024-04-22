@@ -1,7 +1,13 @@
 import {
+  BadRequestException,
+  Body,
   Controller,
   Delete,
   Get,
+  HttpException,
+  InternalServerErrorException,
+  NotFoundException,
+  Post,
   Req,
   Res,
   Session,
@@ -16,53 +22,68 @@ export class AuthController {
   constructor(private authService: AuthService) {}
   /**
    * Debugging Route that shows all Users
-   * @param res
    */
   @Get('/all')
-  async all(@Res() res: Response) {
-    res.json(await this.authService.all());
+  async all() {
+    try {
+      return await this.authService.all();
+    } catch (e) {
+      throw new InternalServerErrorException({
+        error: e.message,
+      });
+    }
   }
 
   /**
    * Display user keys
    *
    * @param session
-   * @param res
    */
   @Get('/keys')
   @UseGuards(AuthGuard)
-  async keys(@Session() session: Record<string, any>, @Res() res: Response) {
+  async keys(@Session() session: Record<string, any>) {
     const wallet = session.wallet;
-    const user = await this.authService.find(wallet);
-    res.json(user || {});
+    try {
+      const user = await this.authService.find(wallet);
+      return user || {};
+    } catch (e) {
+      throw new InternalServerErrorException({
+        error: e.message,
+      });
+    }
   }
   /**
    * Delete Credential
    *
    * @param session - Express Session
    * @param req - Express Request
-   * @param res - Express Response
    */
   @Delete('/keys/:id')
   @UseGuards(AuthGuard)
   async remove(
     @Session() session: Record<string, any>,
     @Req() req: Request,
-    @Res() res: Response,
   ) {
-    const user = await this.authService.find(session.wallet);
+    try {
+      const user = await this.authService.find(session.wallet);
 
-    if (!user) {
-      res.status(404).json({ error: 'User not found' });
-    } else {
-      this.authService
-        .removeCredential(user, req.params.id)
-        .then(() => {
-          res.json({ success: true });
-        })
-        .catch((e) => {
-          res.status(500).json({ error: e.message });
+      if (!user) {
+        throw new NotFoundException({
+          error: 'User not found',
         });
+      }
+
+      await this.authService.removeCredential(user, req.params.id);
+
+      return { success: true };
+    } catch (e) {
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new InternalServerErrorException({
+        error: e.message,
+      });
     }
   }
 
