@@ -1,13 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { Session } from '../connect/session.schema';
+import { AuthController } from './auth.controller.js';
+import { AuthService } from './auth.service.js';
+import { Session } from "./session.schema.js";
 import mongoose, { Error, Model } from 'mongoose';
-import { User, UserSchema } from './auth.schema';
+import { User, UserSchema } from './auth.schema.js';
 import { getModelToken } from '@nestjs/mongoose';
 import { Request, Response } from 'express';
-import { dummyUsers } from '../../tests/constants';
-import { mockAuthService } from '../__mocks__/auth.service.mock';
+import { dummyUsers } from '../../tests/constants.js';
+import { mockAuthService } from '../__mocks__/auth.service.mock.js';
+//@ts-ignore, ignore for tests
+import sessionFixtures from '../__fixtures__/session.fixtures.json' assert {type: 'json'}
 import {
   BadRequestException,
   InternalServerErrorException,
@@ -44,30 +46,10 @@ describe('AuthController', () => {
     expect(authController).toBeDefined();
   });
 
-  describe('Get /all', () => {
-    it('(OK) should return all users', async () => {
-      const users = await authController.all();
-
-      expect(users).toBe(dummyUsers);
-    });
-
-    it('(FAIL) should fail when mongo db throws an error', async () => {
-      authService.all = jest
-        .fn()
-        .mockRejectedValue(new Error('failed to retrieve users'));
-
-      await expect(authController.all()).rejects.toThrow(
-        InternalServerErrorException,
-      );
-    });
-  });
-
   describe('Get /keys', () => {
     it('(OK) should return a user from their session', async () => {
       const dummyUser = dummyUsers[0];
-
-      const session = new Session();
-      const user = await authController.keys(session);
+      const user = await authController.keys(sessionFixtures.authorized);
 
       expect(user).toBe(dummyUser);
     });
@@ -88,9 +70,7 @@ describe('AuthController', () => {
   describe('Delete /keys/:id', () => {
     it('(OK) should return success: true when removeCredential succeeds', async () => {
       const session = new Session();
-      const req = { body: {}, params: { id: 1 } } as any as Request;
-
-      await expect(authController.remove(session, req)).resolves.toEqual({
+      await expect(authController.remove(session, `1`)).resolves.toEqual({
         success: true,
       });
     });
@@ -98,10 +78,8 @@ describe('AuthController', () => {
     it('(FAIL) should fail if it cannot find the user', async () => {
       authService.find = jest.fn().mockResolvedValue(undefined);
 
-      const session = new Session();
-      const req = { body: {}, params: { id: 1 } } as any as Request;
-
-      await expect(authController.remove(session, req)).rejects.toThrow(
+      const session =  {} as Record<string, any>;
+      await expect(authController.remove(session, `1`)).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -112,9 +90,7 @@ describe('AuthController', () => {
         .mockRejectedValue(new Error('failed to find user'));
 
       const session = new Session();
-      const req = { body: {}, params: { id: 1 } } as any as Request;
-
-      await expect(authController.remove(session, req)).rejects.toThrow(
+      await expect(authController.remove(session, `1`)).rejects.toThrow(
         InternalServerErrorException,
       );
     });
@@ -127,7 +103,7 @@ describe('AuthController', () => {
       const session = new Session();
       const req = { body: {}, params: { id: 1 } } as any as Request;
 
-      await expect(authController.remove(session, req)).rejects.toThrow(
+      await expect(authController.remove(session, `1`)).rejects.toThrow(
         InternalServerErrorException,
       );
     });
@@ -146,41 +122,16 @@ describe('AuthController', () => {
     });
   });
 
-  describe('Post /session', () => {
-    it('(OK) should create a session', async () => {
-      const dummyUser = dummyUsers[0];
-      const session = new Session();
-      const body = { wallet: dummyUser.wallet };
-
-      await expect(authController.create(session, body)).resolves.toBe(
-        dummyUser,
-      );
-    });
-
-    it('(FAIL) should fail when given a malformed wallet address', async () => {
-      const session = new Session();
-      const body = { wallet: 'mreh' };
-
-      await expect(authController.create(session, body)).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-  });
-
   describe('Get /session', () => {
     it('(OK) should fetch a session', async () => {
       const dummyUser = dummyUsers[0];
-      const session = new Session();
-
-      await expect(authController.read(session)).resolves.toBe(dummyUser);
+      const user = await authController.read(sessionFixtures.authorized)
+      await expect(user).toStrictEqual({user: dummyUser, session: sessionFixtures.authorized});
     });
 
     it('(OK) should return an empty object if the user is not found', async () => {
-      authService.find = jest.fn().mockResolvedValue(undefined);
-
-      const session = new Session();
-
-      await expect(authController.read(session)).resolves.toEqual({});
+      authService.find = jest.fn().mockResolvedValue(null);
+      await expect(authController.read(sessionFixtures.authorized)).resolves.toEqual({session: sessionFixtures.authorized, user: null});
     });
   });
 });

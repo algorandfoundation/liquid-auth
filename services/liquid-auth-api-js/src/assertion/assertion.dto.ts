@@ -1,6 +1,6 @@
 import {
   PublicKeyCredentialRequestOptionsJSON as PublicKeyCredentialRequestOptionsJSONType,
-  PublicKeyCredentialDescriptorJSON,
+  PublicKeyCredentialDescriptorJSON as PublicKeyCredentialDescriptorJSONType,
   AssertionCredentialJSON as AssertionCredentialJSONType,
   AuthenticatorAssertionResponseJSON as AuthenticatorAssertionResponseJSONType,
   PublicKeyCredentialRequestOptions as PublicKeyCredentialRequestOptionsType,
@@ -73,14 +73,20 @@ export class AssertionCredentialJSON implements AssertionCredentialJSONType {
   @ApiProperty()
   readonly type: string;
 }
+export type LiquidAssertionCredentialJSON = AssertionCredentialJSON & {
+  clientExtensionResults: { liquid: { requestId: string } };
+}
 
+/**
+ * JSON representation of PublicKeyCredentialRequestOptions
+ */
 export class PublicKeyCredentialRequestOptionsJSON
   implements PublicKeyCredentialRequestOptionsJSONType
 {
   @ApiProperty()
   challenge: string;
   @ApiProperty()
-  allowCredentials: PublicKeyCredentialDescriptorJSON[];
+  allowCredentials: PublicKeyCredentialDescriptorJSONType[];
   @ApiProperty()
   userVerification: UserVerificationRequirement;
   @ApiProperty()

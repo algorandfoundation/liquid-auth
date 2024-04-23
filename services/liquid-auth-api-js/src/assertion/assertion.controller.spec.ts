@@ -1,29 +1,30 @@
 import * as crypto from 'node:crypto';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthService } from '../auth/auth.service';
-import { Session } from '../connect/session.schema';
+import { AuthService } from '../auth/auth.service.js';
+import { Session } from '../auth/session.schema.js';
 import mongoose, { Model } from 'mongoose';
-import { User, UserSchema } from '../auth/auth.schema';
+import { User, UserSchema } from '../auth/auth.schema.js';
 import { getModelToken } from '@nestjs/mongoose';
 import { Request } from 'express';
-import { AssertionController } from './assertion.controller';
-import { AssertionService } from './assertion.service';
-import { dummyUsers, dummyOptions } from '../../tests/constants';
-import { mockAuthService } from '../__mocks__/auth.service.mock';
-import { mockAssertionService } from '../__mocks__/assertion.service.mock';
-import { mockAccountLinkService } from '../__mocks__/account-link.service.mock';
-import { AppService } from '../app.service';
+import { AssertionController } from './assertion.controller.js';
+import { AssertionService } from './assertion.service.js';
+import { dummyUsers, dummyOptions } from '../../tests/constants.js';
+import { mockAuthService } from '../__mocks__/auth.service.mock.js';
+import { mockAssertionService } from '../__mocks__/assertion.service.mock.js';
+import { mockAccountLinkService } from '../__mocks__/account-link.service.mock.js';
+import { AppService } from '../app.service.js';
 import { ConfigService } from '@nestjs/config';
 import {
   ForbiddenException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { AssertionCredentialJSON, PublicKeyCredentialRequestOptions, LiquidAssertionCredentialJSON } from "./assertion.dto.js";
 
 // PublicKeyCredentialRequestOptions
 const dummyPublicKeyCredentialRequestOptions = {
-  challenge: crypto.randomBytes(32),
-};
+  userVerification: 'required',
+} as PublicKeyCredentialRequestOptions;
 
 // AssertionCredentialJSON
 const dummyAssertionCredentialJSON = {
@@ -35,7 +36,7 @@ const dummyAssertionCredentialJSON = {
     clientDataJSON: '',
     signature: '',
   },
-};
+} as LiquidAssertionCredentialJSON;
 
 describe('AssertionController', () => {
   let assertionController: AssertionController;
@@ -83,17 +84,6 @@ describe('AssertionController', () => {
       authService.search = jest.fn().mockResolvedValue(undefined);
     });
 
-    describe('Get /request/:credId', () => {
-      it('(FAIL) should fail if it cannot find a user', async () => {
-        const session = new Session();
-        const req = { body: {}, params: { credId: 1 } } as any as Request;
-        const body = dummyPublicKeyCredentialRequestOptions;
-
-        await expect(
-          assertionController.assertionDemoRequest(session, req, body),
-        ).rejects.toThrow(NotFoundException);
-      });
-    });
 
     describe('Post /request/:credId', () => {
       it('(FAIL) should fail if it cannot find a user', async () => {
@@ -119,18 +109,6 @@ describe('AssertionController', () => {
           assertionController.assertionResponse(session, req, body),
         ).rejects.toThrow(ForbiddenException);
       });
-    });
-  });
-
-  describe('Get /request/:credId', () => {
-    it('(OK) should save the challenge', async () => {
-      const session = new Session();
-      const req = { body: {}, params: { credId: 1 } } as any as Request;
-      const body = dummyPublicKeyCredentialRequestOptions;
-
-      await expect(
-        assertionController.assertionDemoRequest(session, req, body),
-      ).resolves.toBe(dummyOptions);
     });
   });
 

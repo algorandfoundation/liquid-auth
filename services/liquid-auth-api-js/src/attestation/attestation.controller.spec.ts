@@ -1,31 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthService } from '../auth/auth.service';
-import { Session } from '../connect/session.schema';
+import { AuthService } from '../auth/auth.service.js';
+import { Session } from '../auth/session.schema.js';
 import mongoose, { Model } from 'mongoose';
-import { User, UserSchema } from '../auth/auth.schema';
+import { User, UserSchema } from '../auth/auth.schema.js';
 import { getModelToken } from '@nestjs/mongoose';
 import { Request } from 'express';
-import { AttestationController } from './attestation.controller';
+import { AttestationController } from './attestation.controller.js';
 import {
   accFixture,
   dummyUsers,
   dummyAttestationOptions,
-} from '../../tests/constants';
-import { mockAuthService } from '../__mocks__/auth.service.mock';
-import { mockAccountLinkService } from '../__mocks__/account-link.service.mock';
-import { mockAttestationService } from '../__mocks__/attestation.service.mock';
-import { AppService } from '../app.service';
+} from '../../tests/constants.js';
+import { mockAuthService } from '../__mocks__/auth.service.mock.js';
+import { mockAccountLinkService } from '../__mocks__/account-link.service.mock.js';
+import { mockAttestationService } from '../__mocks__/attestation.service.mock.js';
+import { AppService } from '../app.service.js';
 import { ConfigService } from '@nestjs/config';
-import { AttestationService } from './attestation.service';
+import { AttestationService } from './attestation.service.js';
 import {
   ForbiddenException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { AttestationCredentialJSONDto, AttestationSelectorDto } from "./attestation.dto.js";
 
 const dummyAttestationSelectorDto = {
   authenticatorSelection: {},
-};
+} as AttestationSelectorDto;
 
 const dummyAttestationCredentialJSON = {
   id: '',
@@ -35,7 +36,7 @@ const dummyAttestationCredentialJSON = {
     attestationObject: '',
     clientDataJSON: '',
   },
-};
+} as AttestationCredentialJSONDto;
 
 describe('AttestationController', () => {
   let attestationController: AttestationController;
@@ -79,30 +80,6 @@ describe('AttestationController', () => {
     expect(attestationController).toBeDefined();
   });
 
-  describe('User Not Found', () => {
-    beforeEach(async () => {
-      authService.find = jest.fn().mockResolvedValue(undefined);
-    });
-
-    describe('Post/ request', () => {
-      it('(FAIL) should fail if it cannot find a user', async () => {
-        const session: Record<string, any> = new Session();
-        session.wallet = accFixture.accs[0].addr;
-
-        const body = dummyAttestationSelectorDto;
-        const req = {
-          headers: {
-            host: 'meh',
-          },
-        } as Request;
-
-        await expect(
-          attestationController.request(session, body, req),
-        ).rejects.toThrow(ForbiddenException);
-      });
-    });
-  });
-
   describe('Post /request', () => {
     it('(OK) should create a challenge', async () => {
       const session: Record<string, any> = new Session();
@@ -116,22 +93,8 @@ describe('AttestationController', () => {
       } as Request;
 
       await expect(
-        attestationController.request(session, body, req),
+        attestationController.request(session, body),
       ).resolves.toBe(dummyAttestationOptions);
-    });
-
-    it('(FAIL) should fail if there is no session wallet set', async () => {
-      const session: Record<string, any> = new Session();
-      const body = dummyAttestationSelectorDto;
-      const req = {
-        headers: {
-          host: 'meh',
-        },
-      } as Request;
-
-      await expect(
-        attestationController.request(session, body, req),
-      ).rejects.toThrow(UnauthorizedException);
     });
   });
 

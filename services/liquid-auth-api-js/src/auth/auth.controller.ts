@@ -4,12 +4,12 @@ import {
   Get,
   HttpException,
   InternalServerErrorException,
-  NotFoundException,
+  NotFoundException, Param,
   Req,
   Res,
   Session,
-  UseGuards,
-} from '@nestjs/common';
+  UseGuards
+} from "@nestjs/common";
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { AuthGuard } from './auth.guard.js';
@@ -26,19 +26,6 @@ import { User } from './auth.schema.js';
 @ApiTags('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
-  /**
-   * Debugging Route that shows all Users
-   */
-  @Get('/all')
-  async all() {
-    try {
-      return await this.authService.all();
-    } catch (e) {
-      throw new InternalServerErrorException({
-        error: e.message,
-      });
-    }
-  }
 
   /**
    * Display user keys
@@ -66,14 +53,14 @@ export class AuthController {
    * Delete Credential
    *
    * @param session - Express Session
-   * @param req - Express Request
+   * @param id
    */
   @Delete('/keys/:id')
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Delete Credential' })
   @ApiForbiddenResponse({ description: 'Forbidden' })
   @ApiCookieAuth()
-  async remove(@Session() session: Record<string, any>, @Req() req: Request) {
+  async remove(@Session() session: Record<string, any>, @Param('id') id: string) {
     try {
       const user = await this.authService.find(session.wallet);
 
@@ -83,7 +70,7 @@ export class AuthController {
         });
       }
 
-      await this.authService.removeCredential(user, req.params.id);
+      await this.authService.removeCredential(user, id);
 
       return { success: true };
     } catch (e) {

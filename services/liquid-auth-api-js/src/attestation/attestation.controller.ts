@@ -17,9 +17,10 @@ import { AuthService } from '../auth/auth.service.js';
 
 import { AttestationService } from './attestation.service.js';
 import {
+  AttestationCredentialJSONDto,
   AttestationExtension,
-  AttestationSelectorDto,
-} from './attestation.dto.js';
+  AttestationSelectorDto
+} from "./attestation.dto.js";
 import { ClientProxy } from '@nestjs/microservices';
 import { fromBase64Url } from '@liquid/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -71,9 +72,7 @@ export class AttestationController {
   async attestationResponse(
     @Session() session: Record<string, any>,
     @Body()
-    body: AttestationCredentialJSON & {
-      clientExtensionResults: AttestationExtension;
-    },
+    body: AttestationCredentialJSONDto,
     @Req() req: Request,
   ) {
     this.logger.log(`POST /attestation/response for Session: ${session.id}`);
@@ -89,15 +88,7 @@ export class AttestationController {
       this.logger.debug(
         `Username: ${username} Challenge: ${expectedChallenge}`,
       );
-      function arrayBufferToStr(buf) {
-        return String.fromCharCode.apply(null, new Uint8Array(buf));
-      }
-      const data = JSON.parse(
-        arrayBufferToStr(fromBase64Url(body.response.clientDataJSON)),
-      );
 
-      console.log('LEFFFFGGGG', data);
-      console.log(body);
       const credential = await this.attestationService.response(
         expectedChallenge,
         req.get('User-Agent'),
@@ -111,12 +102,13 @@ export class AttestationController {
       session.wallet = username;
       const { wallet } = user;
       const credId = credential.credId;
-      // const requestId = body.credentialrequestId;
-      this.client.emit<string>('auth', {
-        requestId: body.clientExtensionResults.liquid.requestId,
-        wallet,
-        credId,
-      });
+      if(typeof body?.clientExtensionResults?.liquid?.requestId === 'string') {
+        this.client.emit<string>('auth', {
+          requestId: body.clientExtensionResults.liquid.requestId,
+          wallet,
+          credId,
+        });
+      }
       this.client.emit<string>('auth-interaction', {
         wallet: user.wallet,
         credential,
