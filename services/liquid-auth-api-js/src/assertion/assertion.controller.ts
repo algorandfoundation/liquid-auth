@@ -2,11 +2,9 @@ import {
   Body,
   Controller,
   ForbiddenException,
-  Get,
   Inject,
   Logger,
   NotFoundException,
-
   Post,
   Req,
   Session,
@@ -14,25 +12,33 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 
-import {AssertionCredentialJSON, PublicKeyCredentialRequestOptions} from './assertion.dto.js'
+import {
+  AssertionCredentialJSON,
+  PublicKeyCredentialRequestOptions,
+} from './assertion.dto.js';
 import { AuthService } from '../auth/auth.service.js';
 import { AssertionService } from './assertion.service.js';
 import { ClientProxy } from '@nestjs/microservices';
 
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path'
+import { join } from 'node:path';
 import {
   ApiBody,
   ApiForbiddenResponse,
   ApiOperation,
   ApiParam,
-  ApiResponse, ApiTags,
-  ApiUnauthorizedResponse
-} from "@nestjs/swagger";
-import { User } from "../auth/auth.schema.js";
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import { User } from '../auth/auth.schema.js';
 const filePath = join(process.cwd(), './src/assertion');
-const requestDescription = readFileSync(join(filePath, 'assertion.controller.post.request.md')).toString();
-const responseDescription = readFileSync(join(filePath, 'assertion.controller.post.response.md')).toString();
+const requestDescription = readFileSync(
+  join(filePath, 'assertion.controller.post.request.md'),
+).toString();
+const responseDescription = readFileSync(
+  join(filePath, 'assertion.controller.post.response.md'),
+).toString();
 @Controller('assertion')
 @ApiTags('assertion')
 export class AssertionController {
@@ -57,10 +63,17 @@ export class AssertionController {
    * @param [body] - Standard Public Key Request Options
    */
   @Post('/request/:credId')
-  @ApiOperation({ summary: 'Assertion Request', description: requestDescription })
+  @ApiOperation({
+    summary: 'Assertion Request',
+    description: requestDescription,
+  })
   @ApiParam({ name: 'credId', description: 'Credential ID', required: true })
   @ApiBody({ type: PublicKeyCredentialRequestOptions })
-  @ApiResponse({ status: 201, description: 'Successfully created options', type: PublicKeyCredentialRequestOptions })
+  @ApiResponse({
+    status: 201,
+    description: 'Successfully created options',
+    type: PublicKeyCredentialRequestOptions,
+  })
   @ApiResponse({ status: 404, description: 'Not Found' })
   async assertionRequest(
     @Session() session: Record<string, any>,
@@ -106,15 +119,25 @@ export class AssertionController {
    * @param body - Assertion Credential JSON
    */
   @Post('/response')
-  @ApiOperation({ summary: 'Assertion Response', description: responseDescription })
+  @ApiOperation({
+    summary: 'Assertion Response',
+    description: responseDescription,
+  })
   @ApiBody({ type: AssertionCredentialJSON })
-  @ApiResponse({ status: 201, description: 'Successfully attested public key', type: User })
+  @ApiResponse({
+    status: 201,
+    description: 'Successfully attested public key',
+    type: User,
+  })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden' })
   async assertionResponse(
     @Session() session: Record<string, any>,
     @Req() req: Request,
-    @Body() body: AssertionCredentialJSON & {clientExtensionResults: {liquid: {requestId: string}}},
+    @Body()
+    body: AssertionCredentialJSON & {
+      clientExtensionResults: { liquid: { requestId: string } };
+    },
   ) {
     this.logger.log(`POST /response for Session: ${session.id}`);
     const expectedChallenge = session.challenge;
@@ -146,7 +169,9 @@ export class AssertionController {
 
     delete session.challenge;
     session.wallet = user.wallet;
-    if(typeof body?.clientExtensionResults?.liquid?.requestId !== 'undefined'){
+    if (
+      typeof body?.clientExtensionResults?.liquid?.requestId !== 'undefined'
+    ) {
       this.client.emit<string>('auth', {
         requestId: body.clientExtensionResults.liquid.requestId,
         wallet: user.wallet,

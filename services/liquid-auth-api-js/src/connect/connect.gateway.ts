@@ -53,7 +53,7 @@ export class ConnectGateway
       session.reload((err) => {
         // console.log('Reloaded session')
         if (err) {
-          this.logger.error(err.message, err.stack)
+          this.logger.error(err.message, err.stack);
           // forces the client to reconnect
           socket.conn.close();
           // you can also use socket.disconnect(), but in that case the client
@@ -82,7 +82,9 @@ export class ConnectGateway
       }`,
     );
     if (typeof session.wallet === 'string') {
-      this.logger.debug(`(*) Client Joining Room ${session.wallet} with Session: ${request.sessionID}`);
+      this.logger.debug(
+        `(*) Client Joining Room ${session.wallet} with Session: ${request.sessionID}`,
+      );
       await socket.join(session.wallet);
     }
   }
@@ -131,7 +133,9 @@ export class ConnectGateway
               `(*) Linking Wallet: ${data.wallet} to Session: ${request.sessionID}`,
             );
             await this.authService.updateSessionWallet(session, data.wallet);
-            this.logger.debug(`(*) Joining Room: ${data.wallet} with Session: ${request.sessionID}`);
+            this.logger.debug(
+              `(*) Joining Room: ${data.wallet} with Session: ${request.sessionID}`,
+            );
             await client.join(data.wallet);
             observer.next(data);
             this.ioAdapter.subClient.off('message', handleAuthMessage);

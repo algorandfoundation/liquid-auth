@@ -14,7 +14,11 @@ import { mockAssertionService } from '../__mocks__/assertion.service.mock';
 import { mockAccountLinkService } from '../__mocks__/account-link.service.mock';
 import { AppService } from '../app.service';
 import { ConfigService } from '@nestjs/config';
-import { ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 
 // PublicKeyCredentialRequestOptions
 const dummyPublicKeyCredentialRequestOptions = {
@@ -73,7 +77,7 @@ describe('AssertionController', () => {
   it('should be defined', () => {
     expect(assertionController).toBeDefined();
   });
-  
+
   describe('User Not Found', () => {
     beforeEach(async () => {
       authService.search = jest.fn().mockResolvedValue(undefined);

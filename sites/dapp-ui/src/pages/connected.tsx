@@ -13,13 +13,13 @@ import { useAccountInfo } from '@/hooks/useAccountInfo.ts';
 import FormControl from '@mui/material/FormControl';
 import { Box, CircularProgress, Input, Slider } from '@mui/material';
 import Typography from '@mui/material/Typography';
-import { useAddressStore, useMessageStore } from "../store.ts";
+import { useAddressStore, useMessageStore } from '../store.ts';
 import { useNavigate } from 'react-router-dom';
 
 export function ConnectedPage() {
   const navigate = useNavigate();
   const algod = useAlgod();
-  const wallet = useAddressStore((state: any) => state.address);
+  const wallet = useAddressStore((state) => state.address);
   const [txn, setTxn] = useState<Transaction | null>(null);
   // const datachannel = useDataChannel('remote', peerConnection);
   const accountInfo = useAccountInfo(wallet, 3000);
@@ -44,7 +44,7 @@ export function ConnectedPage() {
     async function handleMessage() {
       if (!txn) return;
       const message = JSON.parse(event.data);
-      if(message.type === 'credential') localStorage['credId'] = message.id
+      if (message.type === 'credential') localStorage['credId'] = message.id;
       if (message.type !== 'transaction-signature') return;
 
       if (txn.txID() !== message.txId) throw new Error('Invalid txId');

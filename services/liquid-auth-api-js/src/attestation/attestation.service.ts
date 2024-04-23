@@ -3,10 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { AppService } from '../app.service.js';
 import fido2 from '@simplewebauthn/server';
 import { AttestationSelectorDto } from './attestation.dto.js';
-import { User } from '../auth/auth.schema.js';
 import type { AttestationCredentialJSON } from '@simplewebauthn/typescript-types';
-import { decodeAddress, fromBase64Url } from "@liquid/core";
-import nacl from "tweetnacl";
+import { decodeAddress, fromBase64Url } from '@liquid/core';
+import nacl from 'tweetnacl';
 @Injectable()
 export class AttestationService {
   constructor(
@@ -14,18 +13,22 @@ export class AttestationService {
     private configService: ConfigService,
   ) {}
   verify(type: string, challenge: string, signature: string, address: string) {
-    if(type === 'algorand'){
+    if (type === 'algorand') {
       // Decode
       const publicKeyBytes = decodeAddress(address);
       const signatureBytes = fromBase64Url(signature);
       const challengeBytes = fromBase64Url(challenge);
 
-      return nacl.sign.detached.verify(challengeBytes, signatureBytes, publicKeyBytes)
+      return nacl.sign.detached.verify(
+        challengeBytes,
+        signatureBytes,
+        publicKeyBytes,
+      );
     }
 
     return false;
   }
-  request(options: AttestationSelectorDto, user?: User) {
+  request(options: AttestationSelectorDto) {
     //https://www.iana.org/assignments/cose/cose.xhtml#algorithms
     // EdDSA is -8
     const pubKeyCredParams = [];
@@ -40,7 +43,7 @@ export class AttestationService {
       rpName: this.configService.get('rpName'),
       rpID: this.configService.get('hostname'),
       userID: options.username,
-      userName:options.username,
+      userName: options.username,
       timeout: this.configService.get('timeout'),
     });
 
@@ -64,7 +67,16 @@ export class AttestationService {
   async response(
     expectedChallenge: string,
     ua: string,
-    credential: AttestationCredentialJSON & { clientExtensionResults?: { liquid: { type: string, signature: string, address: string, device?: string } } },
+    credential: AttestationCredentialJSON & {
+      clientExtensionResults?: {
+        liquid: {
+          type: string;
+          signature: string;
+          address: string;
+          device?: string;
+        };
+      };
+    },
   ) {
     const expectedOrigin = this.appService.getOrigin(ua);
     const expectedRPID = this.configService.get<string>('hostname');
@@ -76,20 +88,25 @@ export class AttestationService {
       expectedOrigin,
       expectedRPID,
     });
-    let { verified, authenticatorInfo } = verifiedAttestation;
+    const { authenticatorInfo } = verifiedAttestation;
+    let { verified } = verifiedAttestation;
 
     // Handle Liquid Extension
-    const isLiquid = typeof credential.clientExtensionResults !== 'undefined' && typeof credential.clientExtensionResults.liquid !== 'undefined'
-    let liquid = isLiquid ? credential.clientExtensionResults.liquid : undefined;
+    const isLiquid =
+      typeof credential.clientExtensionResults !== 'undefined' &&
+      typeof credential.clientExtensionResults.liquid !== 'undefined';
+    const liquid = isLiquid
+      ? credential.clientExtensionResults.liquid
+      : undefined;
     // Check for extension results
-    if(isLiquid && verified){
-      console.log(credential.clientExtensionResults.liquid, expectedChallenge)
+    if (isLiquid && verified) {
+      console.log(credential.clientExtensionResults.liquid, expectedChallenge);
       // Verify the signature
       verified = this.verify(
         credential.clientExtensionResults.liquid.type,
         expectedChallenge,
         credential.clientExtensionResults.liquid.signature,
-        credential.clientExtensionResults.liquid.address
+        credential.clientExtensionResults.liquid.address,
       );
     }
 
@@ -98,11 +115,12 @@ export class AttestationService {
     }
 
     return {
-      device: credential?.clientExtensionResults?.liquid?.device || 'Unknown Device',
+      device:
+        credential?.clientExtensionResults?.liquid?.device || 'Unknown Device',
       publicKey: authenticatorInfo.base64PublicKey,
       credId: authenticatorInfo.base64CredentialID,
       prevCounter: authenticatorInfo.counter,
-      liquid
+      liquid,
     };
   }
 }

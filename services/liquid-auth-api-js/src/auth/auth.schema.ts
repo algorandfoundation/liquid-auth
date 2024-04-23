@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 export type UserDocument = HydratedDocument<User>;
 export type CredentialType = {
@@ -9,7 +9,7 @@ export type CredentialType = {
   credId: string; //base64CredentialID,
   prevCounter: number; //counter,
 };
-export class Credential implements CredentialType{
+export class Credential implements CredentialType {
   @ApiProperty()
   device?: string;
   @ApiProperty()
@@ -29,7 +29,7 @@ export class User {
   @Prop({ required: true })
   wallet: string;
 
-  @ApiProperty({type: [Credential] })
+  @ApiProperty({ type: [Credential] })
   @Prop({ required: true })
   credentials: Credential[];
 }

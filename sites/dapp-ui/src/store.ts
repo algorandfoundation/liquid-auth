@@ -1,7 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export const useAddressStore = create(
+interface AddressState {
+  address: string;
+  setAddress: (address: string) => void;
+}
+
+export const useAddressStore = create<
+  AddressState,
+  [['zustand/persist', AddressState]]
+>(
   persist(
     (set) => ({
       address: '',
@@ -11,7 +19,7 @@ export const useAddressStore = create(
       name: 'address-storage', // name of the item in the storage (must be unique)
     },
   ),
-)
+);
 export type Message = {
   data: unknown;
   type: 'local' | 'remote';

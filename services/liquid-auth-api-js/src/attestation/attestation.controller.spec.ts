@@ -9,7 +9,7 @@ import { AttestationController } from './attestation.controller';
 import {
   accFixture,
   dummyUsers,
-  dummyAttestationOptions
+  dummyAttestationOptions,
 } from '../../tests/constants';
 import { mockAuthService } from '../__mocks__/auth.service.mock';
 import { mockAccountLinkService } from '../__mocks__/account-link.service.mock';
@@ -17,7 +17,11 @@ import { mockAttestationService } from '../__mocks__/attestation.service.mock';
 import { AppService } from '../app.service';
 import { ConfigService } from '@nestjs/config';
 import { AttestationService } from './attestation.service';
-import { ForbiddenException, HttpException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 
 const dummyAttestationSelectorDto = {
   authenticatorSelection: {},

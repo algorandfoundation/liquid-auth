@@ -7,11 +7,13 @@ import Button from '@mui/material/Button';
 
 import { ConnectModal } from '@/components/ConnectModal';
 import { assertion } from '@liquid/auth-client/assertion';
-import { useState } from "react";
+import { useState } from 'react';
 
 export function HomePage() {
   const credId = window.localStorage.getItem('credId');
-  const [showLogin, setShowLogin] = useState(typeof credId === 'string' || false);
+  const [showLogin, setShowLogin] = useState(
+    typeof credId === 'string' || false,
+  );
   return (
     <Card>
       <CardMedia

@@ -1,13 +1,10 @@
 import {
-  BadRequestException,
-  Body,
   Controller,
   Delete,
   Get,
   HttpException,
   InternalServerErrorException,
   NotFoundException,
-  Post,
   Req,
   Res,
   Session,
@@ -18,12 +15,12 @@ import { AuthService } from './auth.service.js';
 import { AuthGuard } from './auth.guard.js';
 import {
   ApiResponse,
-  ApiUnauthorizedResponse,
   ApiForbiddenResponse,
-  ApiSecurity,
-  ApiCookieAuth, ApiOperation, ApiTags
-} from "@nestjs/swagger";
-import { User } from "./auth.schema.js";
+  ApiCookieAuth,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { User } from './auth.schema.js';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -76,10 +73,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Delete Credential' })
   @ApiForbiddenResponse({ description: 'Forbidden' })
   @ApiCookieAuth()
-  async remove(
-    @Session() session: Record<string, any>,
-    @Req() req: Request,
-  ) {
+  async remove(@Session() session: Record<string, any>, @Req() req: Request) {
     try {
       const user = await this.authService.find(session.wallet);
 

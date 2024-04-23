@@ -8,7 +8,11 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Request, Response } from 'express';
 import { dummyUsers } from '../../tests/constants';
 import { mockAuthService } from '../__mocks__/auth.service.mock';
-import { BadRequestException, HttpException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 
 describe('AuthController', () => {
   let authController: AuthController;
@@ -123,7 +127,9 @@ describe('AuthController', () => {
       const session = new Session();
       const req = { body: {}, params: { id: 1 } } as any as Request;
 
-      await expect(authController.remove(session, req)).rejects.toThrow(InternalServerErrorException);
+      await expect(authController.remove(session, req)).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 

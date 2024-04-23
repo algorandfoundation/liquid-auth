@@ -2,7 +2,7 @@ import { Controller, Get, Logger, Req, Res } from '@nestjs/common';
 import type { Response } from 'express';
 //@ts-ignore, required for jest
 import assetLinks from '../../assetlinks.json' assert { type: 'json' };
-import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 @Controller('.well-known')
 @ApiTags('.well-known')
 export class AndroidController {

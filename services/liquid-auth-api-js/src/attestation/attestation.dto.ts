@@ -7,5 +7,11 @@ export type AttestationSelectorDto = {
 };
 
 export type AttestationExtension = AuthenticationExtensionsClientInputs & {
-  liquid: { type: string, signature: string, address: string, requestId: number, device?: string }
-}
+  liquid: {
+    type: string;
+    signature: string;
+    address: string;
+    requestId: number;
+    device?: string;
+  };
+};

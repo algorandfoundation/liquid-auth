@@ -1,32 +1,28 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
-  Get,
   HttpException,
-  HttpStatus,
   Inject,
   InternalServerErrorException,
   Logger,
   NotFoundException,
   Post,
   Req,
-  Res,
   Session,
-  UnauthorizedException,
-  UseGuards,
 } from '@nestjs/common';
 import type { AttestationCredentialJSON } from '@simplewebauthn/typescript-types';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 
 import { AuthService } from '../auth/auth.service.js';
 
 import { AttestationService } from './attestation.service.js';
-import { AttestationExtension, AttestationSelectorDto } from "./attestation.dto.js";
-import { AuthGuard } from '../auth/auth.guard.js';
+import {
+  AttestationExtension,
+  AttestationSelectorDto,
+} from './attestation.dto.js';
 import { ClientProxy } from '@nestjs/microservices';
-import { fromBase64Url } from "@liquid/core";
-import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { fromBase64Url } from '@liquid/core';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @Controller('attestation')
 @ApiTags('attestation')
@@ -48,13 +44,13 @@ export class AttestationController {
    * @param req - Express Request
    */
   @Post('/request')
-  @ApiOperation({summary: 'Attestation Request'})
+  @ApiOperation({ summary: 'Attestation Request' })
   async request(
     @Session() session: Record<string, any>,
     @Body() options: AttestationSelectorDto,
   ) {
     // Force unauthenticated users to prove they own a private key
-    if(options.username !== session.wallet) {
+    if (options.username !== session.wallet) {
       session.liquidExtension = options.username;
     }
 
@@ -64,7 +60,7 @@ export class AttestationController {
     const attestationOptions = this.attestationService.request(options);
     session.challenge = attestationOptions.challenge;
     this.logger.debug(attestationOptions);
-    return attestationOptions
+    return attestationOptions;
   }
 
   /**
@@ -74,7 +70,10 @@ export class AttestationController {
   @ApiOperation({ summary: 'Attestation Response' })
   async attestationResponse(
     @Session() session: Record<string, any>,
-    @Body() body: AttestationCredentialJSON & { clientExtensionResults: AttestationExtension},
+    @Body()
+    body: AttestationCredentialJSON & {
+      clientExtensionResults: AttestationExtension;
+    },
     @Req() req: Request,
   ) {
     this.logger.log(`POST /attestation/response for Session: ${session.id}`);
@@ -93,9 +92,11 @@ export class AttestationController {
       function arrayBufferToStr(buf) {
         return String.fromCharCode.apply(null, new Uint8Array(buf));
       }
-      const data = JSON.parse(arrayBufferToStr(fromBase64Url(body.response.clientDataJSON)))
+      const data = JSON.parse(
+        arrayBufferToStr(fromBase64Url(body.response.clientDataJSON)),
+      );
 
-      console.log('LEFFFFGGGG', data)
+      console.log('LEFFFFGGGG', data);
       console.log(body);
       const credential = await this.attestationService.response(
         expectedChallenge,
@@ -103,7 +104,7 @@ export class AttestationController {
         body,
       );
       this.logger.debug(body);
-      await this.authService.init(username)
+      await this.authService.init(username);
       const user = await this.authService.addCredential(username, credential);
       delete session.liquidExtension;
       delete session.challenge;
