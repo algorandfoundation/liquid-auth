@@ -5,6 +5,9 @@
       <entry key="android">
         <State />
       </entry>
+      <entry key="liquid-auth.foundation.algorand.liquid.android">
+        <State />
+      </entry>
     </value>
   </component>
 </project>

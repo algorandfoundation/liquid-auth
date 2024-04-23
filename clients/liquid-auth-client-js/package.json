@@ -9,10 +9,6 @@
       "default": "./lib/index.js",
       "types": "./lib/index.d.ts"
     },
-    "./client": {
-      "default": "./lib/client/index.js",
-      "types": "./lib/client/index.d.ts"
-    },
     "./attestation": {
       "default": "./lib/attestation.js",
       "types": "./lib/attestation.d.ts"
