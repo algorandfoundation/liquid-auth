@@ -85,6 +85,19 @@ export default function ProviderApp() {
       console.log('SignalClient datachannel', dc);
       setDataChannel(dc);
     }
+    client.on('offer-description', (description) => {
+      console.log({ 'offer-description': description });
+    });
+    client.on('offer-candidate', (candidate) => {
+      console.log({ 'offer-candidate': candidate });
+    });
+
+    client.on('answer-description', (description) => {
+      console.log({ 'answer-description': description });
+    });
+    client.on('answer-candidate', (candidate) => {
+      console.log({ 'answer-candidate': candidate });
+    });
     client.on('data-channel', handleDataChannel);
     function handleSocketConnect() {
       console.log('Socket Connect');
@@ -92,6 +105,7 @@ export default function ProviderApp() {
     }
     client.on('connect', handleSocketConnect);
     function handleLinkMessage(msg: LinkMessage) {
+      console.log('LinkMessage', msg);
       setAddress(msg.wallet);
     }
     client.on('link-message', handleLinkMessage);

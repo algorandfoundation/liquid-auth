@@ -223,6 +223,10 @@ class MainActivity : AppCompatActivity() {
         options.put("username", account.address.toString())
         options.put("displayName",  "Liquid Auth User")
         options.put("authenticatorSelection", JSONObject().put("userVerification", "required"))
+        val extensions = JSONObject()
+        extensions.put("liquid", true)
+        options.put("extensions", extensions)
+
         // FIDO2 Server API Response for PublicKeyCredentialCreationOptions
         val response = attestationApi.postAttestationOptions(msg.origin, userAgent, options).await()
         val session = Cookie.fromResponse(response)
@@ -386,7 +390,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         val msg = viewModel.message.value!!
                         val keyPair = KeyPairs.getKeyPair(viewModel.account.value!!.toMnemonic())
-                        // Connect to the service and if the message is unsigned, pass in a keypair
+                        // Connect to the service then handle state changes and messages
                         connectApi.connect(application, msg, {
                             Log.d(TAG, "onStateChange($it)")
                             if(it === "OPEN"){

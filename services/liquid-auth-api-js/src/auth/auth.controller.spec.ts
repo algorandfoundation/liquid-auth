@@ -1,17 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
-import { Session } from "./session.schema.js";
+import { Session } from './session.schema.js';
 import mongoose, { Error, Model } from 'mongoose';
 import { User, UserSchema } from './auth.schema.js';
 import { getModelToken } from '@nestjs/mongoose';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { dummyUsers } from '../../tests/constants.js';
 import { mockAuthService } from '../__mocks__/auth.service.mock.js';
 //@ts-ignore, ignore for tests
-import sessionFixtures from '../__fixtures__/session.fixtures.json' assert {type: 'json'}
+import sessionFixtures from '../__fixtures__/session.fixtures.json' assert { type: 'json' };
 import {
-  BadRequestException,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
@@ -78,7 +77,7 @@ describe('AuthController', () => {
     it('(FAIL) should fail if it cannot find the user', async () => {
       authService.find = jest.fn().mockResolvedValue(undefined);
 
-      const session =  {} as Record<string, any>;
+      const session = {} as Record<string, any>;
       await expect(authController.remove(session, `1`)).rejects.toThrow(
         NotFoundException,
       );
@@ -101,7 +100,6 @@ describe('AuthController', () => {
         .mockRejectedValue(new Error('failed to update user'));
 
       const session = new Session();
-      const req = { body: {}, params: { id: 1 } } as any as Request;
 
       await expect(authController.remove(session, `1`)).rejects.toThrow(
         InternalServerErrorException,
@@ -125,13 +123,18 @@ describe('AuthController', () => {
   describe('Get /session', () => {
     it('(OK) should fetch a session', async () => {
       const dummyUser = dummyUsers[0];
-      const user = await authController.read(sessionFixtures.authorized)
-      await expect(user).toStrictEqual({user: dummyUser, session: sessionFixtures.authorized});
+      const user = await authController.read(sessionFixtures.authorized);
+      await expect(user).toStrictEqual({
+        user: dummyUser,
+        session: sessionFixtures.authorized,
+      });
     });
 
     it('(OK) should return an empty object if the user is not found', async () => {
       authService.find = jest.fn().mockResolvedValue(null);
-      await expect(authController.read(sessionFixtures.authorized)).resolves.toEqual({session: sessionFixtures.authorized, user: null});
+      await expect(
+        authController.read(sessionFixtures.authorized),
+      ).resolves.toEqual({ session: sessionFixtures.authorized, user: null });
     });
   });
 });

@@ -19,7 +19,10 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AssertionCredentialJSON, PublicKeyCredentialRequestOptions, LiquidAssertionCredentialJSON } from "./assertion.dto.js";
+import {
+  PublicKeyCredentialRequestOptions,
+  LiquidAssertionCredentialJSON,
+} from './assertion.dto.js';
 
 // PublicKeyCredentialRequestOptions
 const dummyPublicKeyCredentialRequestOptions = {
@@ -83,7 +86,6 @@ describe('AssertionController', () => {
     beforeEach(async () => {
       authService.search = jest.fn().mockResolvedValue(undefined);
     });
-
 
     describe('Post /request/:credId', () => {
       it('(FAIL) should fail if it cannot find a user', async () => {

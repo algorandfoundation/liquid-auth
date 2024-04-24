@@ -75,7 +75,7 @@ export class AssertionCredentialJSON implements AssertionCredentialJSONType {
 }
 export type LiquidAssertionCredentialJSON = AssertionCredentialJSON & {
   clientExtensionResults: { liquid: { requestId: string } };
-}
+};
 
 /**
  * JSON representation of PublicKeyCredentialRequestOptions

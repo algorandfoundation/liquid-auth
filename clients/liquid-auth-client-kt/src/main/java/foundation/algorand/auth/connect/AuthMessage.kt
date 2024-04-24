@@ -16,6 +16,7 @@ class AuthMessage @Inject constructor(
          *
          * uses JSON for serialization
          * @todo: Use a URL for the serialization to allow for deep-links
+         * @note: Suggest liquid://{ORIGIN}/{REQUEST_ID}/
          */
         fun fromBarcode(barcode: Barcode): AuthMessage {
             Log.d(TAG, "fromBarcode(${barcode.displayValue})")
@@ -25,7 +26,6 @@ class AuthMessage @Inject constructor(
             return AuthMessage(origin, requestId)
         }
     }
-
     fun toJSON() : JSONObject {
         val result = JSONObject()
         result.put("origin", origin)

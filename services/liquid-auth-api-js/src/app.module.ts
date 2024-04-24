@@ -13,8 +13,7 @@ import { AndroidController } from './android/android.controller.js';
 // User Endpoints
 import { AuthModule } from './auth/auth.module.js';
 
-// Connect/Signals
-import { ConnectModule } from './connect/connect.module.js';
+// Signals
 import { SignalsModule } from './signals/signals.module.js';
 
 @Module({
@@ -37,7 +36,6 @@ import { SignalsModule } from './signals/signals.module.js';
     AuthModule,
     AttestationModule,
     AssertionModule,
-    ConnectModule,
     SignalsModule,
   ],
   controllers: [AndroidController],

@@ -17,12 +17,11 @@ import { mockAttestationService } from '../__mocks__/attestation.service.mock.js
 import { AppService } from '../app.service.js';
 import { ConfigService } from '@nestjs/config';
 import { AttestationService } from './attestation.service.js';
+import { NotFoundException } from '@nestjs/common';
 import {
-  ForbiddenException,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { AttestationCredentialJSONDto, AttestationSelectorDto } from "./attestation.dto.js";
+  AttestationCredentialJSONDto,
+  AttestationSelectorDto,
+} from './attestation.dto.js';
 
 const dummyAttestationSelectorDto = {
   authenticatorSelection: {},
@@ -40,7 +39,6 @@ const dummyAttestationCredentialJSON = {
 
 describe('AttestationController', () => {
   let attestationController: AttestationController;
-  let authService: AuthService;
   let userModel: Model<User>;
 
   beforeEach(async () => {
@@ -70,7 +68,6 @@ describe('AttestationController', () => {
       ],
     }).compile();
 
-    authService = moduleRef.get<AuthService>(AuthService);
     attestationController = moduleRef.get<AttestationController>(
       AttestationController,
     );
@@ -86,15 +83,10 @@ describe('AttestationController', () => {
       session.wallet = accFixture.accs[0].addr;
 
       const body = dummyAttestationSelectorDto;
-      const req = {
-        headers: {
-          host: 'meh',
-        },
-      } as Request;
 
-      await expect(
-        attestationController.request(session, body),
-      ).resolves.toBe(dummyAttestationOptions);
+      await expect(attestationController.request(session, body)).resolves.toBe(
+        dummyAttestationOptions,
+      );
     });
   });
 

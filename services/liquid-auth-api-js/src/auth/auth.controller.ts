@@ -4,13 +4,13 @@ import {
   Get,
   HttpException,
   InternalServerErrorException,
-  NotFoundException, Param,
-  Req,
+  NotFoundException,
+  Param,
   Res,
   Session,
-  UseGuards
-} from "@nestjs/common";
-import type { Request, Response } from 'express';
+  UseGuards,
+} from '@nestjs/common';
+import type { Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { AuthGuard } from './auth.guard.js';
 import {
@@ -60,7 +60,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Delete Credential' })
   @ApiForbiddenResponse({ description: 'Forbidden' })
   @ApiCookieAuth()
-  async remove(@Session() session: Record<string, any>, @Param('id') id: string) {
+  async remove(
+    @Session() session: Record<string, any>,
+    @Param('id') id: string,
+  ) {
     try {
       const user = await this.authService.find(session.wallet);
 

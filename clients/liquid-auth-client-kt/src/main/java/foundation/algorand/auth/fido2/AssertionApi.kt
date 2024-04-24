@@ -20,8 +20,13 @@ class AssertionApi @Inject constructor(
     fun postAssertionOptions(
         origin: String,
         userAgent: String,
-        credentialId: String
+        credentialId: String,
+        liquidExt: Boolean? = true
     ): Call {
+        val payload = JSONObject()
+        if(liquidExt == true) {
+            payload.put("extensions", liquidExt)
+        }
         val path = "$origin/assertion/request/$credentialId"
         val requestBuilder = Request.Builder()
             .url(path)

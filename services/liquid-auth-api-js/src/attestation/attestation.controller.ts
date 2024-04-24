@@ -10,7 +10,6 @@ import {
   Req,
   Session,
 } from '@nestjs/common';
-import type { AttestationCredentialJSON } from '@simplewebauthn/typescript-types';
 import type { Request } from 'express';
 
 import { AuthService } from '../auth/auth.service.js';
@@ -18,11 +17,9 @@ import { AuthService } from '../auth/auth.service.js';
 import { AttestationService } from './attestation.service.js';
 import {
   AttestationCredentialJSONDto,
-  AttestationExtension,
-  AttestationSelectorDto
-} from "./attestation.dto.js";
+  AttestationSelectorDto,
+} from './attestation.dto.js';
 import { ClientProxy } from '@nestjs/microservices';
-import { fromBase64Url } from '@liquid/core';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @Controller('attestation')
@@ -42,7 +39,6 @@ export class AttestationController {
    *
    * @param session - Express Session
    * @param options - Attestation Selector DTO
-   * @param req - Express Request
    */
   @Post('/request')
   @ApiOperation({ summary: 'Attestation Request' })
@@ -50,8 +46,12 @@ export class AttestationController {
     @Session() session: Record<string, any>,
     @Body() options: AttestationSelectorDto,
   ) {
-    // Force unauthenticated users to prove they own a private key
-    if (options.username !== session.wallet) {
+    this.logger.debug(options);
+    // Enable the liquid extension if the username is different or the liquid extension is enabled
+    if (
+      options.username !== session.wallet ||
+      options?.extensions?.liquid === true
+    ) {
       session.liquidExtension = options.username;
     }
 
@@ -85,6 +85,15 @@ export class AttestationController {
           error: 'Challenge not found',
         });
       }
+      if (
+        typeof session.liquidExtension !== 'undefined' &&
+        typeof body?.clientExtensionResults?.liquid === 'undefined'
+      ) {
+        throw new NotFoundException({
+          reason: 'not_found',
+          error: 'Liquid extension not found',
+        });
+      }
       this.logger.debug(
         `Username: ${username} Challenge: ${expectedChallenge}`,
       );
@@ -102,7 +111,9 @@ export class AttestationController {
       session.wallet = username;
       const { wallet } = user;
       const credId = credential.credId;
-      if(typeof body?.clientExtensionResults?.liquid?.requestId === 'string') {
+      if (
+        typeof body?.clientExtensionResults?.liquid?.requestId !== 'undefined'
+      ) {
         this.client.emit<string>('auth', {
           requestId: body.clientExtensionResults.liquid.requestId,
           wallet,
