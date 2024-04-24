@@ -1,8 +1,0 @@
-<resources>
-    <string name="app_name">foundation.algorand.demo</string>
-    <string name="origin">Origin: %s</string>
-    <string name="wallet">Wallet: %s</string>
-    <string name="session">Session: %s</string>
-    <string name="credential">Credential: %s</string>
-    <string name="count">Login Count: %s</string>
-</resources>
