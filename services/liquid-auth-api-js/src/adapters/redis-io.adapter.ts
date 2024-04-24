@@ -1,8 +1,7 @@
 import { IoAdapter } from '@nestjs/platform-socket.io';
-import { ServerOptions, Socket } from 'socket.io';
+import { ServerOptions } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
-import Redis from 'ioredis';
-import socketSessions from 'express-socket.io-session';
+import { Redis } from 'ioredis';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { RequestHandler } from 'express';
 import { ConfigService } from '@nestjs/config';
@@ -14,7 +13,7 @@ export class RedisIoAdapter extends IoAdapter {
   private readonly sessionHandler: RequestHandler;
   private adapterConstructor: ReturnType<typeof createAdapter>;
   private pubClient: Redis;
-  private subClient: Redis;
+  public subClient: Redis;
 
   constructor(app: NestExpressApplication, sessionHandler: RequestHandler) {
     super(app);
@@ -35,13 +34,7 @@ export class RedisIoAdapter extends IoAdapter {
 
   createIOServer(port: number, options?: ServerOptions): any {
     const server = super.createIOServer(port, options);
-    const wrap =
-      (middleware: (request: any, options: any, next: any) => any) =>
-      (socket: Socket, next: (err?: Error) => void) => {
-        return middleware(socket.request, {}, next);
-      };
-    server.use(wrap(this.sessionHandler));
-    server.use(socketSessions(this.sessionHandler, { autoSave: true }));
+    server.engine.use(this.sessionHandler);
     server.adapter(this.adapterConstructor);
     return server;
   }

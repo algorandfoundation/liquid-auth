@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppService } from '../app.service.js';
 import fido2 from '@simplewebauthn/server';
-import { AttestationSelectorDto } from './attestation.dto';
+import { AttestationSelectorDto } from './attestation.dto.js';
 import { User } from '../auth/auth.schema.js';
 import type { AttestationCredentialJSON } from '@simplewebauthn/typescript-types';
 @Injectable()
@@ -63,6 +63,7 @@ export class AttestationService {
     credential: AttestationCredentialJSON & { device?: string },
   ) {
     const expectedOrigin = this.appService.getOrigin(ua);
+    console.log(expectedOrigin);
     const expectedRPID = this.configService.get<string>('hostname');
     const verifiedAttestation = await fido2.verifyAttestationResponse({
       credential,

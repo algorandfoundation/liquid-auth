@@ -1,4 +1,4 @@
-import { AlgorandEncoder } from "../src/connect/AlgoEncoder";
+import { decodeAddress } from '@liquid/core/encoding';
 
 export const accFixture = {
   challenge: '1234',
@@ -28,7 +28,7 @@ export const dummyUsers = [
     credentials: [
       {
         credId: 0,
-        publicKey: new AlgorandEncoder().decodeAddress(accFixture.accs[0].addr),
+        publicKey: decodeAddress(accFixture.accs[0].addr),
       },
     ],
   },

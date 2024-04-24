@@ -1,70 +1,135 @@
-import { useContext, ReactElement, useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
-import { ColorModeContext, StateContext } from './Contexts';
+import { ColorModeContext } from './Contexts';
 import Layout from './Layout';
-
-import { GetStartedCard } from './pages/home/GetStarted';
-import { WaitForRegistrationCard } from './pages/dashboard/WaitForRegistration';
-import { RegisteredCard } from './pages/dashboard/Registered';
 import { createTheme, CssBaseline } from '@mui/material';
 import { DEFAULT_THEME } from './theme.tsx';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { ThemeProvider } from '@emotion/react';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
-const queryClient = new QueryClient()
+import { createHashRouter, RouterProvider } from 'react-router-dom';
+import { HomePage, ConnectedPage } from '@/pages';
+import { Algodv2 } from 'algosdk';
+import { AlgodContext } from '@/hooks';
+import { SignalClientContext } from '@/hooks/useSignalClient.ts';
+import { LinkMessage, SignalClient } from '@liquid/auth-client/signal';
+const queryClient = new QueryClient();
 
-export default function ProviderApp(){
-    const [state, setState] = useState('start')
+const algod = new Algodv2(
+  import.meta.env.VITE_ALGOD_TOKEN || '',
+  import.meta.env.VITE_ALGOD_SERVER || 'https://testnet-api.algonode.cloud',
+  import.meta.env.VITE_ALGOD_PORT || 443,
+);
 
-    const [mode, setMode] = useState<'light' | 'dark'>(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)') ? 'dark' : 'light');
-    const colorMode = useMemo(
-      () => ({
-          toggle: () => {
-              setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
-          },
+const router = createHashRouter([
+  {
+    path: '/',
+    element: (
+      <Layout>
+        <HomePage />
+      </Layout>
+    ),
+  },
+  {
+    path: '/connected',
+    element: (
+      <Layout>
+        <ConnectedPage />
+      </Layout>
+    ),
+  },
+]);
+export default function ProviderApp() {
+  const [dataChannel, setDataChannel] = useState<RTCDataChannel | null>(null);
+
+  const [mode, setMode] = useState<'light' | 'dark'>(
+    window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
+      ? 'dark'
+      : 'light',
+  );
+  const colorMode = useMemo(
+    () => ({
+      toggle: () => {
+        setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
+      },
+    }),
+    [],
+  );
+
+  const theme = useMemo(
+    () =>
+      createTheme({
+        ...DEFAULT_THEME,
+        palette:
+          mode === 'dark'
+            ? {
+                primary: { main: '#9966ff' },
+                mode: 'dark',
+              }
+            : { ...DEFAULT_THEME.palette },
       }),
-      [],
-    );
+    [mode],
+  );
 
-    const theme = useMemo(
-      () =>
-        createTheme({
-            ...DEFAULT_THEME,
-            palette: {
-                ...DEFAULT_THEME.palette,
-                mode,
-            },
-        }),
-      [mode],
-    );
-    return (
-      <QueryClientProvider client={queryClient}>
-          <StateContext.Provider value={{state, setState}}>
-              <ColorModeContext.Provider value={colorMode}>
-                  <ThemeProvider theme={theme}>
-                      <CssBaseline />
-                      <App/>
-                  </ThemeProvider>
-              </ColorModeContext.Provider>
-          </StateContext.Provider>
-      </QueryClientProvider>
-    )
-}
+  const [client, setClient] = useState<SignalClient | null>(
+    new SignalClient(window.origin),
+  );
+  const [status, setStatus] = useState<'connected' | 'disconnected'>(
+    'disconnected',
+  );
+  useEffect(() => {
+    if (!client) return;
+    function handleDataChannel(dc: RTCDataChannel) {
+      console.log('SignalClient datachannel', dc);
+      setDataChannel(dc);
+    }
+    client.on('data-channel', handleDataChannel);
+    function handleSocketConnect() {
+      console.log('Socket Connect');
+      setStatus('connected');
+    }
+    client.on('connect', handleSocketConnect);
+    function handleLinkMessage(msg: LinkMessage) {
+      window.localStorage.setItem('wallet', JSON.stringify(msg.wallet));
+    }
+    client.on('link-message', handleLinkMessage);
 
-export function App() {
-  const { state } = useContext(StateContext);
-
-  // Authentication Steps
-  const STATES: { [k: string]: () => ReactElement } = {
-    'start': GetStartedCard,
-    'connected': WaitForRegistrationCard,
-    'registered': RegisteredCard,
-  };
-  const Content = STATES[state];
-
+    function handleSocketDisconnect() {
+      console.log('Socket Disconnect');
+      setStatus('disconnected');
+    }
+    client.on('disconnect', handleSocketDisconnect);
+    return () => {
+      console.log('removing emitters');
+      client.off('link-message', handleLinkMessage);
+      client.off('data-channel', handleDataChannel);
+      client.off('connect', handleSocketConnect);
+      client.off('disconnect', handleSocketDisconnect);
+    };
+  }, [client]);
   return (
-    <Layout>
-      <Content />
-    </Layout>
+    <SignalClientContext.Provider
+      value={{
+        client,
+        setClient,
+        status,
+        setStatus,
+        dataChannel,
+        setDataChannel,
+      }}
+    >
+      <AlgodContext.Provider value={{ algod }}>
+        <QueryClientProvider client={queryClient}>
+          <ColorModeContext.Provider value={colorMode}>
+            <ThemeProvider theme={theme}>
+              <CssBaseline />
+              <RouterProvider router={router} />
+              <ReactQueryDevtools initialIsOpen={false} />
+            </ThemeProvider>
+          </ColorModeContext.Provider>
+        </QueryClientProvider>
+      </AlgodContext.Provider>
+    </SignalClientContext.Provider>
   );
 }

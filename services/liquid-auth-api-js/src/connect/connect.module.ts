@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
-import { ConnectController } from './connect.controller.js';
-import { ConnectGateway } from './connect.gateway.js';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Session, SessionSchema } from './session.schema.js';
-import { SessionService } from './session.service.js';
+
+// Connect
+import { ConnectController } from './connect.controller.js';
+import { ConnectGateway } from './connect.gateway.js';
+// Auth
 import { AuthService } from '../auth/auth.service.js';
+import { Session, SessionSchema } from '../auth/session.schema.js';
 import { User, UserSchema } from '../auth/auth.schema.js';
 import { AlgodService } from '../algod/algod.service.js';
 
@@ -30,6 +32,6 @@ import { AlgodService } from '../algod/algod.service.js';
     ]),
   ],
   controllers: [ConnectController],
-  providers: [AuthService, SessionService, ConnectGateway, AlgodService],
+  providers: [AuthService, ConnectGateway, AlgodService],
 })
 export class ConnectModule {}

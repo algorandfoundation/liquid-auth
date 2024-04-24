@@ -38,7 +38,7 @@ export class AssertionService {
       rpID: this.configService.get<string>('hostname'),
       allowCredentials,
       /**
-       * This optional value controls whether or not the authenticator needs be able to uniquely
+       * This optional value controls whether the authenticator needs to be able to uniquely
        * identify the user interacting with it (via built-in PIN pad, fingerprint scanner, etc...)
        */
       userVerification,

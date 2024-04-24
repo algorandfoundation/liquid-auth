@@ -1,0 +1,23 @@
+name: CI
+on: [pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [ 18.x, 20.x ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install Dependencies
+        run: npm install
+      - name: Run Build
+        run: npm run build
+      - name: Lint Codebase
+        run: npm run lint
+      - name: Unit Tests with Coverage
+        run: npm run test:cov

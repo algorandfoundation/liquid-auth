@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AlgodService } from '../algod/algod.service';
-import { ConnectController } from './connect.controller';
-import { AuthService } from '../auth/auth.service';
-import { Session } from './session.schema';
-import { accFixture } from '../../tests/constants';
-import { mockAuthService } from '../__mocks__/auth.service.mock';
-import { mockAccountLinkService } from '../__mocks__/account-link.service.mock';
+import { AlgodService } from '../algod/algod.service.js';
+import { ConnectController } from './connect.controller.js';
+import { AuthService } from '../auth/auth.service.js';
+import { Session } from '../auth/session.schema.js';
+import { accFixture } from '../../tests/constants.js';
+import { mockAuthService } from '../__mocks__/auth.service.mock.js';
+import { mockAccountLinkService } from '../__mocks__/account-link.service.mock.js';
 
 describe('ConnectController', () => {
   let connectController: ConnectController;

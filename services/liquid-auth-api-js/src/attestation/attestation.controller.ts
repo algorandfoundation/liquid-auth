@@ -84,7 +84,6 @@ export class AttestationController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    console.log(req.headers.host);
     this.logger.log(
       `POST /attestation/request for Session: ${session.id} and Wallet: ${session.wallet}`,
     );

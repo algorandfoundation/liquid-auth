@@ -11,18 +11,8 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { AuthService } from '../auth/auth.service.js';
 import { AlgodService } from '../algod/algod.service.js';
-import { AlgorandEncoder } from './AlgoEncoder.js';
-import * as nacl from 'tweetnacl';
-
-const algoEncoder = new AlgorandEncoder();
-
-const base64ToUint8Array = (encoded) => {
-  return new Uint8Array(
-    atob(encoded)
-      .split('')
-      .map((c) => c.charCodeAt(0)),
-  );
-};
+import nacl from 'tweetnacl';
+import { decodeAddress, fromBase64Url } from '@liquid/core/encoding';
 
 type LinkResponseDTO = {
   credId?: string;
@@ -60,14 +50,11 @@ export class ConnectController {
     this.logger.log(
       `POST /connect/response for RequestId: ${requestId} Session: ${session.id} with Wallet: ${wallet}`,
     );
-
     // Decode Address
-    const publicKey = algoEncoder.decodeAddress(wallet);
+    const publicKey = decodeAddress(wallet);
 
     // Decode signature
-    const uint8Signature = base64ToUint8Array(
-      signature.replace(/-/g, '+').replace(/_/g, '/').replace(/\s/g, ''),
-    );
+    const uint8Signature = fromBase64Url(signature);
 
     // Validate Signature
     const encoder = new TextEncoder();
@@ -95,7 +82,7 @@ export class ConnectController {
         throw new HttpException('Invalid signature', HttpStatus.FORBIDDEN);
       }
 
-      const authPublicKey = algoEncoder.decodeAddress(accountInfo['auth-addr']);
+      const authPublicKey = decodeAddress(accountInfo['auth-addr']);
 
       // Validate Auth Address Signature
       if (

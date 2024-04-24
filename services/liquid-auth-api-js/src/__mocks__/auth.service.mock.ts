@@ -1,4 +1,4 @@
-import { dummyUsers } from '../../tests/constants';
+import { dummyUsers } from '../../tests/constants.js';
 
 const dummyUser = dummyUsers[0];
 

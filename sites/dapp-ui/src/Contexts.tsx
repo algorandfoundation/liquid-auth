@@ -1,5 +1,4 @@
-import {createContext} from "react";
+import { createContext } from 'react';
 
-export const ColorModeContext = createContext({toggle: () => {}});
-
-export const StateContext = createContext({state: 'start', setState: (_: string) => {}});
+export const ColorModeContext = createContext({ toggle: () => {} });
+export { SignalClientContext } from './hooks/useSignalClient.ts';

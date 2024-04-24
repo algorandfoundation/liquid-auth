@@ -7,11 +7,15 @@ import { AppService } from '../app.service.js';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from '../auth/auth.schema.js';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { Session, SessionSchema } from '../auth/session.schema.js';
 
 @Module({
   imports: [
     ConfigModule,
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([
+      { name: User.name, schema: UserSchema },
+      { name: Session.name, schema: SessionSchema },
+    ]),
     ClientsModule.register([
       {
         name: 'ACCOUNT_LINK_SERVICE',

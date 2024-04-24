@@ -1,7 +1,8 @@
 import {
   Body,
   Controller,
-  Get, Inject,
+  Get,
+  Inject,
   Logger,
   Post,
   Req,
@@ -148,7 +149,7 @@ export class AssertionController {
 
     await this.authService.update(user);
     const credential = await this.authService.findCredential(body.id);
-    console.log(credential)
+    console.log(credential);
     delete session.challenge;
     session.wallet = user.wallet;
 
