@@ -15,11 +15,7 @@ COPY --from=BUILDER ./package-lock.json ./package-lock.json
 # Client Files
 COPY --from=BUILDER ./clients ./clients
 # Service Files
-COPY --from=BUILDER ./services/liquid-auth-api-js/assetlinks.json ./services/liquid-auth-api-js/assetlinks.json
-COPY --from=BUILDER ./services/liquid-auth-api-js/dist ./services/liquid-auth-api-js/dist
-COPY --from=BUILDER ./services/liquid-auth-api-js/bin ./services/liquid-auth-api-js/bin
-COPY --from=BUILDER ./services/liquid-auth-api-js/.env.template ./services/liquid-auth-api-js/.env.template
-COPY --from=BUILDER ./services/liquid-auth-api-js/package.json ./services/liquid-auth-api-js/package.json
+COPY --from=BUILDER ./services/liquid-auth-api-js/ ./services/liquid-auth-api-js/
 
 RUN npm ci --production
 
