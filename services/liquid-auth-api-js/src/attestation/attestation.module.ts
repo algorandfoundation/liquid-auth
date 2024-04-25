@@ -8,6 +8,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from '../auth/auth.schema.js';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { Session, SessionSchema } from '../auth/session.schema.js';
+import { AlgodService } from '../algod/algod.service.js';
 
 @Module({
   imports: [
@@ -30,6 +31,6 @@ import { Session, SessionSchema } from '../auth/session.schema.js';
     ]),
   ],
   controllers: [AttestationController],
-  providers: [AppService, AuthService, AttestationService],
+  providers: [AppService, AlgodService, AuthService, AttestationService],
 })
 export class AttestationModule {}

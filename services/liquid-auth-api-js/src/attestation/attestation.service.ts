@@ -6,26 +6,54 @@ import { AttestationSelectorDto } from './attestation.dto.js';
 import type { AttestationCredentialJSON } from '@simplewebauthn/typescript-types';
 import { decodeAddress, fromBase64Url } from '@liquid/core';
 import nacl from 'tweetnacl';
+import { AlgodService } from '../algod/algod.service.js';
 @Injectable()
 export class AttestationService {
   constructor(
     private appService: AppService,
+    private algodService: AlgodService,
     private configService: ConfigService,
   ) {}
-  verify(type: string, challenge: string, signature: string, address: string) {
+  async verify(
+    type: string,
+    challenge: string,
+    signature: string,
+    address: string,
+  ) {
     if (type === 'algorand') {
       // Decode
       const publicKeyBytes = decodeAddress(address);
       const signatureBytes = fromBase64Url(signature);
       const challengeBytes = fromBase64Url(challenge);
 
-      return nacl.sign.detached.verify(
+      const valid = nacl.sign.detached.verify(
         challengeBytes,
         signatureBytes,
         publicKeyBytes,
       );
-    }
+      if (valid) return true;
+      if (!valid) {
+        // signature check failed, check if its rekeyed
+        // if it is, verify against that public key instead
+        const accountInfo = await this.algodService
+          .accountInformation(address)
+          .exclude('all')
+          .do();
 
+        if (!accountInfo['auth-addr']) {
+          return false;
+        }
+
+        const authPublicKey = decodeAddress(accountInfo['auth-addr']);
+
+        // Validate Auth Address Signature
+        return nacl.sign.detached.verify(
+          challengeBytes,
+          signatureBytes,
+          authPublicKey,
+        );
+      }
+    }
     return false;
   }
   request(options: AttestationSelectorDto) {
@@ -95,14 +123,10 @@ export class AttestationService {
     const isLiquid =
       typeof credential.clientExtensionResults !== 'undefined' &&
       typeof credential.clientExtensionResults.liquid !== 'undefined';
-    const liquid = isLiquid
-      ? credential.clientExtensionResults.liquid
-      : undefined;
     // Check for extension results
     if (isLiquid && verified) {
-      console.log(credential.clientExtensionResults.liquid, expectedChallenge);
       // Verify the signature
-      verified = this.verify(
+      verified = await this.verify(
         credential.clientExtensionResults.liquid.type,
         expectedChallenge,
         credential.clientExtensionResults.liquid.signature,
@@ -120,7 +144,7 @@ export class AttestationService {
       publicKey: authenticatorInfo.base64PublicKey,
       credId: authenticatorInfo.base64CredentialID,
       prevCounter: authenticatorInfo.counter,
-      liquid,
+      liquid: isLiquid ? credential.clientExtensionResults.liquid : undefined,
     };
   }
 }

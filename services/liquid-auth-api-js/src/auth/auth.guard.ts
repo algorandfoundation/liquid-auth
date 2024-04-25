@@ -7,7 +7,7 @@ export class AuthGuard implements CanActivate {
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
     const request = context.switchToHttp().getRequest();
-    const session = request.session || request.handshake.session;
+    const session = request.session;
     return (
       typeof session !== 'undefined' &&
       typeof session.wallet === 'string' &&

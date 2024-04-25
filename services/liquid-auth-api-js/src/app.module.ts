@@ -16,21 +16,23 @@ import { AuthModule } from './auth/auth.module.js';
 // Signals
 import { SignalsModule } from './signals/signals.module.js';
 
+export function mongooseModuleFactory(configService: ConfigService) {
+  const database = configService.get('database');
+  const { host, username, password, name, atlas: isAtlas } = database;
+  const uri = `mongodb${
+    isAtlas ? '+srv' : ''
+  }://${username}:${password}@${host}/${name}?authSource=admin&retryWrites=true&w=majority`;
+  return {
+    uri,
+  };
+}
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => {
-        const database = configService.get('database');
-        const { host, username, password, name, atlas: isAtlas } = database;
-        const uri = `mongodb${
-          isAtlas ? '+srv' : ''
-        }://${username}:${password}@${host}/${name}?authSource=admin&retryWrites=true&w=majority`;
-        return {
-          uri,
-        };
-      },
+      useFactory: mongooseModuleFactory,
       inject: [ConfigService],
     }),
     AuthModule,
