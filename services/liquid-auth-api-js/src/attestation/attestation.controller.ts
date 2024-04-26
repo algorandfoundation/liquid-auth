@@ -1,26 +1,23 @@
 import {
   Body,
   Controller,
-  HttpException,
   Inject,
-  InternalServerErrorException,
   Logger,
-  NotFoundException,
   Post,
-  Req,
+  Headers,
   Session,
+  UnauthorizedException,
+  NotImplementedException,
 } from '@nestjs/common';
-import type { Request } from 'express';
+import { ClientProxy } from '@nestjs/microservices';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { AuthService } from '../auth/auth.service.js';
-
 import { AttestationService } from './attestation.service.js';
 import {
   AttestationCredentialJSONDto,
   AttestationSelectorDto,
 } from './attestation.dto.js';
-import { ClientProxy } from '@nestjs/microservices';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @Controller('attestation')
 @ApiTags('attestation')
@@ -37,105 +34,116 @@ export class AttestationController {
    * Creates a challenge and returns the options for the
    * authentication client to create an attestation
    *
-   * @param session - Express Session
-   * @param options - Attestation Selector DTO
+   * @param {Session} session - Express Session
+   * @param {AttestationSelectorDto} options - Attestation Selector DTO
    */
   @Post('/request')
   @ApiOperation({ summary: 'Attestation Request' })
-  async request(
+  request(
     @Session() session: Record<string, any>,
     @Body() options: AttestationSelectorDto,
   ) {
-    this.logger.debug(options);
-    // Enable the liquid extension if the username is different or the liquid extension is enabled
-    if (
-      options.username !== session.wallet ||
-      options?.extensions?.liquid === true
-    ) {
-      session.liquidExtension = options.username;
-    }
-
     this.logger.log(
       `POST /attestation/request for Session: ${session.id} and Address: ${session.wallet}`,
     );
+    this.logger.debug('Attestation Selector', options);
+    // Enforce the liquid extension
+    if (typeof options?.extensions?.liquid === 'undefined') {
+      throw new NotImplementedException({
+        reason: 'not_implemented',
+        error: 'Liquid extension is required',
+      });
+    }
+    session.liquidExtension = true;
+    // Request Attestation Options
     const attestationOptions = this.attestationService.request(options);
+    // This challenge is used to verify the response
     session.challenge = attestationOptions.challenge;
-    this.logger.debug(attestationOptions);
+    // Return the Attestation Options
+    this.logger.debug('Attestation Options', attestationOptions);
     return attestationOptions;
   }
 
   /**
-   * Register a Key
+   * Validate Attestation Response
+   *
+   * Validates the attestation response from the authenticator and adds the credential to the user.
+   *
+   * @param {Session} session - Express Session
+   * @param {Headers} headers - Express Request
+   * @param {AttestationCredentialJSONDto} body - Attestation Credential JSON DTO
+   *
    */
   @Post('/response')
   @ApiOperation({ summary: 'Attestation Response' })
   async attestationResponse(
     @Session() session: Record<string, any>,
+    @Headers() headers: Record<string, any>,
     @Body()
     body: AttestationCredentialJSONDto,
-    @Req() req: Request,
   ) {
     this.logger.log(`POST /attestation/response for Session: ${session.id}`);
-    try {
-      const username = session.liquidExtension;
-      const expectedChallenge = session.challenge;
-      if (typeof expectedChallenge !== 'string') {
-        throw new NotFoundException({
-          reason: 'not_found',
-          error: 'Challenge not found',
-        });
-      }
-      if (
-        typeof session.liquidExtension !== 'undefined' &&
-        typeof body?.clientExtensionResults?.liquid === 'undefined'
-      ) {
-        throw new NotFoundException({
-          reason: 'not_found',
-          error: 'Liquid extension not found',
-        });
-      }
-      this.logger.debug(
-        `Username: ${username} Challenge: ${expectedChallenge}`,
-      );
-
-      const credential = await this.attestationService.response(
-        expectedChallenge,
-        req.get('User-Agent'),
-        body,
-      );
-      this.logger.debug(body);
-      await this.authService.init(username);
-      const user = await this.authService.addCredential(username, credential);
-      delete session.liquidExtension;
-      delete session.challenge;
-      session.wallet = username;
-      const { wallet } = user;
-      const credId = credential.credId;
-      if (
-        typeof body?.clientExtensionResults?.liquid?.requestId !== 'undefined'
-      ) {
-        this.client.emit<string>('auth', {
-          requestId: body.clientExtensionResults.liquid.requestId,
-          wallet,
-          credId,
-        });
-      }
-      this.client.emit<string>('auth-interaction', {
-        wallet: user.wallet,
-        credential,
-      });
-
-      return user;
-    } catch (e) {
-      this.logger.error(e.message, e.stack);
-
-      if (e instanceof HttpException) {
-        throw e;
-      }
-
-      throw new InternalServerErrorException({
-        error: e.message,
+    this.logger.debug(`Authenticator Response`, body);
+    // Session state
+    const isLiquid = session.liquidExtension || false;
+    const expectedChallenge = session.challenge;
+    // This request should only be called after a request
+    if (typeof expectedChallenge !== 'string') {
+      throw new UnauthorizedException({
+        reason: 'unauthorized',
+        error: 'Challenge not found',
       });
     }
+    // If the liquid extension is enabled, the client must send the liquid extension
+    if (
+      isLiquid &&
+      typeof body?.clientExtensionResults?.liquid === 'undefined'
+    ) {
+      throw new UnauthorizedException({
+        reason: 'unauthorized',
+        error: 'Liquid extension not found',
+      });
+    }
+    // Service only supports liquid extension
+    if (!isLiquid) {
+      throw new NotImplementedException({
+        reason: 'not_implemented',
+        error: 'Liquid extension is required',
+      });
+    }
+    // Verify the Credential and Liquid Extension
+    const credential = await this.attestationService
+      .response(expectedChallenge, headers['user-agent'], body)
+      .catch((e) => {
+        this.logger.error(e);
+        throw new UnauthorizedException({
+          reason: 'unauthorized',
+          error: 'User verification failed',
+        });
+      });
+
+    const username = body.clientExtensionResults.liquid.address;
+    // Initialize a new user if it doesn't exist
+    await this.authService.init(username);
+    // Add the new credential to the user
+    const user = await this.authService.addCredential(username, credential);
+    // Cleanup Session
+    delete session.liquidExtension;
+    delete session.challenge;
+    // Authorize user with a wallet session
+    session.wallet = username;
+    // Handle Liquid Extension
+    if (
+      typeof body?.clientExtensionResults?.liquid?.requestId !== 'undefined'
+    ) {
+      this.client.emit<string>('auth', {
+        requestId: body.clientExtensionResults.liquid.requestId,
+        wallet: user.wallet,
+        credId: credential.credId,
+      });
+    }
+
+    this.logger.debug('User', user);
+    return user;
   }
 }

@@ -1,0 +1,33 @@
+[
+  {
+    "challenge": "Rr5tMsVFB3MLvWoNsMx8FlrPu9zSFwyOlOSu5vdXsr0",
+    "rp": {
+      "name": "Algorand Foundation FIDO2 Server",
+      "id": "catfish-pro-wolf.ngrok-free.app"
+    },
+    "user": {
+      "id": "UY5OHBV7O7RJXY7MKLDCVE4MCJ7OFSGFMCENS6BHJHCO3ERQU2CBJTVD2E",
+      "name": "UY5OHBV7O7RJXY7MKLDCVE4MCJ7OFSGFMCENS6BHJHCO3ERQU2CBJTVD2E",
+      "displayName": "UY5OHBV7O7RJXY7MKLDCVE4MCJ7OFSGFMCENS6BHJHCO3ERQU2CBJTVD2E"
+    },
+    "pubKeyCredParams": [
+      {
+        "type": "public-key",
+        "alg": -7
+      },
+      {
+        "type": "public-key",
+        "alg": -257
+      }
+    ],
+    "timeout": 1800000,
+    "attestation": "none",
+    "excludeCredentials": [],
+    "authenticatorSelection": {
+      "userVerification": "required"
+    },
+    "extensions": {
+      "liquid": true
+    }
+  }
+]

@@ -1,9 +1,12 @@
 [
   {
-    "username": "B7WYCZ6HRBGCH452D24TYAK7BXKNCHEXY2X7S7FWZXMHDVTDOARAOURJEU",
-    "displayName": "Test Wallet",
-    "authenticatorSelection": "AuthenticatorSelectionCriteria",
-    "attestationType": "AttestationConveyancePreference",
-    "extensions": "AttestationExtension"
+    "username": "UY5OHBV7O7RJXY7MKLDCVE4MCJ7OFSGFMCENS6BHJHCO3ERQU2CBJTVD2E",
+    "displayName": "Liquid Auth User",
+    "authenticatorSelection": {
+      "userVerification": "required"
+    },
+    "extensions": {
+      "liquid": true
+    }
   }
 ]

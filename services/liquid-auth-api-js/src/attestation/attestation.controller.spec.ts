@@ -4,59 +4,50 @@ import { Session } from '../auth/session.schema.js';
 import mongoose, { Model } from 'mongoose';
 import { User, UserSchema } from '../auth/auth.schema.js';
 import { getModelToken } from '@nestjs/mongoose';
-import { Request } from 'express';
 import { AttestationController } from './attestation.controller.js';
-import {
-  accFixture,
-  dummyUsers,
-  dummyAttestationOptions,
-} from '../../tests/constants.js';
 import { mockAuthService } from '../__mocks__/auth.service.mock.js';
 import { mockAccountLinkService } from '../__mocks__/account-link.service.mock.js';
-import { mockAttestationService } from '../__mocks__/attestation.service.mock.js';
 import { AppService } from '../app.service.js';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AttestationService } from './attestation.service.js';
-import { NotFoundException } from '@nestjs/common';
+import { NotImplementedException, UnauthorizedException } from '@nestjs/common';
 import {
   AttestationCredentialJSONDto,
   AttestationSelectorDto,
 } from './attestation.dto.js';
-
-const dummyAttestationSelectorDto = {
-  authenticatorSelection: {},
-} as AttestationSelectorDto;
-
-const dummyAttestationCredentialJSON = {
-  id: '',
-  type: '',
-  rawId: 'mreh',
-  response: {
-    attestationObject: '',
-    clientDataJSON: '',
-  },
-} as AttestationCredentialJSONDto;
-
+import { AlgodService } from '../algod/algod.service.js';
+import configurationFixture from '../__fixtures__/configuration.fixture.json';
+import androidUserAgentFixtures from '../__fixtures__/user-agent.android.fixtures.json';
+import attestationRequestResponseFixtures from './__fixtures__/attestation.request.response.fixtures.json';
+import attestationRequestBodyFixtures from './__fixtures__/attestation.request.body.fixtures.json';
+import attestationResponseBodyFixtures from './__fixtures__/attestation.response.body.fixtures.json';
+// TODO: Response Fixtures
+import attestationResponseResponseFixtures from './__fixtures__/attestation.response.response.fixtures.json';
+import { join } from "node:path";
 describe('AttestationController', () => {
   let attestationController: AttestationController;
   let userModel: Model<User>;
-
+  let authService: AuthService;
   beforeEach(async () => {
     userModel = mongoose.model('User', UserSchema);
 
     const moduleRef: TestingModule = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          load: [() => configurationFixture],
+        }),
+      ],
       controllers: [AttestationController],
       providers: [
         ConfigService,
+        AlgodService,
         {
           provide: AuthService,
           useValue: { ...mockAuthService },
         },
         AppService,
-        {
-          provide: AttestationService,
-          useValue: { ...mockAttestationService },
-        },
+        AttestationService,
         {
           provide: 'ACCOUNT_LINK_SERVICE',
           useValue: { ...mockAccountLinkService },
@@ -68,6 +59,7 @@ describe('AttestationController', () => {
       ],
     }).compile();
 
+    authService = moduleRef.get<AuthService>(AuthService);
     attestationController = moduleRef.get<AttestationController>(
       AttestationController,
     );
@@ -77,46 +69,148 @@ describe('AttestationController', () => {
     expect(attestationController).toBeDefined();
   });
 
-  describe('Post /request', () => {
-    it('(OK) should create a challenge', async () => {
-      const session: Record<string, any> = new Session();
-      session.wallet = accFixture.accs[0].addr;
-
-      const body = dummyAttestationSelectorDto;
-
-      await expect(attestationController.request(session, body)).resolves.toBe(
-        dummyAttestationOptions,
-      );
+  describe('POST /request', () => {
+    it('should create PublicKeyCredentialCreationOptions', () => {
+      attestationRequestBodyFixtures.forEach((fixture, i) => {
+        const setChallengeSpy = jest.fn();
+        const setLiquidExtensionSpy = jest.fn();
+        const response = attestationController.request(
+          {
+            set challenge(str: string) {
+              setChallengeSpy(str);
+            },
+            set liquidExtension(val: boolean) {
+              setLiquidExtensionSpy(val);
+            },
+          },
+          fixture as AttestationSelectorDto,
+        );
+        expect(response).toEqual({
+          ...attestationRequestResponseFixtures[i],
+          challenge: response.challenge,
+        });
+        expect(setChallengeSpy).toHaveBeenCalledWith(response.challenge);
+        expect(setLiquidExtensionSpy).toHaveBeenCalledWith(true);
+      });
+    });
+    it('should fail if liquid extension is not enabled', async () => {
+      attestationRequestBodyFixtures.forEach((fixture, i) => {
+        expect(() =>
+          attestationController.request({}, {
+            ...fixture,
+            extensions: {},
+          } as AttestationSelectorDto),
+        ).toThrow(NotImplementedException);
+      });
     });
   });
 
-  describe('Post /response', () => {
-    it('(OK) should register a key', async () => {
-      const dummyUser = dummyUsers[0];
-
+  describe('POST /response', () => {
+    it('should register a key', async () => {
       const session: Record<string, any> = new Session();
-      session.wallet = accFixture.accs[0].addr;
-      session.challenge = accFixture.challenge;
-
-      const body = dummyAttestationCredentialJSON;
-      const req = { get: jest.fn() } as any as Request;
-
+      authService.addCredential = jest.fn(async (username, credential)=>{
+        return attestationResponseResponseFixtures[0];
+      });
+      session.challenge = attestationRequestResponseFixtures[0].challenge;
+      session.liquidExtension = true;
+      const body =
+        attestationResponseBodyFixtures[0] as AttestationCredentialJSONDto;
+      const headers = { 'user-agent': androidUserAgentFixtures[0] };
       await expect(
-        attestationController.attestationResponse(session, body, req),
-      ).resolves.toBe(dummyUser);
+        attestationController.attestationResponse(session, headers, body),
+      ).resolves.toBe(attestationResponseResponseFixtures[0]);
+      expect(session.challenge).toBeUndefined();
+      expect(session.liquidExtension).toBeUndefined();
     });
-
-    it('(FAIL) should fail if the expectedChallenge is not a string', async () => {
+    it('should set a default device if empty', async () => {
       const session: Record<string, any> = new Session();
-      session.wallet = accFixture.accs[0].addr;
-      session.challenge = 0;
-
-      const body = dummyAttestationCredentialJSON;
-      const req = { get: jest.fn() } as any as Request;
-
+      authService.addCredential = jest.fn(async (username, credential)=>{
+        return attestationResponseResponseFixtures[0];
+      });
+      session.challenge = attestationRequestResponseFixtures[0].challenge;
+      session.liquidExtension = true;
+      const body =
+        {...attestationResponseBodyFixtures[0], clientExtensionResults: {liquid: {...attestationResponseBodyFixtures[0].clientExtensionResults.liquid, device: null}}} as AttestationCredentialJSONDto;
+      const headers = { 'user-agent': androidUserAgentFixtures[0] };
       await expect(
-        attestationController.attestationResponse(session, body, req),
-      ).rejects.toThrow(NotFoundException);
+        attestationController.attestationResponse(session, headers, body),
+      ).resolves.toBe(attestationResponseResponseFixtures[0]);
+      expect(session.challenge).toBeUndefined();
+      expect(session.liquidExtension).toBeUndefined();
+    });
+    it('should fail if the challenge is not a string', async () => {
+      await Promise.all(
+        attestationResponseBodyFixtures.map(async (fixture, i) => {
+          const body = fixture as AttestationCredentialJSONDto;
+          const headers = { 'user-agent': androidUserAgentFixtures[0] };
+
+          await expect(() =>
+            attestationController.attestationResponse(
+              {
+                challenge: null,
+              },
+              headers,
+              body,
+            ),
+          ).rejects.toThrow(UnauthorizedException);
+        }),
+      );
+    });
+    it(`should fail when liquid is not enabled`, async () => {
+      await Promise.all(
+        attestationResponseBodyFixtures.map(async (fixture, i) => {
+          const body = fixture as AttestationCredentialJSONDto;
+          const headers = { 'user-agent': androidUserAgentFixtures[0] };
+          const session = {
+            challenge: attestationRequestResponseFixtures[0].challenge,
+          };
+          await expect(
+            attestationController.attestationResponse(session, headers, body),
+          ).rejects.toThrow(NotImplementedException);
+        }),
+      );
+    });
+    it(`should fail when liquid is enabled without client extension results`, async () => {
+      await Promise.all(
+        attestationResponseBodyFixtures.map(async (fixture, i) => {
+          const body = {
+            ...fixture,
+            clientExtensionResults: {},
+          } as AttestationCredentialJSONDto;
+          const headers = { 'user-agent': androidUserAgentFixtures[0] };
+          const session = {
+            challenge: attestationRequestResponseFixtures[0].challenge,
+            liquidExtension: true,
+          };
+          await expect(
+            attestationController.attestationResponse(session, headers, body),
+          ).rejects.toThrow(UnauthorizedException);
+        }),
+      );
+    });
+    it(`should fail when the extension data is invalid`, async () => {
+      await Promise.all(
+        attestationResponseBodyFixtures.map(async (fixture, i) => {
+          const body = {
+            ...fixture,
+            clientExtensionResults: {
+              liquid: {
+                ...fixture.clientExtensionResults.liquid,
+                signature:
+                  'zM0bKHTntG3VtAp_1nAgsxK2F__bv5FukQAB6W-SMEkcvGPPkXbAmahudJB9M0HTBCcwymH7rjvnO2qR73F7AA',
+              },
+            },
+          } as AttestationCredentialJSONDto;
+          const headers = { 'user-agent': androidUserAgentFixtures[0] };
+          const session = {
+            challenge: attestationRequestResponseFixtures[0].challenge,
+            liquidExtension: true,
+          };
+          await expect(() =>
+            attestationController.attestationResponse(session, headers, body),
+          ).rejects.toThrow(UnauthorizedException);
+        }),
+      );
     });
   });
 });

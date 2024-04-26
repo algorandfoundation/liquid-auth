@@ -2,8 +2,8 @@
   "env": "test",
   "timeout": 1800000,
   "rpName": "Algorand Foundation FIDO2 Server",
-  "hostname": "localhost",
-  "origin": "http://localhost",
+  "hostname": "catfish-pro-wolf.ngrok-free.app",
+  "origin": "http://catfish-pro-wolf.ngrok-free.app",
   "socket": {
     "host": "localhost",
     "port": 6379,

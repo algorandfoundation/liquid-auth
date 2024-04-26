@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppService } from '../app.service.js';
-import fido2 from '@simplewebauthn/server';
+import * as fido2 from '@simplewebauthn/server';
 import { AttestationSelectorDto } from './attestation.dto.js';
 import type { AttestationCredentialJSON } from '@simplewebauthn/typescript-types';
 import { decodeAddress, fromBase64Url } from '@liquid/core';
@@ -15,6 +15,7 @@ export class AttestationService {
     private configService: ConfigService,
   ) {}
   async verify(
+    algod: AlgodService,
     type: string,
     challenge: string,
     signature: string,
@@ -25,7 +26,6 @@ export class AttestationService {
       const publicKeyBytes = decodeAddress(address);
       const signatureBytes = fromBase64Url(signature);
       const challengeBytes = fromBase64Url(challenge);
-
       const valid = nacl.sign.detached.verify(
         challengeBytes,
         signatureBytes,
@@ -35,7 +35,7 @@ export class AttestationService {
       if (!valid) {
         // signature check failed, check if its rekeyed
         // if it is, verify against that public key instead
-        const accountInfo = await this.algodService
+        const accountInfo = await algod
           .accountInformation(address)
           .exclude('all')
           .do();
@@ -127,6 +127,7 @@ export class AttestationService {
     if (isLiquid && verified) {
       // Verify the signature
       verified = await this.verify(
+        this.algodService,
         credential.clientExtensionResults.liquid.type,
         expectedChallenge,
         credential.clientExtensionResults.liquid.signature,
@@ -144,7 +145,6 @@ export class AttestationService {
       publicKey: authenticatorInfo.base64PublicKey,
       credId: authenticatorInfo.base64CredentialID,
       prevCounter: authenticatorInfo.counter,
-      liquid: isLiquid ? credential.clientExtensionResults.liquid : undefined,
     };
   }
 }
