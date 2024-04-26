@@ -21,9 +21,7 @@ import androidUserAgentFixtures from '../__fixtures__/user-agent.android.fixture
 import attestationRequestResponseFixtures from './__fixtures__/attestation.request.response.fixtures.json';
 import attestationRequestBodyFixtures from './__fixtures__/attestation.request.body.fixtures.json';
 import attestationResponseBodyFixtures from './__fixtures__/attestation.response.body.fixtures.json';
-// TODO: Response Fixtures
 import attestationResponseResponseFixtures from './__fixtures__/attestation.response.response.fixtures.json';
-import { join } from "node:path";
 describe('AttestationController', () => {
   let attestationController: AttestationController;
   let userModel: Model<User>;
@@ -94,7 +92,7 @@ describe('AttestationController', () => {
       });
     });
     it('should fail if liquid extension is not enabled', async () => {
-      attestationRequestBodyFixtures.forEach((fixture, i) => {
+      attestationRequestBodyFixtures.forEach((fixture) => {
         expect(() =>
           attestationController.request({}, {
             ...fixture,
@@ -108,7 +106,7 @@ describe('AttestationController', () => {
   describe('POST /response', () => {
     it('should register a key', async () => {
       const session: Record<string, any> = new Session();
-      authService.addCredential = jest.fn(async (username, credential)=>{
+      authService.addCredential = jest.fn(async () => {
         return attestationResponseResponseFixtures[0];
       });
       session.challenge = attestationRequestResponseFixtures[0].challenge;
@@ -124,13 +122,20 @@ describe('AttestationController', () => {
     });
     it('should set a default device if empty', async () => {
       const session: Record<string, any> = new Session();
-      authService.addCredential = jest.fn(async (username, credential)=>{
+      authService.addCredential = jest.fn(async () => {
         return attestationResponseResponseFixtures[0];
       });
       session.challenge = attestationRequestResponseFixtures[0].challenge;
       session.liquidExtension = true;
-      const body =
-        {...attestationResponseBodyFixtures[0], clientExtensionResults: {liquid: {...attestationResponseBodyFixtures[0].clientExtensionResults.liquid, device: null}}} as AttestationCredentialJSONDto;
+      const body = {
+        ...attestationResponseBodyFixtures[0],
+        clientExtensionResults: {
+          liquid: {
+            ...attestationResponseBodyFixtures[0].clientExtensionResults.liquid,
+            device: null,
+          },
+        },
+      } as AttestationCredentialJSONDto;
       const headers = { 'user-agent': androidUserAgentFixtures[0] };
       await expect(
         attestationController.attestationResponse(session, headers, body),
@@ -140,7 +145,7 @@ describe('AttestationController', () => {
     });
     it('should fail if the challenge is not a string', async () => {
       await Promise.all(
-        attestationResponseBodyFixtures.map(async (fixture, i) => {
+        attestationResponseBodyFixtures.map(async (fixture) => {
           const body = fixture as AttestationCredentialJSONDto;
           const headers = { 'user-agent': androidUserAgentFixtures[0] };
 
@@ -162,7 +167,7 @@ describe('AttestationController', () => {
           const body = fixture as AttestationCredentialJSONDto;
           const headers = { 'user-agent': androidUserAgentFixtures[0] };
           const session = {
-            challenge: attestationRequestResponseFixtures[0].challenge,
+            challenge: attestationRequestResponseFixtures[i].challenge,
           };
           await expect(
             attestationController.attestationResponse(session, headers, body),
@@ -179,7 +184,7 @@ describe('AttestationController', () => {
           } as AttestationCredentialJSONDto;
           const headers = { 'user-agent': androidUserAgentFixtures[0] };
           const session = {
-            challenge: attestationRequestResponseFixtures[0].challenge,
+            challenge: attestationRequestResponseFixtures[i].challenge,
             liquidExtension: true,
           };
           await expect(
@@ -203,7 +208,7 @@ describe('AttestationController', () => {
           } as AttestationCredentialJSONDto;
           const headers = { 'user-agent': androidUserAgentFixtures[0] };
           const session = {
-            challenge: attestationRequestResponseFixtures[0].challenge,
+            challenge: attestationRequestResponseFixtures[i].challenge,
             liquidExtension: true,
           };
           await expect(() =>
