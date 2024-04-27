@@ -14,10 +14,10 @@ import type { Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { AuthGuard } from './auth.guard.js';
 import {
-  ApiResponse,
-  ApiForbiddenResponse,
   ApiCookieAuth,
+  ApiForbiddenResponse,
   ApiOperation,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { User } from './auth.schema.js';
@@ -40,14 +40,7 @@ export class AuthController {
   @UseGuards(AuthGuard)
   async keys(@Session() session: Record<string, any>) {
     const wallet = session.wallet;
-    try {
-      const user = await this.authService.find(wallet);
-      return user || {};
-    } catch (e) {
-      throw new InternalServerErrorException({
-        error: e.message,
-      });
-    }
+    return await this.authService.find(wallet);
   }
   /**
    * Delete Credential
@@ -104,17 +97,15 @@ export class AuthController {
   @ApiOperation({ summary: 'Get Session' })
   async read(@Session() session: Record<string, any>) {
     const user = await this.authService.find(session.wallet);
-    return (
-      {
-        user: user
-          ? {
-              id: user.id,
-              wallet: user.wallet,
-              credentials: user.credentials,
-            }
-          : null,
-        session,
-      } || {}
-    );
+    return {
+      user: user
+        ? {
+            id: user.id,
+            wallet: user.wallet,
+            credentials: user.credentials,
+          }
+        : null,
+      session,
+    };
   }
 }

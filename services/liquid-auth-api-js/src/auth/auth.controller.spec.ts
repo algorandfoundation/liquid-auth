@@ -59,9 +59,7 @@ describe('AuthController', () => {
 
       const session = new Session();
 
-      await expect(authController.keys(session)).rejects.toThrow(
-        InternalServerErrorException,
-      );
+      await expect(authController.keys(session)).rejects.toThrow();
     });
   });
 
