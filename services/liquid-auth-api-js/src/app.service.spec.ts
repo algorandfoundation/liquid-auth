@@ -1,11 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-//@ts-ignore, required for jest
-import uaChromeFixtures from './__fixtures__/user-agent.chrome.fixtures.json' assert { type: 'json' };
-//@ts-ignore, required for jest
-import uaAndroidFixtures from './__fixtures__/user-agent.android.fixtures.json' assert { type: 'json' };
-//@ts-ignore, required for jest
-import configurationFixture from './__fixtures__/configuration.fixture.json' assert { type: 'json' };
+import uaChromeFixtures from './__fixtures__/user-agent.chrome.fixtures.json';
+import uaAndroidFixtures from './__fixtures__/user-agent.android.fixtures.json';
+import configurationFixture from './__fixtures__/configuration.fixture.json';
 
 import { AppService } from './app.service.js';
 import { ConfigModule, ConfigService } from '@nestjs/config';

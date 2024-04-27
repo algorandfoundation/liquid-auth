@@ -18,7 +18,7 @@ export type LiquidAuthClientExtensionResults = {
     address: string;
 
     device?: string;
-    requestId?: string;
+    requestId?: string | number;
   };
 };
 export type LiquidAttestationExtensionsClientInput =

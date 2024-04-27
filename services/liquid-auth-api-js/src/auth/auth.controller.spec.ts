@@ -8,8 +8,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Response } from 'express';
 import { dummyUsers } from '../../tests/constants.js';
 import { mockAuthService } from '../__mocks__/auth.service.mock.js';
-//@ts-ignore, ignore for tests
-import sessionFixtures from '../__fixtures__/session.fixtures.json' assert { type: 'json' };
+import sessionFixtures from '../__fixtures__/session.fixtures.json';
 import {
   InternalServerErrorException,
   NotFoundException,

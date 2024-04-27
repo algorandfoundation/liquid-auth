@@ -1,6 +1,56 @@
 [
   {
-    "username": "UY5OHBV7O7RJXY7MKLDCVE4MCJ7OFSGFMCENS6BHJHCO3ERQU2CBJTVD2E",
+    "username": "2SPDE6XLJNXFTOO7OIGNRNKSEDOHJWVD3HBSEAPHONZQ4IQEYOGYTP6LXA",
+    "displayName": "Liquid Auth User",
+    "authenticatorSelection": {
+      "userVerification": "required"
+    },
+    "extensions": {
+      "liquid": true
+    }
+  },
+  {
+    "username": "KH4XYQ4ZYKARWZAYVIVAY6WPWXNU3FWU2QC6HF2666KKM6CH4APTUIOQHU",
+    "displayName": "Liquid Auth User",
+    "authenticatorSelection": {
+      "userVerification": "required"
+    },
+    "extensions": {
+      "liquid": true
+    }
+  },
+  {
+    "username": "6P3TIK6KEPUNVHM77UXVG7ZIZRCCJX6IKZ5FA3WMXKRBHIXW4SAQ3OSEY4",
+    "displayName": "Liquid Auth User",
+    "authenticatorSelection": {
+      "userVerification": "required"
+    },
+    "extensions": {
+      "liquid": true
+    }
+  },
+  {
+    "username": "2W5VGV43VOKJTVFZXCEZ6L647XCQEXCDNZGDVFROWAR4FZJJCOWHVXLFOE",
+    "displayName": "Liquid Auth User",
+    "authenticatorSelection": {
+      "userVerification": "required"
+    },
+    "extensions": {
+      "liquid": true
+    }
+  },
+  {
+    "username": "L72CSGO2C7K6QJZHVC2AYCLZ5GY3IMN7GJVKVNXU5WDDKLENPKSBZ7GE7U",
+    "displayName": "Liquid Auth User",
+    "authenticatorSelection": {
+      "userVerification": "required"
+    },
+    "extensions": {
+      "liquid": true
+    }
+  },
+  {
+    "username": "OXOACNIWZ7VDJXJXJHQ53BMNFQTSPPW524RU5JVAFLHSSGGQZCTII65ZII",
     "displayName": "Liquid Auth User",
     "authenticatorSelection": {
       "userVerification": "required"

@@ -4,8 +4,7 @@ import { SignalsGateway } from './signals/signals.gateway.js';
 import { AttestationModule } from './attestation/attestation.module.js';
 import { AssertionModule } from './assertion/assertion.module.js';
 
-//@ts-ignore, required for jest
-import databaseConfigFixtures from './__fixtures__/configuration.database.fixtures.json' assert { type: 'json' };
+import databaseConfigFixtures from './__fixtures__/configuration.database.fixtures.json';
 import { ConfigService } from '@nestjs/config';
 
 describe('AppModule', () => {

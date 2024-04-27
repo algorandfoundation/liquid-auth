@@ -32,9 +32,10 @@ describe('AndroidController', () => {
   it('should return developer web links', () => {
     process.env.NODE_ENV = 'development';
     process.env.ORIGIN = 'http://unkown.site';
-    // @ts-ignore
     expect(
-      controller.assetLinks({ headers: { 'user-agent': uaChromeFixtures[0] } as unknown as Headers } as Request),
+      controller.assetLinks({
+        headers: { 'user-agent': uaChromeFixtures[0] } as unknown as Headers,
+      } as Request),
     ).toEqual([
       ...assetLinks,
       {
@@ -56,9 +57,10 @@ describe('AndroidController', () => {
     process.env.ANDROID_PACKAGENAME = 'com.example';
     process.env.ANDROID_SHA256HASH =
       'AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA';
-    // @ts-ignore
     expect(
-      controller.assetLinks({ headers: { 'user-agent': uaChromeFixtures[0] } as unknown as Headers } as Request),
+      controller.assetLinks({
+        headers: { 'user-agent': uaChromeFixtures[0] } as unknown as Headers,
+      } as Request),
     ).toEqual([
       ...assetLinks,
       {

@@ -1,16 +1,14 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
+  Headers,
   Inject,
   Logger,
-  NotFoundException,
+  Param,
   Post,
-  Req,
   Session,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { Request } from 'express';
 
 import {
   AssertionCredentialJSON,
@@ -27,11 +25,12 @@ import {
   ApiForbiddenResponse,
   ApiOperation,
   ApiParam,
-  ApiResponse,
   ApiTags,
+  ApiResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { User } from '../auth/auth.schema.js';
+// TODO: Make doc loader utility
 const filePath = join(process.cwd(), './src/assertion');
 const requestDescription = readFileSync(
   join(filePath, 'assertion.controller.post.request.md'),
@@ -39,6 +38,13 @@ const requestDescription = readFileSync(
 const responseDescription = readFileSync(
   join(filePath, 'assertion.controller.post.response.md'),
 ).toString();
+
+/**
+ * Assertion Controller
+ *
+ * Handles assertion requests and responses from previously registered PublicKeyCredentials
+ *
+ */
 @Controller('assertion')
 @ApiTags('assertion')
 export class AssertionController {
@@ -59,7 +65,7 @@ export class AssertionController {
    * route.
    *
    * @param session - Express Session
-   * @param req - Express Request
+   * @param credId - Credential ID to Lookup
    * @param [body] - Standard Public Key Request Options
    */
   @Post('/request/:credId')
@@ -75,34 +81,30 @@ export class AssertionController {
     type: PublicKeyCredentialRequestOptions,
   })
   @ApiResponse({ status: 404, description: 'Not Found' })
-  async assertionRequest(
+  async request(
     @Session() session: Record<string, any>,
-    @Req() req: Request,
+    @Param('credId') credId: string,
     @Body() body?: PublicKeyCredentialRequestOptions,
   ) {
-    this.logger.log(
-      `POST /request/${req.params.credId} for Session: ${session.id}`,
-    );
-    const user = await this.authService.search({
-      'credentials.credId': req.params.credId,
-    });
+    this.logger.log(`POST /request/${credId} for Session: ${session.id}`);
+    this.logger.debug('Request Body', body);
 
+    const user = await this.authService.search({
+      'credentials.credId': credId,
+    });
     if (!user) {
-      throw new NotFoundException({
+      throw new UnauthorizedException({
         reason: 'not_found',
         error: 'User not found.',
       });
     }
 
     // Get options, save challenge and respond
-    const options = this.assertionService.request(
-      user,
-      req.params.credId,
-      body,
-    );
+    const options = this.assertionService.request(user, credId, body);
 
     session.challenge = options.challenge;
 
+    this.logger.debug('Assertion Options', options);
     return options;
   }
 
@@ -115,7 +117,7 @@ export class AssertionController {
    * must have a valid challenge in the session.
    *
    * @param session - Express Session
-   * @param req - Express Request
+   * @param headers - Request Headers
    * @param body - Assertion Credential JSON
    */
   @Post('/response')
@@ -131,15 +133,18 @@ export class AssertionController {
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden' })
-  async assertionResponse(
-    @Session() session: Record<string, any>,
-    @Req() req: Request,
+  async response(
+    @Session()
+    session: Record<string, any>,
+    @Headers()
+    headers: Record<string, any>,
     @Body()
     body: AssertionCredentialJSON & {
       clientExtensionResults: { liquid: { requestId: string } };
     },
   ) {
     this.logger.log(`POST /response for Session: ${session.id}`);
+    this.logger.debug('Authenticator Response', body);
     const expectedChallenge = session.challenge;
     if (typeof expectedChallenge !== 'string') {
       throw new UnauthorizedException({
@@ -151,34 +156,42 @@ export class AssertionController {
       'credentials.credId': body.id,
     });
     if (!savedUser) {
-      throw new ForbiddenException({
+      throw new UnauthorizedException({
         reason: 'not_found',
         error: 'Credential not found.',
       });
     }
-
-    const user = this.assertionService.response(
-      savedUser,
-      body,
-      expectedChallenge,
-      req.get('User-Agent'),
-    );
+    let user: User;
+    try {
+      user = this.assertionService.response(
+        savedUser,
+        body,
+        expectedChallenge,
+        headers['user-agent'],
+      );
+    } catch (e) {
+      this.logger.error(e);
+      throw new UnauthorizedException({
+        reason: 'unauthorized',
+        error: 'User verification failed.',
+      });
+    }
 
     await this.authService.update(user);
-    const credential = await this.authService.findCredential(body.id);
 
     delete session.challenge;
     session.wallet = user.wallet;
+    // Emit the signin event for the given request id
     if (
       typeof body?.clientExtensionResults?.liquid?.requestId !== 'undefined'
     ) {
       this.client.emit<string>('auth', {
         requestId: body.clientExtensionResults.liquid.requestId,
         wallet: user.wallet,
-        credId: credential.credId,
+        credId: body.id,
       });
     }
-
+    this.logger.debug('User', user);
     return user;
   }
 }

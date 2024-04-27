@@ -109,7 +109,8 @@
       "/node_modules/",
       "/test/",
       "/dist/",
-      "/src/main.ts"
+      "/src/main.ts",
+      "/src/adapters/redis-io.adapter.ts"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"

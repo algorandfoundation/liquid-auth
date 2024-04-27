@@ -1,0 +1,74 @@
+[
+  {
+    "challenge": "0TXu4G4iu3sbAQopheoPe_CpnLJOB-QlIUvwFBC317Q",
+    "allowCredentials": [
+      {
+        "id": "AYMPi2Rbhcnu2gSHOO1TNvzDJ38iU00rrlCqyH874XCIEoIotRc7eVRFpx0TvsQurg7BAnXy5KnWdKC8LeWs0k0",
+        "type": "public-key"
+      }
+    ],
+    "timeout": 1800000,
+    "userVerification": "required",
+    "rpId": "catfish-pro-wolf.ngrok-free.app"
+  },
+  {
+    "challenge": "h8upgZHta6ZifR3ApK83Jjpb7SC0IhOK_j839UuLOSo",
+    "allowCredentials": [
+      {
+        "id": "ASk2I69zskHtkQLgnI_zHCAS9n7AwYoGSN8TEfE2D2IrVjETxVJADCdlYAu5lqhigqWvjGq8M0cfHcludnSD-3I",
+        "type": "public-key"
+      }
+    ],
+    "timeout": 1800000,
+    "userVerification": "required",
+    "rpId": "catfish-pro-wolf.ngrok-free.app"
+  },
+  {
+    "challenge": "zWFuwmsM9mYVoSYgOzhcBU0R2kyvNANTQiSwPM4emmo",
+    "allowCredentials": [
+      {
+        "id": "AbqTh-5GQBr6NoOMkL_bTOpCDOVBF7_yHvi084BjrlLy8LYLoCJ3Uknichga4FDPY9vq6r3tdGPWS8a9s_Kkpco",
+        "type": "public-key"
+      }
+    ],
+    "timeout": 1800000,
+    "userVerification": "required",
+    "rpId": "catfish-pro-wolf.ngrok-free.app"
+  },
+  {
+    "challenge": "coubA_4RNRJE-oQJQk82i1yZoCZ6kb_NrzsW4DxU2Xo",
+    "allowCredentials": [
+      {
+        "id": "Af6bB9Z_zx0PmRlncq9IbzRzTuxPS-yvEwOrtojHy7eOOVnhGxxHICrKQfoiXv8sINQjs_3AX9TEejK7VOvav-c",
+        "type": "public-key"
+      }
+    ],
+    "timeout": 1800000,
+    "userVerification": "required",
+    "rpId": "catfish-pro-wolf.ngrok-free.app"
+  },
+  {
+    "challenge": "s4UTa1JBoSkqjNpHb8i6xepK0Gc9esz7sRSygiY1lf4",
+    "allowCredentials": [
+      {
+        "id": "AVl7TsljN83pJD7_FfyXNoGubqbs37t41TGV9Y7V4jtgb30BnpqqlUwsQiB-a2h5ovTpkoJg5ChnQEmMlC6L0Sw",
+        "type": "public-key"
+      }
+    ],
+    "timeout": 1800000,
+    "userVerification": "required",
+    "rpId": "catfish-pro-wolf.ngrok-free.app"
+  },
+  {
+    "challenge": "Gkc9Cqhn8TEprdIjRT9l8R6mI2H5q8pe64VRRSBaDWE",
+    "allowCredentials": [
+      {
+        "id": "AYvDA1VZ-qkvCPmf7Re7_GVDY4AwzmUFbI1Njsl3kDcI9BFKTqTd0YUC47IK-peJbf3weNCUdqmB2_QDEPy7iR4",
+        "type": "public-key"
+      }
+    ],
+    "timeout": 1800000,
+    "userVerification": "required",
+    "rpId": "catfish-pro-wolf.ngrok-free.app"
+  }
+]

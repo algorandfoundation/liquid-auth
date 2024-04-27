@@ -76,7 +76,7 @@ export class AttestationController {
    */
   @Post('/response')
   @ApiOperation({ summary: 'Attestation Response' })
-  async attestationResponse(
+  async response(
     @Session() session: Record<string, any>,
     @Headers() headers: Record<string, any>,
     @Body()

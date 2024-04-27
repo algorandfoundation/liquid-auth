@@ -48,7 +48,7 @@ describe('AttestationController', () => {
         AttestationService,
         {
           provide: 'ACCOUNT_LINK_SERVICE',
-          useValue: { ...mockAccountLinkService },
+          useValue: mockAccountLinkService,
         },
         {
           provide: getModelToken(User.name),
@@ -56,7 +56,6 @@ describe('AttestationController', () => {
         },
       ],
     }).compile();
-
     authService = moduleRef.get<AuthService>(AuthService);
     attestationController = moduleRef.get<AttestationController>(
       AttestationController,
@@ -104,27 +103,35 @@ describe('AttestationController', () => {
   });
 
   describe('POST /response', () => {
-    it('should register a key', async () => {
+    it('should register a key and emit to connected clients', async () => {
       const session: Record<string, any> = new Session();
-      authService.addCredential = jest.fn(async () => {
-        return attestationResponseResponseFixtures[0];
-      });
+      authService.addCredential = jest
+        .fn()
+        .mockResolvedValue(attestationResponseResponseFixtures[0]);
       session.challenge = attestationRequestResponseFixtures[0].challenge;
       session.liquidExtension = true;
       const body =
         attestationResponseBodyFixtures[0] as AttestationCredentialJSONDto;
       const headers = { 'user-agent': androidUserAgentFixtures[0] };
       await expect(
-        attestationController.attestationResponse(session, headers, body),
+        attestationController.response(session, headers, body),
       ).resolves.toBe(attestationResponseResponseFixtures[0]);
       expect(session.challenge).toBeUndefined();
       expect(session.liquidExtension).toBeUndefined();
+      expect(session.wallet).toEqual(
+        attestationResponseResponseFixtures[0].wallet,
+      );
+      expect(mockAccountLinkService.emit).toHaveBeenCalledWith('auth', {
+        requestId: body.clientExtensionResults.liquid.requestId,
+        wallet: body.clientExtensionResults.liquid.address,
+        credId: body.id,
+      });
     });
     it('should set a default device if empty', async () => {
       const session: Record<string, any> = new Session();
-      authService.addCredential = jest.fn(async () => {
-        return attestationResponseResponseFixtures[0];
-      });
+      authService.addCredential = jest
+        .fn()
+        .mockResolvedValue(attestationResponseResponseFixtures[0]);
       session.challenge = attestationRequestResponseFixtures[0].challenge;
       session.liquidExtension = true;
       const body = {
@@ -138,10 +145,15 @@ describe('AttestationController', () => {
       } as AttestationCredentialJSONDto;
       const headers = { 'user-agent': androidUserAgentFixtures[0] };
       await expect(
-        attestationController.attestationResponse(session, headers, body),
+        attestationController.response(session, headers, body),
       ).resolves.toBe(attestationResponseResponseFixtures[0]);
       expect(session.challenge).toBeUndefined();
       expect(session.liquidExtension).toBeUndefined();
+      expect(mockAccountLinkService.emit).toHaveBeenCalledWith('auth', {
+        requestId: body.clientExtensionResults.liquid.requestId,
+        wallet: body.clientExtensionResults.liquid.address,
+        credId: body.id,
+      });
     });
     it('should fail if the challenge is not a string', async () => {
       await Promise.all(
@@ -150,7 +162,7 @@ describe('AttestationController', () => {
           const headers = { 'user-agent': androidUserAgentFixtures[0] };
 
           await expect(() =>
-            attestationController.attestationResponse(
+            attestationController.response(
               {
                 challenge: null,
               },
@@ -170,7 +182,7 @@ describe('AttestationController', () => {
             challenge: attestationRequestResponseFixtures[i].challenge,
           };
           await expect(
-            attestationController.attestationResponse(session, headers, body),
+            attestationController.response(session, headers, body),
           ).rejects.toThrow(NotImplementedException);
         }),
       );
@@ -181,14 +193,14 @@ describe('AttestationController', () => {
           const body = {
             ...fixture,
             clientExtensionResults: {},
-          } as AttestationCredentialJSONDto;
+          } as unknown as AttestationCredentialJSONDto;
           const headers = { 'user-agent': androidUserAgentFixtures[0] };
           const session = {
             challenge: attestationRequestResponseFixtures[i].challenge,
             liquidExtension: true,
           };
           await expect(
-            attestationController.attestationResponse(session, headers, body),
+            attestationController.response(session, headers, body),
           ).rejects.toThrow(UnauthorizedException);
         }),
       );
@@ -212,7 +224,7 @@ describe('AttestationController', () => {
             liquidExtension: true,
           };
           await expect(() =>
-            attestationController.attestationResponse(session, headers, body),
+            attestationController.response(session, headers, body),
           ).rejects.toThrow(UnauthorizedException);
         }),
       );

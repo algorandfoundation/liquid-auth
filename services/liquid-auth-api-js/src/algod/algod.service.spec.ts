@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AlgodService } from './algod.service.js';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
-//@ts-ignore, required for jest
 import configurationFixture from '../__fixtures__/configuration.fixture.json';
 
 describe('AlgodService', () => {

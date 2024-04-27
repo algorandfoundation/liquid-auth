@@ -13,19 +13,9 @@ describe('AttestationService', () => {
   let provider: AttestationService;
   const algodServiceMockFactory = (addr: string) =>
     ({
-      accountInformation: jest.fn(() => {
-        return {
-          exclude: jest.fn(() => {
-            return {
-              do: jest.fn(() => {
-                return {
-                  'auth-addr': addr,
-                };
-              }),
-            };
-          }),
-        };
-      }),
+      exclude: jest.fn().mockReturnThis(),
+      do: jest.fn(async () => ({ 'auth-addr': addr })),
+      accountInformation: jest.fn().mockReturnThis(),
     }) as unknown as AlgodService;
   let currentMock = algodServiceMockFactory(
     '24FEVK3D3VPVHP2MHVTZZSP6PINKW7PGPYTFHLO6X6LV4VNFWDTM6AQI7U',
@@ -49,7 +39,6 @@ describe('AttestationService', () => {
         AttestationService,
       ],
     }).compile();
-    // currentMock = module.get<AlgodService>(AlgodService)
     provider = module.get<AttestationService>(AttestationService);
   });
   it('should be defined', () => {
