@@ -95,10 +95,6 @@ export class AuthService {
     return this.update(user);
   }
 
-  async all() {
-    return this.userModel.find({}).exec();
-  }
-
   /**
    * Find a Session by ID
    *
