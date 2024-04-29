@@ -14,7 +14,7 @@ A user must prove ownership of a private key to associate PublicKeyCredentials
 ## Getting started
 
 ### Prerequisites
-- Node.js 20
+- Node.js 18+
 - Docker
 
 #### Clone the project
@@ -25,9 +25,25 @@ git clone git@github.com:algorandfoundation/liquid-auth.git && cd liquid-auth
 
 ### NGROK
 
-WebAuthn requires a secure context (HTTPS) to work and this will not allow you to test the FIDO2 feature in your local machine.
+**note on VPNs**: Ngrok will not work with VPNs, so to run locally the project, `disable` it or `configure` your VPN's split tunneling to allow ngrok traffic.
 
-Sign up for a free account at [ngrok](https://ngrok.com/) and configure a static domain for your account.
+Sign up for a free account at [ngrok](https://ngrok.com/) and follow the instructions to get your <NGROK_AUTH_TOKEN> and <NGROK_STATIC_DOMAIN>.
+
+#### With Docker
+Don't run the ngrok commands directly as expressed in the ngrok guide as it will create run-time port conflicts.
+
+#### Without Docker
+nrokg will ask you to add your auth token to your configuration file.
+
+``` bash
+ngrok config add-authtoken <NGROK_AUTH_TOKEN>
+```
+
+Will then ask you to deploy your static domain, make sure to change the port to **5137** like this:
+
+``` bash
+ngrok http --domain=<NGROK_STATIC_DOMAIN> 5137
+```
 
 #### Configure NGROK
 
