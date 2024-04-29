@@ -3,7 +3,7 @@ version: '3.4'
 services:
   liquid-auth:
     build: .
-    restart: always
+    restart: no
     env_file:
       - .env.docker
     ports:
@@ -13,12 +13,12 @@ services:
       - mongo
       - ngrok
   liquid-demo:
+    restart: no
     build:
       context: .
       dockerfile: Vite.Dockerfile
     ports:
       - "5173:5173"
-    restart: always
     environment:
       - PROXY_URL=http://liquid-auth:3000
       - WSS_PROXY_SERVER=ws://liquid-auth:3000
@@ -27,7 +27,7 @@ services:
       - ngrok
   ngrok:
     image: ngrok/ngrok:latest
-    restart: unless-stopped
+    restart: no
     command:
       - "start"
       - "--all"
@@ -44,7 +44,7 @@ services:
       - "6379:6379"
   mongo:
     image: mongo:7.0
-    restart: always
+    restart: no
     environment:
       - MONGO_INITDB_DATABASE=${DB_NAME:-fido}
       - MONGO_INITDB_ROOT_USERNAME=${DB_USERNAME:-algorand}
@@ -55,6 +55,7 @@ services:
       - mongo:/data/db
   turn:
     image: coturn/coturn
+    restart: no
     deploy:
       replicas: 0
     depends_on:
