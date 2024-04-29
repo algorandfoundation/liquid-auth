@@ -1,5 +1,0 @@
----
-title: Attestation
----
-
-Placeholder
