@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import fido2 from '@simplewebauthn/server';
+import * as fido2 from '@simplewebauthn/server';
 import { User } from '../auth/auth.schema.js';
 import {
   AssertionCredentialJSON,

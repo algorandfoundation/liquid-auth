@@ -1,64 +1,25 @@
-import { create, StateCreator } from 'zustand';
-import { createJSONStorage, persist, PersistOptions } from 'zustand/middleware';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-export type Credential = {
-  id: string;
-  device: string;
-};
+interface AddressState {
+  address: string;
+  setAddress: (address: string) => void;
+}
 
-export type Address = {
-  name: string;
-  credentials: Credential[];
-};
-
-export type Addresses = {
-  [k: string]: Address;
-};
-
-export type CredentialStore = {
-  addresses: Addresses;
-  update: (address: Address) => void;
-  remove: (address: Address) => void;
-};
-type PersistCredentials = (
-  config: StateCreator<CredentialStore>,
-  options: PersistOptions<CredentialStore>,
-) => StateCreator<CredentialStore>;
-
-export const useCredentialStore = create<CredentialStore>(
-  (persist as PersistCredentials)(
-    (set, get) => ({
-      addresses: {},
-      update: (address) =>
-        set(() => ({
-          addresses: { ...get().addresses, [address.name]: address },
-        })),
-      remove: (address) =>
-        set(() => {
-          const addresses = { ...get().addresses };
-          delete addresses[address.name];
-          return { addresses };
-        }),
+export const useAddressStore = create<
+  AddressState,
+  [['zustand/persist', AddressState]]
+>(
+  persist(
+    (set) => ({
+      address: '',
+      setAddress: (address: string) => set({ address }),
     }),
     {
-      name: 'avicennia-credential-store',
-      storage: createJSONStorage(() => localStorage),
+      name: 'address-storage', // name of the item in the storage (must be unique)
     },
   ),
 );
-
-interface PeerStore {
-  candidates: RTCIceCandidateInit[];
-  addCandidate: (candidate: RTCIceCandidateInit) => void;
-  clearCandidates: () => void;
-}
-export const usePeerStore = create<PeerStore>((set) => ({
-  candidates: [],
-  addCandidate: (candidate: RTCIceCandidateInit) =>
-    set((state) => ({ candidates: [...state.candidates, candidate] })),
-  clearCandidates: () => set({ candidates: [] }),
-}));
-
 export type Message = {
   data: unknown;
   type: 'local' | 'remote';

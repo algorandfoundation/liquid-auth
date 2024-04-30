@@ -1,0 +1,86 @@
+[
+  {
+    "_id": "662c2ca47c56f26fbd619624",
+    "id": "M6RT4iT5FkNDM2i57MXzBhLDt9zl2CrLt2p4Ar03t2Q",
+    "wallet": "2SPDE6XLJNXFTOO7OIGNRNKSEDOHJWVD3HBSEAPHONZQ4IQEYOGYTP6LXA",
+    "credentials": [
+      {
+        "device": "Pixel 8 Pro",
+        "publicKey": "pQECAyYgASFYIB2dcp3wanhReRhgRIpJCUfRSwkCvyE9OdvEL_NlncSJIlggkSIz7h7O5nrAXGJrkCOmeolChSc09eHzniCFLFxaKH0",
+        "credId": "AYMPi2Rbhcnu2gSHOO1TNvzDJ38iU00rrlCqyH874XCIEoIotRc7eVRFpx0TvsQurg7BAnXy5KnWdKC8LeWs0k0",
+        "prevCounter": 1
+      }
+    ],
+    "__v": 0
+  },
+  {
+    "_id": "662c2cbe7c56f26fbd619639",
+    "id": "w0Me3F2XfcK_wVdMejk6Xl98gHmOtqxcN-WKjLydDA0",
+    "wallet": "KH4XYQ4ZYKARWZAYVIVAY6WPWXNU3FWU2QC6HF2666KKM6CH4APTUIOQHU",
+    "credentials": [
+      {
+        "device": "Pixel 8 Pro",
+        "publicKey": "pQECAyYgASFYIIYtbWsD526npX6pWVda473yek0mi8uLWbpQPAv5pJQTIlgg1j0emgrGTJoujIqn27cBBatDEegpRsKwDvzYw7GTuMM",
+        "credId": "ASk2I69zskHtkQLgnI_zHCAS9n7AwYoGSN8TEfE2D2IrVjETxVJADCdlYAu5lqhigqWvjGq8M0cfHcludnSD-3I",
+        "prevCounter": 1
+      }
+    ],
+    "__v": 0
+  },
+  {
+    "_id": "662c2cdc7c56f26fbd61964f",
+    "id": "mvpgdpIfho5IPdU3QquBDDmnnuUD6DittFevmJCMZmA",
+    "wallet": "6P3TIK6KEPUNVHM77UXVG7ZIZRCCJX6IKZ5FA3WMXKRBHIXW4SAQ3OSEY4",
+    "credentials": [
+      {
+        "device": "Pixel 8 Pro",
+        "publicKey": "pQECAyYgASFYIMJO5NYWM6zT5iCx-dSK8xqXkDiebkZtHpjX7FKwZ_L9IlggM02BH4IpsxBww-avE70ZYHbtFv6wCFbTOFGVJ8jmBYA",
+        "credId": "AbqTh-5GQBr6NoOMkL_bTOpCDOVBF7_yHvi084BjrlLy8LYLoCJ3Uknichga4FDPY9vq6r3tdGPWS8a9s_Kkpco",
+        "prevCounter": 1
+      }
+    ],
+    "__v": 0
+  },
+  {
+    "_id": "662c2cf77c56f26fbd619664",
+    "id": "iIet1pMIMOIPmfws0m2aTenDOI1xhux775w09SlNhXM",
+    "wallet": "2W5VGV43VOKJTVFZXCEZ6L647XCQEXCDNZGDVFROWAR4FZJJCOWHVXLFOE",
+    "credentials": [
+      {
+        "device": "Pixel 8 Pro",
+        "publicKey": "pQECAyYgASFYIL8k0vHupVfbe8EQSsRFkGHfjKf_6ZWv63QsqHrxWCWgIlggfy32BhGoicWESUFJ6XhlZUZckPKuGkBacEnLP5pDOPY",
+        "credId": "Af6bB9Z_zx0PmRlncq9IbzRzTuxPS-yvEwOrtojHy7eOOVnhGxxHICrKQfoiXv8sINQjs_3AX9TEejK7VOvav-c",
+        "prevCounter": 1
+      }
+    ],
+    "__v": 0
+  },
+  {
+    "_id": "662c2d127c56f26fbd61967a",
+    "id": "0Xb1BYjal05QzGSe2kUN5BRoBPjR4seyssK1GJKgxhE",
+    "wallet": "L72CSGO2C7K6QJZHVC2AYCLZ5GY3IMN7GJVKVNXU5WDDKLENPKSBZ7GE7U",
+    "credentials": [
+      {
+        "device": "Pixel 8 Pro",
+        "publicKey": "pQECAyYgASFYIJ2cwWQ49K-Sr7ldYkfUCI8hl42qvcFrfDxyquE-7mOiIlggDOxVoZzESas5nboQLMrsL4mHnbdA1zRmnTvqm7qb1s8",
+        "credId": "AVl7TsljN83pJD7_FfyXNoGubqbs37t41TGV9Y7V4jtgb30BnpqqlUwsQiB-a2h5ovTpkoJg5ChnQEmMlC6L0Sw",
+        "prevCounter": 1
+      }
+    ],
+    "__v": 0
+  },
+  {
+    "_id": "662c2d2c7c56f26fbd61968f",
+    "id": "hoQk-DlJOXqyuV2IDKtBHEE2DYr7K2_DTgAyiFcgGpE",
+    "wallet": "OXOACNIWZ7VDJXJXJHQ53BMNFQTSPPW524RU5JVAFLHSSGGQZCTII65ZII",
+    "credentials": [
+      {
+        "device": "Pixel 8 Pro",
+        "publicKey": "pQECAyYgASFYIF5hkHAZkg76PAXB5DGb0IcJJXlxYqT6HSIequIL6DYyIlggaRfQcwy7w-hx-AcLgEZ57oq1n3nCcL8QodheQcLcbto",
+        "credId": "AYvDA1VZ-qkvCPmf7Re7_GVDY4AwzmUFbI1Njsl3kDcI9BFKTqTd0YUC47IK-peJbf3weNCUdqmB2_QDEPy7iR4",
+        "prevCounter": 1
+      }
+    ],
+    "__v": 0
+  }
+]

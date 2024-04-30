@@ -1,0 +1,116 @@
+[
+  {
+    "id": "AYMPi2Rbhcnu2gSHOO1TNvzDJ38iU00rrlCqyH874XCIEoIotRc7eVRFpx0TvsQurg7BAnXy5KnWdKC8LeWs0k0",
+    "type": "public-key",
+    "rawId": "AYMPi2Rbhcnu2gSHOO1TNvzDJ38iU00rrlCqyH874XCIEoIotRc7eVRFpx0TvsQurg7BAnXy5KnWdKC8LeWs0k0",
+    "clientExtensionResults": {
+      "liquid": {
+        "type": "algorand",
+        "requestId": 0.6050027432326752,
+        "address": "2SPDE6XLJNXFTOO7OIGNRNKSEDOHJWVD3HBSEAPHONZQ4IQEYOGYTP6LXA",
+        "signature": "QY31mdH8AwpJ9p4pCXBO2iA5WdU-BjG52xEtJNuSJNHJIaJ10uzqk3FdR0fvYVfb_rzXTuWn4k1PFFeg-vpEDw",
+        "device": "Pixel 8 Pro"
+      }
+    },
+    "response": {
+      "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiMzVKWXBvWEduTTRzOElJQ2FrV1NMbGxjWHkzWl9sYzNBYUxTbDg3MnFYTSIsIm9yaWdpbiI6ImFuZHJvaWQ6YXBrLWtleS1oYXNoOlI4eE83cmxRV2FXTDRCbEZ5Z3B0V1JiNXFjS1dkZmp6WklhU1JpdDlYVnciLCJhbmRyb2lkUGFja2FnZU5hbWUiOiJmb3VuZGF0aW9uLmFsZ29yYW5kLmRlbW8ifQ",
+      "attestationObject": "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjFlpPmT7RcYTDeFJdKhDtiKwzb05n-ojlcqqYw5SomXZBFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQQGDD4tkW4XJ7toEhzjtUzb8wyd_IlNNK65Qqsh_O-FwiBKCKLUXO3lURacdE77ELq4OwQJ18uSp1nSgvC3lrNJNpQECAyYgASFYIB2dcp3wanhReRhgRIpJCUfRSwkCvyE9OdvEL_NlncSJIlggkSIz7h7O5nrAXGJrkCOmeolChSc09eHzniCFLFxaKH0"
+    },
+    "device": "Pixel 8 Pro"
+  },
+  {
+    "id": "ASk2I69zskHtkQLgnI_zHCAS9n7AwYoGSN8TEfE2D2IrVjETxVJADCdlYAu5lqhigqWvjGq8M0cfHcludnSD-3I",
+    "type": "public-key",
+    "rawId": "ASk2I69zskHtkQLgnI_zHCAS9n7AwYoGSN8TEfE2D2IrVjETxVJADCdlYAu5lqhigqWvjGq8M0cfHcludnSD-3I",
+    "clientExtensionResults": {
+      "liquid": {
+        "type": "algorand",
+        "requestId": 0.1824949283001871,
+        "address": "KH4XYQ4ZYKARWZAYVIVAY6WPWXNU3FWU2QC6HF2666KKM6CH4APTUIOQHU",
+        "signature": "f0KUNI-Q5H54aSurcxCYwhCuQP8UtuHn2Ne5RhxeXfribsH1plCgbNVI4gwn183WxW8aSA-2JhxqLSe2J7ApCA",
+        "device": "Pixel 8 Pro"
+      }
+    },
+    "response": {
+      "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiV2NZenlabDFidGhQY3loSGlZMWVGSmhzNHFrZ3piVDJ5aVJCdVg3cHVxYyIsIm9yaWdpbiI6ImFuZHJvaWQ6YXBrLWtleS1oYXNoOlI4eE83cmxRV2FXTDRCbEZ5Z3B0V1JiNXFjS1dkZmp6WklhU1JpdDlYVnciLCJhbmRyb2lkUGFja2FnZU5hbWUiOiJmb3VuZGF0aW9uLmFsZ29yYW5kLmRlbW8ifQ",
+      "attestationObject": "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjFlpPmT7RcYTDeFJdKhDtiKwzb05n-ojlcqqYw5SomXZBFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQQEpNiOvc7JB7ZEC4JyP8xwgEvZ-wMGKBkjfExHxNg9iK1YxE8VSQAwnZWALuZaoYoKlr4xqvDNHHx3JbnZ0g_typQECAyYgASFYIIYtbWsD526npX6pWVda473yek0mi8uLWbpQPAv5pJQTIlgg1j0emgrGTJoujIqn27cBBatDEegpRsKwDvzYw7GTuMM"
+    },
+    "device": "Pixel 8 Pro"
+  },
+  {
+    "id": "AbqTh-5GQBr6NoOMkL_bTOpCDOVBF7_yHvi084BjrlLy8LYLoCJ3Uknichga4FDPY9vq6r3tdGPWS8a9s_Kkpco",
+    "type": "public-key",
+    "rawId": "AbqTh-5GQBr6NoOMkL_bTOpCDOVBF7_yHvi084BjrlLy8LYLoCJ3Uknichga4FDPY9vq6r3tdGPWS8a9s_Kkpco",
+    "clientExtensionResults": {
+      "liquid": {
+        "type": "algorand",
+        "requestId": 0.1294004256903012,
+        "address": "6P3TIK6KEPUNVHM77UXVG7ZIZRCCJX6IKZ5FA3WMXKRBHIXW4SAQ3OSEY4",
+        "signature": "t6LqTuixeQ7WG1M-XxhSJvKBydY5YBEXCZi2BU_W9zJf2qWBGIbVlnMSfQnfc0ApYjsOO-bKnnoJtJdbh0lACQ",
+        "device": "Pixel 8 Pro"
+      }
+    },
+    "response": {
+      "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiR1pCX1pCZ3pfSjVzdlpTcm55ZllPWWloQmVJbU1SaDhDam9WN2UtSGlqNCIsIm9yaWdpbiI6ImFuZHJvaWQ6YXBrLWtleS1oYXNoOlI4eE83cmxRV2FXTDRCbEZ5Z3B0V1JiNXFjS1dkZmp6WklhU1JpdDlYVnciLCJhbmRyb2lkUGFja2FnZU5hbWUiOiJmb3VuZGF0aW9uLmFsZ29yYW5kLmRlbW8ifQ",
+      "attestationObject": "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjFlpPmT7RcYTDeFJdKhDtiKwzb05n-ojlcqqYw5SomXZBFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQQG6k4fuRkAa-jaDjJC_20zqQgzlQRe_8h74tPOAY65S8vC2C6Aid1JJ4nIYGuBQz2Pb6uq97XRj1kvGvbPypKXKpQECAyYgASFYIMJO5NYWM6zT5iCx-dSK8xqXkDiebkZtHpjX7FKwZ_L9IlggM02BH4IpsxBww-avE70ZYHbtFv6wCFbTOFGVJ8jmBYA"
+    },
+    "device": "Pixel 8 Pro"
+  },
+  {
+    "id": "Af6bB9Z_zx0PmRlncq9IbzRzTuxPS-yvEwOrtojHy7eOOVnhGxxHICrKQfoiXv8sINQjs_3AX9TEejK7VOvav-c",
+    "type": "public-key",
+    "rawId": "Af6bB9Z_zx0PmRlncq9IbzRzTuxPS-yvEwOrtojHy7eOOVnhGxxHICrKQfoiXv8sINQjs_3AX9TEejK7VOvav-c",
+    "clientExtensionResults": {
+      "liquid": {
+        "type": "algorand",
+        "requestId": 0.5687522830110388,
+        "address": "2W5VGV43VOKJTVFZXCEZ6L647XCQEXCDNZGDVFROWAR4FZJJCOWHVXLFOE",
+        "signature": "QL0e1z24j1K5ZErHtwhpJPBBb7z-tdSb8IOuAuGVzL8KvxMQdAQihWM3-us-Vl3DkQD1GuXMlwB8BpZijvLyDw",
+        "device": "Pixel 8 Pro"
+      }
+    },
+    "response": {
+      "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiYkJ2WWJkdjNNTWlCVjgwODV5S3FPWDFJVkZ5YlRqc0JycGFZdnBUemFCcyIsIm9yaWdpbiI6ImFuZHJvaWQ6YXBrLWtleS1oYXNoOlI4eE83cmxRV2FXTDRCbEZ5Z3B0V1JiNXFjS1dkZmp6WklhU1JpdDlYVnciLCJhbmRyb2lkUGFja2FnZU5hbWUiOiJmb3VuZGF0aW9uLmFsZ29yYW5kLmRlbW8ifQ",
+      "attestationObject": "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjFlpPmT7RcYTDeFJdKhDtiKwzb05n-ojlcqqYw5SomXZBFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQQH-mwfWf88dD5kZZ3KvSG80c07sT0vsrxMDq7aIx8u3jjlZ4RscRyAqykH6Il7_LCDUI7P9wF_UxHoyu1Tr2r_npQECAyYgASFYIL8k0vHupVfbe8EQSsRFkGHfjKf_6ZWv63QsqHrxWCWgIlggfy32BhGoicWESUFJ6XhlZUZckPKuGkBacEnLP5pDOPY"
+    },
+    "device": "Pixel 8 Pro"
+  },
+  {
+    "id": "AVl7TsljN83pJD7_FfyXNoGubqbs37t41TGV9Y7V4jtgb30BnpqqlUwsQiB-a2h5ovTpkoJg5ChnQEmMlC6L0Sw",
+    "type": "public-key",
+    "rawId": "AVl7TsljN83pJD7_FfyXNoGubqbs37t41TGV9Y7V4jtgb30BnpqqlUwsQiB-a2h5ovTpkoJg5ChnQEmMlC6L0Sw",
+    "clientExtensionResults": {
+      "liquid": {
+        "type": "algorand",
+        "requestId": 0.7699192258303749,
+        "address": "L72CSGO2C7K6QJZHVC2AYCLZ5GY3IMN7GJVKVNXU5WDDKLENPKSBZ7GE7U",
+        "signature": "RX-r27Alz0i4IF9wRaEy2kp6na29mTTOYSYzHwBWfwv5wNHkPwvIT2spDFdsvaxlt_M16OKo0PVqOUOAuhhGAQ",
+        "device": "Pixel 8 Pro"
+      }
+    },
+    "response": {
+      "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiTzZDTkJQVGV3SGM0Wnp0R1p5NURCa2tGUDM5VWI2MXVHVUh1ekwwWmVBdyIsIm9yaWdpbiI6ImFuZHJvaWQ6YXBrLWtleS1oYXNoOlI4eE83cmxRV2FXTDRCbEZ5Z3B0V1JiNXFjS1dkZmp6WklhU1JpdDlYVnciLCJhbmRyb2lkUGFja2FnZU5hbWUiOiJmb3VuZGF0aW9uLmFsZ29yYW5kLmRlbW8ifQ",
+      "attestationObject": "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjFlpPmT7RcYTDeFJdKhDtiKwzb05n-ojlcqqYw5SomXZBFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQQFZe07JYzfN6SQ-_xX8lzaBrm6m7N-7eNUxlfWO1eI7YG99AZ6aqpVMLEIgfmtoeaL06ZKCYOQoZ0BJjJQui9EspQECAyYgASFYIJ2cwWQ49K-Sr7ldYkfUCI8hl42qvcFrfDxyquE-7mOiIlggDOxVoZzESas5nboQLMrsL4mHnbdA1zRmnTvqm7qb1s8"
+    },
+    "device": "Pixel 8 Pro"
+  },
+  {
+    "id": "AYvDA1VZ-qkvCPmf7Re7_GVDY4AwzmUFbI1Njsl3kDcI9BFKTqTd0YUC47IK-peJbf3weNCUdqmB2_QDEPy7iR4",
+    "type": "public-key",
+    "rawId": "AYvDA1VZ-qkvCPmf7Re7_GVDY4AwzmUFbI1Njsl3kDcI9BFKTqTd0YUC47IK-peJbf3weNCUdqmB2_QDEPy7iR4",
+    "clientExtensionResults": {
+      "liquid": {
+        "type": "algorand",
+        "requestId": 0.07304218671956053,
+        "address": "OXOACNIWZ7VDJXJXJHQ53BMNFQTSPPW524RU5JVAFLHSSGGQZCTII65ZII",
+        "signature": "Fy7gb4f5PSrLOPRRFtQwB-f6kDuapV_T_MDtDY6TwT2ha9D1Km01KBmdFCgHN5VF9G__ae4bTRzC2VtOx37YAQ",
+        "device": "Pixel 8 Pro"
+      }
+    },
+    "response": {
+      "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiYVRQZnJiTFprUWZCRW5jUTF1MHFtLWxUSHkwTjRKWDl1WldFRHlZazdjZyIsIm9yaWdpbiI6ImFuZHJvaWQ6YXBrLWtleS1oYXNoOlI4eE83cmxRV2FXTDRCbEZ5Z3B0V1JiNXFjS1dkZmp6WklhU1JpdDlYVnciLCJhbmRyb2lkUGFja2FnZU5hbWUiOiJmb3VuZGF0aW9uLmFsZ29yYW5kLmRlbW8ifQ",
+      "attestationObject": "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjFlpPmT7RcYTDeFJdKhDtiKwzb05n-ojlcqqYw5SomXZBFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQQGLwwNVWfqpLwj5n-0Xu_xlQ2OAMM5lBWyNTY7Jd5A3CPQRSk6k3dGFAuOyCvqXiW398HjQlHapgdv0AxD8u4kepQECAyYgASFYIF5hkHAZkg76PAXB5DGb0IcJJXlxYqT6HSIequIL6DYyIlggaRfQcwy7w-hx-AcLgEZ57oq1n3nCcL8QodheQcLcbto"
+    },
+    "device": "Pixel 8 Pro"
+  }
+]

@@ -14,6 +14,7 @@ import { Algodv2 } from 'algosdk';
 import { AlgodContext } from '@/hooks';
 import { SignalClientContext } from '@/hooks/useSignalClient.ts';
 import { LinkMessage, SignalClient } from '@liquid/auth-client/signal';
+import { useAddressStore } from '@/store';
 const queryClient = new QueryClient();
 
 const algod = new Algodv2(
@@ -42,7 +43,7 @@ const router = createHashRouter([
 ]);
 export default function ProviderApp() {
   const [dataChannel, setDataChannel] = useState<RTCDataChannel | null>(null);
-
+  const setAddress = useAddressStore((state) => state.setAddress);
   const [mode, setMode] = useState<'light' | 'dark'>(
     window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
       ? 'dark'
@@ -84,6 +85,19 @@ export default function ProviderApp() {
       console.log('SignalClient datachannel', dc);
       setDataChannel(dc);
     }
+    client.on('offer-description', (description) => {
+      console.log({ 'offer-description': description });
+    });
+    client.on('offer-candidate', (candidate) => {
+      console.log({ 'offer-candidate': candidate });
+    });
+
+    client.on('answer-description', (description) => {
+      console.log({ 'answer-description': description });
+    });
+    client.on('answer-candidate', (candidate) => {
+      console.log({ 'answer-candidate': candidate });
+    });
     client.on('data-channel', handleDataChannel);
     function handleSocketConnect() {
       console.log('Socket Connect');
@@ -91,7 +105,8 @@ export default function ProviderApp() {
     }
     client.on('connect', handleSocketConnect);
     function handleLinkMessage(msg: LinkMessage) {
-      window.localStorage.setItem('wallet', JSON.stringify(msg.wallet));
+      console.log('LinkMessage', msg);
+      setAddress(msg.wallet);
     }
     client.on('link-message', handleLinkMessage);
 

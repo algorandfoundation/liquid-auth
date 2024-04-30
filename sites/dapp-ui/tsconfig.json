@@ -20,6 +20,9 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "types": ["vite/client"],
+
+    "allowSyntheticDefaultImports": true,
+
     "paths": {
       "@/*": ["./src/*"]
     }

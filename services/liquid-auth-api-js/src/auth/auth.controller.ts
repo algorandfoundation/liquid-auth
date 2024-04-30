@@ -2,71 +2,86 @@ import {
   Controller,
   Delete,
   Get,
-  Req,
+  HttpException,
+  InternalServerErrorException,
+  NotFoundException,
+  Param,
   Res,
   Session,
   UseGuards,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { AuthGuard } from './auth.guard.js';
+import {
+  ApiCookieAuth,
+  ApiForbiddenResponse,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { User } from './auth.schema.js';
 
 @Controller('auth')
+@ApiTags('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
-  /**
-   * Debugging Route that shows all Users
-   * @param res
-   */
-  @Get('/all')
-  async all(@Res() res: Response) {
-    res.json(await this.authService.all());
-  }
 
   /**
    * Display user keys
    *
    * @param session
-   * @param res
    */
-  @Get('/keys')
+  @Get('/user')
+  @ApiOperation({ summary: 'Get User' })
+  @ApiResponse({ status: 200, description: 'Get the current user', type: User })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  @ApiCookieAuth()
   @UseGuards(AuthGuard)
-  async keys(@Session() session: Record<string, any>, @Res() res: Response) {
+  async keys(@Session() session: Record<string, any>) {
     const wallet = session.wallet;
-    const user = await this.authService.find(wallet);
-    res.json(user || {});
+    return await this.authService.find(wallet);
   }
   /**
    * Delete Credential
    *
    * @param session - Express Session
-   * @param req - Express Request
-   * @param res - Express Response
+   * @param id
    */
   @Delete('/keys/:id')
   @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Delete Credential' })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  @ApiCookieAuth()
   async remove(
     @Session() session: Record<string, any>,
-    @Req() req: Request,
-    @Res() res: Response,
+    @Param('id') id: string,
   ) {
-    const user = await this.authService.find(session.wallet);
+    try {
+      const user = await this.authService.find(session.wallet);
 
-    if (!user) {
-      res.status(404).json({ error: 'User not found' });
-    } else {
-      this.authService
-        .removeCredential(user, req.params.id)
-        .then(() => {
-          res.json({ success: true });
-        })
-        .catch((e) => {
-          res.status(500).json({ error: e.message });
+      if (!user) {
+        throw new NotFoundException({
+          error: 'User not found',
         });
+      }
+
+      await this.authService.removeCredential(user, id);
+
+      return { success: true };
+    } catch (e) {
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new InternalServerErrorException({
+        error: e.message,
+      });
     }
   }
 
   @Get('/logout')
+  @ApiOperation({ summary: 'Log Out' })
   logout(@Session() session: Record<string, any>, @Res() res: Response) {
     delete session.wallet;
     delete session.active;
@@ -79,19 +94,18 @@ export class AuthController {
    * @param session
    */
   @Get('/session')
+  @ApiOperation({ summary: 'Get Session' })
   async read(@Session() session: Record<string, any>) {
     const user = await this.authService.find(session.wallet);
-    return (
-      {
-        user: user
-          ? {
-              id: user.id,
-              wallet: user.wallet,
-              credentials: user.credentials,
-            }
-          : null,
-        session,
-      } || {}
-    );
+    return {
+      user: user
+        ? {
+            id: user.id,
+            wallet: user.wallet,
+            credentials: user.credentials,
+          }
+        : null,
+      session,
+    };
   }
 }

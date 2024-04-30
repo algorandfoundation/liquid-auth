@@ -1,0 +1,25 @@
+{
+  "env": "test",
+  "timeout": 1800000,
+  "rpName": "Algorand Foundation FIDO2 Server",
+  "hostname": "catfish-pro-wolf.ngrok-free.app",
+  "origin": "http://catfish-pro-wolf.ngrok-free.app",
+  "socket": {
+    "host": "localhost",
+    "port": 6379,
+    "username": "default",
+    "password": ""
+  },
+  "database": {
+    "host": "localhost:27017",
+    "username": "algorand",
+    "password": "algorand",
+    "name": "fido",
+    "atlas": false
+  },
+  "algod": {
+    "token": "",
+    "server": "https://testnet-api.algonode.cloud",
+    "port": "443"
+  }
+}

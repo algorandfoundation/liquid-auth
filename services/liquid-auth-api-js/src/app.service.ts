@@ -19,7 +19,6 @@ export class AppService {
       typeof parser.getBrowser().name !== 'string'
     ) {
       const pkgName = ua.split('/')[0];
-      console.log(pkgName);
       const statement = assetLinks.filter(
         (al) => al?.target?.package_name === pkgName,
       );

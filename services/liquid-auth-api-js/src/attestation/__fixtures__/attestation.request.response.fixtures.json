@@ -1,0 +1,188 @@
+[
+  {
+    "challenge": "35JYpoXGnM4s8IICakWSLllcXy3Z_lc3AaLSl872qXM",
+    "rp": {
+      "name": "Algorand Foundation FIDO2 Server",
+      "id": "catfish-pro-wolf.ngrok-free.app"
+    },
+    "user": {
+      "id": "2SPDE6XLJNXFTOO7OIGNRNKSEDOHJWVD3HBSEAPHONZQ4IQEYOGYTP6LXA",
+      "name": "2SPDE6XLJNXFTOO7OIGNRNKSEDOHJWVD3HBSEAPHONZQ4IQEYOGYTP6LXA",
+      "displayName": "2SPDE6XLJNXFTOO7OIGNRNKSEDOHJWVD3HBSEAPHONZQ4IQEYOGYTP6LXA"
+    },
+    "pubKeyCredParams": [
+      {
+        "type": "public-key",
+        "alg": -7
+      },
+      {
+        "type": "public-key",
+        "alg": -257
+      }
+    ],
+    "timeout": 1800000,
+    "attestation": "none",
+    "excludeCredentials": [],
+    "authenticatorSelection": {
+      "userVerification": "required"
+    },
+    "extensions": {
+      "liquid": true
+    }
+  },
+  {
+    "challenge": "WcYzyZl1bthPcyhHiY1eFJhs4qkgzbT2yiRBuX7puqc",
+    "rp": {
+      "name": "Algorand Foundation FIDO2 Server",
+      "id": "catfish-pro-wolf.ngrok-free.app"
+    },
+    "user": {
+      "id": "KH4XYQ4ZYKARWZAYVIVAY6WPWXNU3FWU2QC6HF2666KKM6CH4APTUIOQHU",
+      "name": "KH4XYQ4ZYKARWZAYVIVAY6WPWXNU3FWU2QC6HF2666KKM6CH4APTUIOQHU",
+      "displayName": "KH4XYQ4ZYKARWZAYVIVAY6WPWXNU3FWU2QC6HF2666KKM6CH4APTUIOQHU"
+    },
+    "pubKeyCredParams": [
+      {
+        "type": "public-key",
+        "alg": -7
+      },
+      {
+        "type": "public-key",
+        "alg": -257
+      }
+    ],
+    "timeout": 1800000,
+    "attestation": "none",
+    "excludeCredentials": [],
+    "authenticatorSelection": {
+      "userVerification": "required"
+    },
+    "extensions": {
+      "liquid": true
+    }
+  },
+  {
+    "challenge": "GZB_ZBgz_J5svZSrnyfYOYihBeImMRh8CjoV7e-Hij4",
+    "rp": {
+      "name": "Algorand Foundation FIDO2 Server",
+      "id": "catfish-pro-wolf.ngrok-free.app"
+    },
+    "user": {
+      "id": "6P3TIK6KEPUNVHM77UXVG7ZIZRCCJX6IKZ5FA3WMXKRBHIXW4SAQ3OSEY4",
+      "name": "6P3TIK6KEPUNVHM77UXVG7ZIZRCCJX6IKZ5FA3WMXKRBHIXW4SAQ3OSEY4",
+      "displayName": "6P3TIK6KEPUNVHM77UXVG7ZIZRCCJX6IKZ5FA3WMXKRBHIXW4SAQ3OSEY4"
+    },
+    "pubKeyCredParams": [
+      {
+        "type": "public-key",
+        "alg": -7
+      },
+      {
+        "type": "public-key",
+        "alg": -257
+      }
+    ],
+    "timeout": 1800000,
+    "attestation": "none",
+    "excludeCredentials": [],
+    "authenticatorSelection": {
+      "userVerification": "required"
+    },
+    "extensions": {
+      "liquid": true
+    }
+  },
+  {
+    "challenge": "bBvYbdv3MMiBV8085yKqOX1IVFybTjsBrpaYvpTzaBs",
+    "rp": {
+      "name": "Algorand Foundation FIDO2 Server",
+      "id": "catfish-pro-wolf.ngrok-free.app"
+    },
+    "user": {
+      "id": "2W5VGV43VOKJTVFZXCEZ6L647XCQEXCDNZGDVFROWAR4FZJJCOWHVXLFOE",
+      "name": "2W5VGV43VOKJTVFZXCEZ6L647XCQEXCDNZGDVFROWAR4FZJJCOWHVXLFOE",
+      "displayName": "2W5VGV43VOKJTVFZXCEZ6L647XCQEXCDNZGDVFROWAR4FZJJCOWHVXLFOE"
+    },
+    "pubKeyCredParams": [
+      {
+        "type": "public-key",
+        "alg": -7
+      },
+      {
+        "type": "public-key",
+        "alg": -257
+      }
+    ],
+    "timeout": 1800000,
+    "attestation": "none",
+    "excludeCredentials": [],
+    "authenticatorSelection": {
+      "userVerification": "required"
+    },
+    "extensions": {
+      "liquid": true
+    }
+  },
+  {
+    "challenge": "O6CNBPTewHc4ZztGZy5DBkkFP39Ub61uGUHuzL0ZeAw",
+    "rp": {
+      "name": "Algorand Foundation FIDO2 Server",
+      "id": "catfish-pro-wolf.ngrok-free.app"
+    },
+    "user": {
+      "id": "L72CSGO2C7K6QJZHVC2AYCLZ5GY3IMN7GJVKVNXU5WDDKLENPKSBZ7GE7U",
+      "name": "L72CSGO2C7K6QJZHVC2AYCLZ5GY3IMN7GJVKVNXU5WDDKLENPKSBZ7GE7U",
+      "displayName": "L72CSGO2C7K6QJZHVC2AYCLZ5GY3IMN7GJVKVNXU5WDDKLENPKSBZ7GE7U"
+    },
+    "pubKeyCredParams": [
+      {
+        "type": "public-key",
+        "alg": -7
+      },
+      {
+        "type": "public-key",
+        "alg": -257
+      }
+    ],
+    "timeout": 1800000,
+    "attestation": "none",
+    "excludeCredentials": [],
+    "authenticatorSelection": {
+      "userVerification": "required"
+    },
+    "extensions": {
+      "liquid": true
+    }
+  },
+  {
+    "challenge": "aTPfrbLZkQfBEncQ1u0qm-lTHy0N4JX9uZWEDyYk7cg",
+    "rp": {
+      "name": "Algorand Foundation FIDO2 Server",
+      "id": "catfish-pro-wolf.ngrok-free.app"
+    },
+    "user": {
+      "id": "OXOACNIWZ7VDJXJXJHQ53BMNFQTSPPW524RU5JVAFLHSSGGQZCTII65ZII",
+      "name": "OXOACNIWZ7VDJXJXJHQ53BMNFQTSPPW524RU5JVAFLHSSGGQZCTII65ZII",
+      "displayName": "OXOACNIWZ7VDJXJXJHQ53BMNFQTSPPW524RU5JVAFLHSSGGQZCTII65ZII"
+    },
+    "pubKeyCredParams": [
+      {
+        "type": "public-key",
+        "alg": -7
+      },
+      {
+        "type": "public-key",
+        "alg": -257
+      }
+    ],
+    "timeout": 1800000,
+    "attestation": "none",
+    "excludeCredentials": [],
+    "authenticatorSelection": {
+      "userVerification": "required"
+    },
+    "extensions": {
+      "liquid": true
+    }
+  }
+]
