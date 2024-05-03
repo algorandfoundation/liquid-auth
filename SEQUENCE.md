@@ -1,5 +1,5 @@
 
-## Nonce
+## Sequence Diagram
 
 ```mermaid
 sequenceDiagram
@@ -8,44 +8,34 @@ sequenceDiagram
     participant Wallet
     Note over Website, Wallet: Link devices
     Website->>Server: Subscribe to 'wss:link'
-    Website-->>Website: Show QR Nonce/Challenge
+    Website-->>Website: Display QR Connect Request ID
     Wallet->>Website: Scan QR Code
-    Wallet->>Server: POST Nonce + Signature
-    Server-->>Server: Validate Signature
-    Server-->>Server: Create/Get User
+    Server-->>Wallet: Get Challenge/Options
+    Wallet->>Server: POST FIDO2 Credential + Liquid Auth Extension
+    Server-->>Server: Validate Signatures
     Server-->>Website: HTTPOnly Session
     Server->>Wallet: Ok Response + HTTPOnly Session
     Server->>Website: Emit to `wss:link` client
-    Website-->>Website: Continue FIDO2 Flow
-    Wallet-->>Wallet: Continue FIDO2 Flow
-```
+    Note over Website, Wallet: Signaling Channels
+    Website-->>Server: Subscribe to 'wss:offer-description'
+    Website-->>Server: Subscribe to 'wss:offer-candidate'
+    Wallet-->>Server: Subscribe to 'wss:answer-description'
+    Wallet-->>Server: Subscribe to 'wss:answer-candidate'
 
-## Authentication
-```mermaid
-sequenceDiagram
-    participant User
-    participant Application
-    participant Server
-    Note over User, Server: Registration
-    Application->>Server: Registration Request
-    Server->>Server: Get User
-    Server-->>Application: Request for Public Key
-    Application->>User: Ask for Biometrics/Key
-    User-->>Application: Respond with Credentials
-    Application->>Application: Create KeyPair
-    Application->>Server: Send Public Key
-    Server->>Server: Update User
-    Server-->>Application: Registration Success
-    
-    Note over User, Server: Authentication
-    Application->>Server: Authentication Request
-    Server-->>Server: Get User
-    Server-->>Application: Send challenge to sign
-    Application->>User: Ask for Biometrics/Key
-    User-->>Application: Respond with Credentials
-    Application->>Application: Sign Challenge
-    Application->>Server: Send Signed Challenge
-    Server->>Server: Verify Signature
-    Server-->>Application: Authentication Success
-    
+    Note over Website, Wallet: Peer Offer
+    Wallet-->>Wallet: On answer-description, set Remote SDP
+    Wallet-->>Wallet: On answer-candidate, add ICE Candidate
+    Wallet-->>Wallet: Create Peer Offer & DataChannel
+    Wallet-->>Server: Emit `wss:offer-description`
+    Wallet-->>Server: Emit `wss:offer-candidate`
+
+    Note over Website, Wallet: Peer Answer
+    Website-->>Website: On offer-description, set Remote SDP and create Answer
+    Website-->>Website: On offer-candidate, add ICE Candidate
+    Website-->>Server: Emit `wss:answer-description`
+    Website-->>Server: Emit `wss:answer-candidate`
+
+    Note over Website, Wallet: Data Channel
+    Website-->>Wallet: On DataChannel, Emit Messages
+
 ```
