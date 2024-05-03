@@ -39,7 +39,7 @@ ngrok will ask you to add your auth token to your configuration file.
 ngrok config add-authtoken <NGROK_AUTH_TOKEN>
 ```
 
-Will then ask you to deploy your static domain, make sure to change the port to **5137** like this:
+Will then ask you to deploy your static domain, make sure to change the port to **5173** like this:
 
 ``` bash
 ngrok http --domain=<NGROK_STATIC_DOMAIN> 5173
