@@ -6,35 +6,37 @@
 - MongoDB (SessionStore/Users)
 
 This service uses [FIDO2 REST API]() endpoints for credential creation and assertions.
-The endpoints are guarded by the attestation of a wallet private key via the [Link Wallet]() component.
-
-## Link Wallet
-
-Sessions use the `wallet` key in order to determine if a session has been validated by
-a wallet's private key. The wallet is assigned to the session in a POST request.
-
-### POST /connect/response
-
-The response will be successful if the challenge and signature are valid. Any session that matches the `nonce` will
-also be assigned a session with the current wallet
-
-### BODY
-```json
-{
-  "requestId": "nonce-one-time-password",
-  "challenge": "challenge that was signed by the wallet",
-  "signature": "base64URL",
-  "wallet": "58 character public key"
-}
-```
-
-The `nonce` message is passed to the wallet application via a QRCode generated in the frontend.
-During the creation of the QRCode, a listener is created with the WebSocketGateway which is dispatched when
-a wallet attests the private keys using above endpoint.
 
 ## FIDO2 Endpoints
 
-Two main components, Assertion and Attestation
+Two main components, Assertion and Attestation. 
+The purposed liquid extension is used to sign the FIDO2 responses with a different key pair and allow remote authentication
+
+### Liquid FIDO2 Extension
+
+```typescript
+// Authenticator Create Response
+interface LiquidClientAttestationExtensionResults {
+  liquid: {
+    type: string; // Currently only "algorand" supported
+    address: string; // Wallet Address
+    signature: string; // Base64URL Encoded Signature
+    requestId?: any // Optional Request ID , authenticate a remote user simaltaneously
+    device?: string // Optional Device Name
+  }
+}
+// Authenticator Get Response
+interface LiquidClientAssertionExtensionResults {
+  liquid: {
+    requestId?: any; // Optional Request ID
+  }
+}
+
+// Selector Options
+interface LiquidExtensionOptions {
+  liquid: boolean;
+}
+```
 
 ### POST /attestation/request
 
@@ -42,30 +44,35 @@ Returns the credential creation options supported by the service. It accepts
 the standard PublicKeyCreateOptions as the `body`. The response can be passed 
 to an available authenticator which will generate the credentials.
 
+The request must enable the `liquid` extension in order to sign the response.
+
 #### BODY
 
 ```json
 {
-    "attestationType": "none",
-    "authenticatorSelection": {
-        "userVerification": "required",
-        "requireResidentKey": false
-    }
+  "username": "2SPDE6XLJNXFTOO7OIGNRNKSEDOHJWVD3HBSEAPHONZQ4IQEYOGYTP6LXA",
+  "displayName": "Liquid Auth User",
+  "authenticatorSelection": {
+    "userVerification": "required"
+  },
+  "extensions": {
+    "liquid": true
+  }
 }
 ```
 
 #### Example CredentialCreateOptions Response
 ```json
 {
-  "challenge": "HaCt-yOSaFTzMZmpK0eOiokLY6C7avkHdtY75GAecTc",
+  "challenge": "35JYpoXGnM4s8IICakWSLllcXy3Z_lc3AaLSl872qXM",
   "rp": {
     "name": "Algorand Foundation FIDO2 Server",
-    "id": "nest-fido2.onrender.com"
+    "id": "catfish-pro-wolf.ngrok-free.app"
   },
   "user": {
-    "id": "eEEF7nTevHnehr-iKOWbx2wTr0P26QbEPSM0qve6M_Y",
-    "name": "IKMUKRWTOEJMMJD4MUAQWWB4C473DEHXLCYHJ4R3RZWZKPNE7E2ZTQ7VD4",
-    "displayName": "IKMUKRWTOEJMMJD4MUAQWWB4C473DEHXLCYHJ4R3RZWZKPNE7E2ZTQ7VD4"
+    "id": "2SPDE6XLJNXFTOO7OIGNRNKSEDOHJWVD3HBSEAPHONZQ4IQEYOGYTP6LXA",
+    "name": "2SPDE6XLJNXFTOO7OIGNRNKSEDOHJWVD3HBSEAPHONZQ4IQEYOGYTP6LXA",
+    "displayName": "2SPDE6XLJNXFTOO7OIGNRNKSEDOHJWVD3HBSEAPHONZQ4IQEYOGYTP6LXA"
   },
   "pubKeyCredParams": [
     {
@@ -79,43 +86,43 @@ to an available authenticator which will generate the credentials.
   ],
   "timeout": 1800000,
   "attestation": "none",
-  "excludeCredentials": [
-    {
-      "id": "ARuNNRDPHpnGGdMbOA-KOdOFqwrnbf_Q23oxDrojFIUrXpQQNl10TRFmXRTNaSKrrIiL1gQZQmY39-GUyQg_iZg",
-      "type": "public-key",
-      "transports": [
-        "internal"
-      ]
-    },
-    {
-      "id": "AV8CQ7z_0uiHs90g-787aoZF8sMnkJPzEhLWJhSTc4XIcC0UZp7ShcoluS21iXtptfx7WqJfjjgbz7p2SrgZNfA",
-      "type": "public-key",
-      "transports": [
-        "internal"
-      ]
-    }
-  ],
+  "excludeCredentials": [],
   "authenticatorSelection": {
-    "requireResidentKey": false,
-    "userVerification": "preferred"
+    "userVerification": "required"
+  },
+  "extensions": {
+    "liquid": true
   }
 }
 ```
 ### POST /attestation/response
 
 Receives the PublicKeyCredential result from the authenticator and validates the credential signature.
-`body` uses base64URL encoding for keys
+`body` uses base64URL encoding for keys.
+
+The authenticator must include the `liquid` extension in the response with the signature and address.
+This will associate the credential with the wallet address and the credential can be used for future assertions without the need for signing with the wallet keys
 
 #### BODY
 ```json
 {
-    "id": "TwmjdtNhFCVxpTAbqUZbvGeAaodj0cInom3QPlyA1LU",
-    "rawId": "TwmjdtNhFCVxpTAbqUZbvGeAaodj0cInom3QPlyA1LU",
-    "type": "public-key",
-    "response": {
-        "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiNVQwY0NUNlJMakprUC1aSVpfUy13VWNULXZVckNsWWRBSW51czZaejdJdyIsIm9yaWdpbiI6Imh0dHBzOi8vbmVzdC1maWRvMi5vbnJlbmRlci5jb20iLCJjcm9zc09yaWdpbiI6ZmFsc2V9",
-        "attestationObject": "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVikhcBrTEiqRmWq59OhneuIKT6K3ZliRcGUI2GZj4xPbP9FAAAAAQECAwQFBgcIAQIDBAUGBwgAIE8Jo3bTYRQlcaUwG6lGW7xngGqHY9HCJ6Jt0D5cgNS1pQECAyYgASFYINq8z70oqi4659kEBdv9qG8VJlDnp4KKXYXT4bbaYwn4IlggGrRyhJK-gldiM78-59jzbh3G1gMYTbFu7xFHRaOOr6Y"
+  "id": "AYMPi2Rbhcnu2gSHOO1TNvzDJ38iU00rrlCqyH874XCIEoIotRc7eVRFpx0TvsQurg7BAnXy5KnWdKC8LeWs0k0",
+  "type": "public-key",
+  "rawId": "AYMPi2Rbhcnu2gSHOO1TNvzDJ38iU00rrlCqyH874XCIEoIotRc7eVRFpx0TvsQurg7BAnXy5KnWdKC8LeWs0k0",
+  "clientExtensionResults": {
+    "liquid": {
+      "type": "algorand",
+      "requestId": 0.6050027432326752,
+      "address": "2SPDE6XLJNXFTOO7OIGNRNKSEDOHJWVD3HBSEAPHONZQ4IQEYOGYTP6LXA",
+      "signature": "QY31mdH8AwpJ9p4pCXBO2iA5WdU-BjG52xEtJNuSJNHJIaJ10uzqk3FdR0fvYVfb_rzXTuWn4k1PFFeg-vpEDw",
+      "device": "Pixel 8 Pro"
     }
+  },
+  "response": {
+    "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiMzVKWXBvWEduTTRzOElJQ2FrV1NMbGxjWHkzWl9sYzNBYUxTbDg3MnFYTSIsIm9yaWdpbiI6ImFuZHJvaWQ6YXBrLWtleS1oYXNoOlI4eE83cmxRV2FXTDRCbEZ5Z3B0V1JiNXFjS1dkZmp6WklhU1JpdDlYVnciLCJhbmRyb2lkUGFja2FnZU5hbWUiOiJmb3VuZGF0aW9uLmFsZ29yYW5kLmRlbW8ifQ",
+    "attestationObject": "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjFlpPmT7RcYTDeFJdKhDtiKwzb05n-ojlcqqYw5SomXZBFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQQGDD4tkW4XJ7toEhzjtUzb8wyd_IlNNK65Qqsh_O-FwiBKCKLUXO3lURacdE77ELq4OwQJ18uSp1nSgvC3lrNJNpQECAyYgASFYIB2dcp3wanhReRhgRIpJCUfRSwkCvyE9OdvEL_NlncSJIlggkSIz7h7O5nrAXGJrkCOmeolChSc09eHzniCFLFxaKH0"
+  },
+  "device": "Pixel 8 Pro"
 }
 ```
 
@@ -130,6 +137,9 @@ allowed credentials.
 {
   "authenticatorSelection": {
     "userVerification": "required"
+  },
+  "extensions": {
+    "liquid": true
   }
 }
 ```
@@ -137,37 +147,95 @@ allowed credentials.
 #### Example Response
 ```json
 {
-  "challenge": "9uQtuADttJHniY_-5dMjf0g_txLQFtArgz2DGDpHgPY",
+  "challenge": "0TXu4G4iu3sbAQopheoPe_CpnLJOB-QlIUvwFBC317Q",
   "allowCredentials": [
     {
-      "id": "HyumFG8QZz2urG3UlLNkKVJ6lvOhI2C9M_XfrCSuayk",
-      "type": "public-key",
-      "transports": [
-        "internal"
-      ]
+      "id": "AYMPi2Rbhcnu2gSHOO1TNvzDJ38iU00rrlCqyH874XCIEoIotRc7eVRFpx0TvsQurg7BAnXy5KnWdKC8LeWs0k0",
+      "type": "public-key"
     }
   ],
   "timeout": 1800000,
   "userVerification": "required",
-  "rpId": "nest-fido2.onrender.com"
+  "rpId": "catfish-pro-wolf.ngrok-free.app",
+  "extensions": {
+    "liquid": true
+  }
 }
 ```
 
 ### POST /assertion/response
 
-Base64URL encoded response from the authenticator
+Base64URL encoded response from the authenticator. 
+Optionally add a `requestId` to also authenticate a remote session
 
 #### BODY
 ```json
-{
-  "id": "HyumFG8QZz2urG3UlLNkKVJ6lvOhI2C9M_XfrCSuayk",
+ {
+  "id": "AYMPi2Rbhcnu2gSHOO1TNvzDJ38iU00rrlCqyH874XCIEoIotRc7eVRFpx0TvsQurg7BAnXy5KnWdKC8LeWs0k0",
   "type": "public-key",
-  "rawId": "HyumFG8QZz2urG3UlLNkKVJ6lvOhI2C9M_XfrCSuayk",
+  "rawId": "AYMPi2Rbhcnu2gSHOO1TNvzDJ38iU00rrlCqyH874XCIEoIotRc7eVRFpx0TvsQurg7BAnXy5KnWdKC8LeWs0k0",
+  "clientExtensionResults": {
+    "liquid": {
+      "requestId": 0.4352672418598509
+    }
+  },
   "response": {
-    "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiOWRlZmhQN0x6RXlFOGF3Uks1am5hVUg5YTZsX1dNRmwwbTFXUF91R3NZSSIsIm9yaWdpbiI6Imh0dHBzOi8vbmVzdC1maWRvMi5vbnJlbmRlci5jb20iLCJjcm9zc09yaWdpbiI6ZmFsc2V9",
-    "authenticatorData": "hcBrTEiqRmWq59OhneuIKT6K3ZliRcGUI2GZj4xPbP8FAAAAAg",
-    "signature": "MEUCIBzJDyfa4kJbDEzwmoXCO_Q9RQmsmTGb9x71hsym2wjDAiEAxI0xoMJPzYo_RFfRi2HrZmn-n5bG1xJg0CzDupBeyhs",
-    "userHandle": ""
+    "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiMFRYdTRHNGl1M3NiQVFvcGhlb1BlX0NwbkxKT0ItUWxJVXZ3RkJDMzE3USIsIm9yaWdpbiI6ImFuZHJvaWQ6YXBrLWtleS1oYXNoOlI4eE83cmxRV2FXTDRCbEZ5Z3B0V1JiNXFjS1dkZmp6WklhU1JpdDlYVnciLCJhbmRyb2lkUGFja2FnZU5hbWUiOiJmb3VuZGF0aW9uLmFsZ29yYW5kLmRlbW8ifQ",
+    "authenticatorData": "lpPmT7RcYTDeFJdKhDtiKwzb05n-ojlcqqYw5SomXZAFAAAAAQ",
+    "signature": "MEUCIQDcV2y6ub3Qh8pyTCCLdWKRH_cmR2xlFuNy1Fn1QsSUygIgTZh9b6mB77C-aQrBj7Evb8u3S4j3vjlnSPAKcR7Kld4"
   }
 }
+```
+
+#### Example Response
+```json
+{
+  "id": "M6RT4iT5FkNDM2i57MXzBhLDt9zl2CrLt2p4Ar03t2Q",
+  "wallet": "2SPDE6XLJNXFTOO7OIGNRNKSEDOHJWVD3HBSEAPHONZQ4IQEYOGYTP6LXA",
+  "credentials": [
+    {
+      "device": "Pixel 8 Pro",
+      "publicKey": "pQECAyYgASFYIB2dcp3wanhReRhgRIpJCUfRSwkCvyE9OdvEL_NlncSJIlggkSIz7h7O5nrAXGJrkCOmeolChSc09eHzniCFLFxaKH0",
+      "credId": "AYMPi2Rbhcnu2gSHOO1TNvzDJ38iU00rrlCqyH874XCIEoIotRc7eVRFpx0TvsQurg7BAnXy5KnWdKC8LeWs0k0",
+      "prevCounter": 0
+    }
+  ]
+}
+```
+## Signaling Service
+
+The signaling service is used to establish a WebRTC connection between the wallet and the website.
+
+### Events
+
+#### microservice:auth
+
+Emits to the event bus when a client attests or asserts a credential with a requestId.
+
+#### wss:link
+
+Submit a request to link the current client to a remote wallet. 
+The server will acknowledge the request when the `microservice:auth` event is received.
+
+```typescript
+const response: LinkMessage = await client.link(requestId)
+```
+
+#### wss:offer-description | wss:answer-description
+
+Wait for the server to emit an offer or answer description to the client.
+
+```typescript
+const response: string = await client.signal('offer' | 'answer')
+```
+
+#### wss:offer-candidate | wss:answer-candidate
+
+Emits the offer or answer ICE Candidates to connected clients.
+
+```typescript
+client.peerClient.onicecandidate=(event)=>{
+  client.socket.emit('offer-candidate', event.candidate.toJSON())
+}
+
 ```
