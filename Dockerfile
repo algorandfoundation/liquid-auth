@@ -1,4 +1,4 @@
-FROM node:20-alpine AS BUILDER
+FROM node:20.12-alpine AS BUILDER
 
 COPY . .
 
@@ -6,7 +6,7 @@ RUN npm ci
 
 RUN npm run build
 
-FROM node:20-alpine
+FROM node:20.12-alpine
 
 # App Files
 COPY --from=BUILDER ./node_modules ./node_modules
