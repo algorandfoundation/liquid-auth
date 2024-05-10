@@ -14,8 +14,11 @@ COPY --from=BUILDER ./package.json ./package.json
 COPY --from=BUILDER ./package-lock.json ./package-lock.json
 # Client Files
 COPY --from=BUILDER ./clients ./clients
+# Sites Files
+COPY --from=BUILDER ./sites ./sites
 # Service Files
 COPY --from=BUILDER ./services/liquid-auth-api-js/ ./services/liquid-auth-api-js/
+
 
 RUN npm ci --production
 

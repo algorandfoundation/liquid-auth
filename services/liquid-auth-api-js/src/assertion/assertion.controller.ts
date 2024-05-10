@@ -18,8 +18,6 @@ import { AuthService } from '../auth/auth.service.js';
 import { AssertionService } from './assertion.service.js';
 import { ClientProxy } from '@nestjs/microservices';
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import {
   ApiBody,
   ApiForbiddenResponse,
@@ -30,14 +28,9 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { User } from '../auth/auth.schema.js';
-// TODO: Make doc loader utility
-const filePath = join(process.cwd(), './src/assertion');
-const requestDescription = readFileSync(
-  join(filePath, 'assertion.controller.post.request.md'),
-).toString();
-const responseDescription = readFileSync(
-  join(filePath, 'assertion.controller.post.response.md'),
-).toString();
+// TODO: make a loader for descriptions
+const requestDescription = '';
+const responseDescription = '';
 
 /**
  * Assertion Controller
