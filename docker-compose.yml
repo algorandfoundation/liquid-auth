@@ -1,4 +1,4 @@
-version: '3.4'
+version: '3.5'
 
 services:
   liquid-auth:
@@ -11,20 +11,7 @@ services:
     depends_on:
       - redis
       - mongo
-      - ngrok
-  liquid-demo:
-    restart: no
-    build:
-      context: .
-      dockerfile: Vite.Dockerfile
-    ports:
-      - "5173:5173"
-    environment:
-      - PROXY_URL=http://liquid-auth:3000
-      - WSS_PROXY_SERVER=ws://liquid-auth:3000
-    depends_on:
-      - liquid-auth
-      - ngrok
+    command: ["npm", "run", "start:ssr"]
   ngrok:
     image: ngrok/ngrok:latest
     restart: no
