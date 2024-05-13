@@ -1,5 +1,8 @@
 FROM node:20.12-alpine AS BUILDER
 
+ENV PYTHONUNBUFFERED=1
+RUN apk add --update --no-cache g++ make py3-pip pkgconfig pixman-dev cairo-dev pango-dev && ln -sf python3 /usr/bin/python
+
 COPY . .
 
 RUN npm ci
@@ -12,17 +15,13 @@ FROM node:20.12-alpine
 COPY --from=BUILDER ./node_modules ./node_modules
 COPY --from=BUILDER ./package.json ./package.json
 COPY --from=BUILDER ./package-lock.json ./package-lock.json
-# Client Files
-COPY --from=BUILDER ./clients ./clients
 # Sites Files
 COPY --from=BUILDER ./sites ./sites
 # Service Files
 COPY --from=BUILDER ./services/liquid-auth-api-js/ ./services/liquid-auth-api-js/
 
-
-RUN npm ci --production
-
 # Expose the port on which the app will run
 EXPOSE 3000
+EXPOSE 5173
 
 CMD ["npm", "run", "start"]

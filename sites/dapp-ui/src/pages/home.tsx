@@ -6,7 +6,7 @@ import Card from '@mui/material/Card';
 import Button from '@mui/material/Button';
 
 import { ConnectModal } from '@/components/ConnectModal';
-import { assertion } from '@liquid/auth-client/assertion';
+import { assertion } from '@algorandfoundation/liquid-client';
 import { useState } from 'react';
 
 export function HomePage() {

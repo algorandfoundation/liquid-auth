@@ -6,7 +6,7 @@
  * @copyright Chen, Yi-Cyuan 2015-2021
  * @license MIT
  */
-const BASE32_ENCODE_CHAR = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".split("");
+const BASE32_ENCODE_CHAR = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'.split('');
 const BASE32_DECODE_CHAR: Record<string, number> = {
   A: 0,
   B: 1,
@@ -43,12 +43,12 @@ const BASE32_DECODE_CHAR: Record<string, number> = {
 };
 
 export const decodeAsBytes = function (base32Str: string): number[] {
-  if (base32Str === "") {
+  if (base32Str === '') {
     return [];
   } else if (!/^[A-Z2-7=]+$/.test(base32Str)) {
-    throw new Error("Invalid base32 characters");
+    throw new Error('Invalid base32 characters');
   }
-  base32Str = base32Str.replace(/=/g, "");
+  base32Str = base32Str.replace(/=/g, '');
   let v1;
   let v2;
   let v3;
@@ -122,7 +122,7 @@ export const encodeBytes = function (bytes: Uint8Array) {
   let v3;
   let v4;
   let v5;
-  let base32Str = "";
+  let base32Str = '';
   const length = bytes.length;
   for (
     var i = 0, count = parseInt((length / 5) as unknown as string) * 5;
@@ -152,7 +152,7 @@ export const encodeBytes = function (bytes: Uint8Array) {
     base32Str +=
       BASE32_ENCODE_CHAR[v1 >>> 3] +
       BASE32_ENCODE_CHAR[(v1 << 2) & 31] +
-      "======";
+      '======';
   } else if (remain === 2) {
     v1 = bytes[i++];
     v2 = bytes[i];
@@ -161,7 +161,7 @@ export const encodeBytes = function (bytes: Uint8Array) {
       BASE32_ENCODE_CHAR[((v1 << 2) | (v2 >>> 6)) & 31] +
       BASE32_ENCODE_CHAR[(v2 >>> 1) & 31] +
       BASE32_ENCODE_CHAR[(v2 << 4) & 31] +
-      "====";
+      '====';
   } else if (remain === 3) {
     v1 = bytes[i++];
     v2 = bytes[i++];
@@ -172,7 +172,7 @@ export const encodeBytes = function (bytes: Uint8Array) {
       BASE32_ENCODE_CHAR[(v2 >>> 1) & 31] +
       BASE32_ENCODE_CHAR[((v2 << 4) | (v3 >>> 4)) & 31] +
       BASE32_ENCODE_CHAR[(v3 << 1) & 31] +
-      "===";
+      '===';
   } else if (remain === 4) {
     v1 = bytes[i++];
     v2 = bytes[i++];
@@ -186,7 +186,7 @@ export const encodeBytes = function (bytes: Uint8Array) {
       BASE32_ENCODE_CHAR[((v3 << 1) | (v4 >>> 7)) & 31] +
       BASE32_ENCODE_CHAR[(v4 >>> 2) & 31] +
       BASE32_ENCODE_CHAR[(v4 << 3) & 31] +
-      "=";
+      '=';
   }
   return base32Str;
 };

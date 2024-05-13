@@ -7,7 +7,7 @@ import {
   waitForConfirmation,
   makePaymentTxnWithSuggestedParamsFromObject,
 } from 'algosdk';
-import { toBase64URL, fromBase64Url } from '@liquid/core/encoding';
+import { toBase64URL, fromBase64Url } from '@algorandfoundation/liquid-client';
 import { useAlgod } from '@/hooks/useAlgod.ts';
 import { useAccountInfo } from '@/hooks/useAccountInfo.ts';
 import FormControl from '@mui/material/FormControl';

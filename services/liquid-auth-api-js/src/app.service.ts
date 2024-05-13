@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import UAParser from 'ua-parser-js';
-import { toBase64URL } from '@liquid/core';
+import { toBase64URL } from './encoding/index.js';
 
 //@ts-ignore, required for jest
 import assetLinks from '../assetlinks.json' assert { type: 'json' };

@@ -1,4 +1,4 @@
-import { decodeAddress } from '@liquid/core/encoding';
+import { decodeAddress } from '../src/encoding/index.js';
 import * as crypto from 'node:crypto';
 
 export const accFixture = {

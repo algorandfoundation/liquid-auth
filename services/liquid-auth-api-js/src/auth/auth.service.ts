@@ -2,7 +2,7 @@ import * as crypto from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { toBase64URL } from '@liquid/core/encoding';
+import { toBase64URL } from '../encoding/index.js';
 import type { FilterQuery } from 'mongoose';
 import { Credential, User } from './auth.schema.js';
 import { Session } from './session.schema.js';

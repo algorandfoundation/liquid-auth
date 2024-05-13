@@ -1,5 +1,3 @@
-version: '3.5'
-
 services:
   liquid-auth:
     build: .
@@ -7,7 +5,7 @@ services:
     env_file:
       - .env.docker
     ports:
-      - "3000:3000"
+      - "5173:5173"
     depends_on:
       - redis
       - mongo
