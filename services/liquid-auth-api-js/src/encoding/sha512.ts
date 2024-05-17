@@ -6,11 +6,11 @@
  * @copyright Chen, Yi-Cyuan 2014-2024
  * @license MIT
  */
-const INPUT_ERROR = "input is invalid type";
-const FINALIZE_ERROR = "finalize already called";
+const INPUT_ERROR = 'input is invalid type';
+const FINALIZE_ERROR = 'finalize already called';
 
-const ARRAY_BUFFER = typeof ArrayBuffer !== "undefined";
-const HEX_CHARS = "0123456789abcdef".split("");
+const ARRAY_BUFFER = typeof ArrayBuffer !== 'undefined';
+const HEX_CHARS = '0123456789abcdef'.split('');
 const EXTRA = [-2147483648, 8388608, 32768, 128];
 const SHIFT = [24, 16, 8, 0];
 const K = [
@@ -43,7 +43,7 @@ const K = [
   0x5fcb6fab, 0x3ad6faec, 0x6c44198c, 0x4a475817,
 ];
 
-const OUTPUT_TYPES = ["hex", "array", "digest", "arrayBuffer"];
+const OUTPUT_TYPES = ['hex', 'array', 'digest', 'arrayBuffer'];
 
 const blocks: number[] = [];
 
@@ -55,10 +55,10 @@ const formatMessage = function (
   message: string | ArrayBuffer | ArrayBufferView,
 ) {
   const type = typeof message;
-  if (type === "string") {
+  if (type === 'string') {
     return [message, true];
   }
-  if (type !== "object" || message === null) {
+  if (type !== 'object' || message === null) {
     throw new Error(INPUT_ERROR);
   }
   if (ARRAY_BUFFER && message.constructor === ArrayBuffer) {
@@ -82,7 +82,7 @@ const createOutputMethod = function (
 export const createMethod = function (bits): {
   array: (d: Uint8Array) => Uint8Array;
 } {
-  const method = createOutputMethod("hex", bits);
+  const method = createOutputMethod('hex', bits);
   //@ts-expect-error, create does exits on the prototype
   method.create = function () {
     return new (Sha512 as any)(bits);
@@ -1202,28 +1202,28 @@ Sha512.prototype.clone = function () {
 Sha512.prototype.copyTo = function (hash) {
   let i = 0;
   const attrs = [
-    "h0h",
-    "h0l",
-    "h1h",
-    "h1l",
-    "h2h",
-    "h2l",
-    "h3h",
-    "h3l",
-    "h4h",
-    "h4l",
-    "h5h",
-    "h5l",
-    "h6h",
-    "h6l",
-    "h7h",
-    "h7l",
-    "start",
-    "bytes",
-    "hBytes",
-    "finalized",
-    "hashed",
-    "lastByteIndex",
+    'h0h',
+    'h0l',
+    'h1h',
+    'h1l',
+    'h2h',
+    'h2l',
+    'h3h',
+    'h3l',
+    'h4h',
+    'h4l',
+    'h5h',
+    'h5l',
+    'h6h',
+    'h6l',
+    'h7h',
+    'h7l',
+    'start',
+    'bytes',
+    'hBytes',
+    'finalized',
+    'hashed',
+    'lastByteIndex',
   ];
   for (i = 0; i < attrs.length; ++i) {
     hash[attrs[i]] = this[attrs[i]];

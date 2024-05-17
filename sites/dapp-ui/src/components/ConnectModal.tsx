@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Fade } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useSignalClient } from '@/hooks/useSignalClient.ts';
-import { SignalClient } from '@liquid/auth-client/signal';
+import { SignalClient } from '@algorandfoundation/liquid-client';
 const style = {
   position: 'absolute' as const,
   top: '50%',

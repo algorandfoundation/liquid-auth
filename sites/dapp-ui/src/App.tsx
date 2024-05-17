@@ -13,7 +13,7 @@ import { HomePage, ConnectedPage } from '@/pages';
 import { Algodv2 } from 'algosdk';
 import { AlgodContext } from '@/hooks';
 import { SignalClientContext } from '@/hooks/useSignalClient.ts';
-import { LinkMessage, SignalClient } from '@liquid/auth-client/signal';
+import { LinkMessage, SignalClient } from '@algorandfoundation/liquid-client';
 import { useAddressStore } from '@/store';
 const queryClient = new QueryClient();
 

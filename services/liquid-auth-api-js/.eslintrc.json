@@ -17,6 +17,8 @@
     "jest": true
   },
   "ignorePatterns": [
+    "src/encoding/hi-base32.ts",
+    "src/encoding/sha512.ts",
     ".eslintrc.js",
     "dist/**"
   ],

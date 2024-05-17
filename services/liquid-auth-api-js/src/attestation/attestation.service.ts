@@ -4,7 +4,7 @@ import { AppService } from '../app.service.js';
 import * as fido2 from '@simplewebauthn/server';
 import { AttestationSelectorDto } from './attestation.dto.js';
 import type { AttestationCredentialJSON } from '@simplewebauthn/typescript-types';
-import { decodeAddress, fromBase64Url } from '@liquid/core';
+import { decodeAddress, fromBase64Url } from '../encoding/index.js';
 import nacl from 'tweetnacl';
 import { AlgodService } from '../algod/algod.service.js';
 @Injectable()

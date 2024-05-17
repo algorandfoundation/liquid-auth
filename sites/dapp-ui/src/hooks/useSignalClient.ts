@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import { SignalClient } from '@liquid/auth-client/signal';
+import { SignalClient } from '@algorandfoundation/liquid-client';
 
 type SignalClientState = {
   client: SignalClient | null;

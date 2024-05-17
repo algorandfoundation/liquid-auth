@@ -12,10 +12,10 @@
     "lint": "eslint \"{src,apps,libs,test}/**/*.{ts,tsx}\" --fix"
   },
   "dependencies": {
+    "@algorandfoundation/liquid-client": "github:algorandfoundation/liquid-auth-js#develop",
     "@emotion/react": "^11.11.3",
     "@emotion/server": "^11.11.0",
     "@emotion/styled": "^11.11.0",
-    "@liquid/auth-client": "^1.0.0",
     "@mui/icons-material": "^5.15.4",
     "@mui/material": "^5.15.4",
     "@tanstack/react-query": "^5.20.5",
