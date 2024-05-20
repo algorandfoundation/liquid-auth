@@ -55,7 +55,7 @@ version: 2
 authtoken: <NGROK_AUTH_TOKEN>
 tunnels:
   website:
-    addr: liquid-demo:5173
+    addr: liquid-auth:5173
     proto: http
     domain: <NGROK_STATIC_DOMAIN>
 
