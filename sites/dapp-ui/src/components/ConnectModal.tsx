@@ -28,13 +28,13 @@ export function ConnectModal({
   color,
 }: {
   color?:
-    | 'inherit'
-    | 'primary'
-    | 'secondary'
-    | 'success'
-    | 'error'
-    | 'info'
-    | 'warning';
+  | 'inherit'
+  | 'primary'
+  | 'secondary'
+  | 'success'
+  | 'error'
+  | 'info'
+  | 'warning';
 }) {
   const { client, dataChannel } = useSignalClient();
   const navigate = useNavigate();
@@ -57,6 +57,16 @@ export function ConnectModal({
               'stun:stun1.l.google.com:19302',
               'stun:stun2.l.google.com:19302',
             ],
+          },
+          {
+            urls: [
+              "turn:global.relay.metered.ca:80",
+              "turn:global.relay.metered.ca:80?transport=tcp",
+              "turn:global.relay.metered.ca:443",
+              "turns:global.relay.metered.ca:443?transport=tcp"
+            ],
+            username: "fc7708976bf5d60be20c5a1d",
+            credential: "sVpEREQGGhXOw4gX",
           },
         ],
         iceCandidatePoolSize: 10,
