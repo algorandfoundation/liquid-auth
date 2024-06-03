@@ -65,8 +65,10 @@ export function ConnectModal({
               "turn:global.relay.metered.ca:443",
               "turns:global.relay.metered.ca:443?transport=tcp"
             ],
-            username: "fc7708976bf5d60be20c5a1d",
-            credential: "sVpEREQGGhXOw4gX",
+            // default username and credential when the turn server doesn't
+            // use auth, the client still requires a value
+            username: import.meta.env.VITE_TURN_USERNAME || 'username',
+            credential: import.meta.env.VITE_TURN_CREDENTIAL || 'credential',
           },
         ],
         iceCandidatePoolSize: 10,
