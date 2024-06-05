@@ -96,43 +96,45 @@ export function ConnectModal({
         aria-labelledby="modal-modal-title"
         aria-describedby="modal-modal-description"
       >
-        <Box>
-          <Fade in={open}>
-            <Box sx={style}>
-              <Box
-                sx={{
-                  position: 'relative',
-                }}
-              >
+        <a href={client.deepLink(requestId)}>
+          <Box>
+            <Fade in={open}>
+              <Box sx={style}>
                 <Box
-                  component="img"
-                  src={barcode}
                   sx={{
-                    maxHeight: '50vh',
-                    maxWidth: '50vh',
-                    height: {
-                      xs: 250,
-                      sm: 600,
-                      md: 900,
-                      lg: 1200,
-                      xl: 1536,
-                    },
-                    width: {
-                      xs: 250,
-                      sm: 600,
-                      md: 900,
-                      lg: 1200,
-                      xl: 1536,
-                    },
-                    position: 'absolute',
-                    transform: 'translate(-50%, -50%)',
-                    top: '50%',
+                    position: "relative"
                   }}
-                />
+                >
+                  <Box
+                    component="img"
+                    src={barcode}
+                    sx={{
+                      maxHeight: "50vh",
+                      maxWidth: "50vh",
+                      height: {
+                        xs: 250,
+                        sm: 600,
+                        md: 900,
+                        lg: 1200,
+                        xl: 1536
+                      },
+                      width: {
+                        xs: 250,
+                        sm: 600,
+                        md: 900,
+                        lg: 1200,
+                        xl: 1536
+                      },
+                      position: "absolute",
+                      transform: "translate(-50%, -50%)",
+                      top: "50%"
+                    }}
+                  />
+                </Box>
               </Box>
-            </Box>
-          </Fade>
-        </Box>
+            </Fade>
+          </Box>
+        </a>
       </Modal>
     </div>
   );
