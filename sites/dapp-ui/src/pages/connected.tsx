@@ -50,7 +50,7 @@ export function ConnectedPage() {
       if (txn.txID() !== message.txId) throw new Error('Invalid txId');
 
       const sig = fromBase64Url(message.sig);
-      const signedTxn = txn.attachSignature(wallet, sig);
+      const signedTxn = txn.attachSignature((!!accountInfo.data?.['auth-addr']) ? accountInfo.data?.['auth-addr'] : wallet, sig);
 
       setIsWaitingForSignature(false);
       setIsWaitingForConfirmation(true);
