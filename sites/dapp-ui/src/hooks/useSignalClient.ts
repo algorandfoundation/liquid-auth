@@ -7,7 +7,7 @@ type SignalClientState = {
   status: 'connected' | 'disconnected';
   setStatus: (_: 'connected' | 'disconnected') => void;
   dataChannel: RTCDataChannel | null;
-  setDataChannel: (_: RTCDataChannel) => void;
+  setDataChannel: (_: RTCDataChannel | null) => void;
 };
 export const SignalClientContext = createContext({
   client: null,

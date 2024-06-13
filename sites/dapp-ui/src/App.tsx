@@ -122,7 +122,7 @@ export default function ProviderApp() {
       client.off('connect', handleSocketConnect);
       client.off('disconnect', handleSocketDisconnect);
     };
-  }, [client]);
+  }, [client, setAddress]);
   return (
     <SignalClientContext.Provider
       value={{

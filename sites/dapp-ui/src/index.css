@@ -1,15 +1,9 @@
-#root, body, html {
-    height: 100vh;
-    width: 100vw;
-    overflow: hidden !important;
-}
-
 .ocean {
     position: absolute;
     top: 0;
     left: 0;
     height: 100vh;
-    width: 100vw;
+    width: 98vw;
     z-index: -10;
     overflow: hidden !important;
 }

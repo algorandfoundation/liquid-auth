@@ -33,12 +33,13 @@ export function HomePage() {
       />
       <CardContent>
         <Typography gutterBottom variant="h5" component="div">
-          Get Started (1 of 2)
+          Get Started
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Start by connecting a valid wallet, this is the first step in a three
-          step process. The connecting wallet receives the current website URL
-          from the QR Code and submits a verification request to the service.
+          Start by connecting a valid wallet, the connecting wallet receives the
+          current website URL from the QR Code and submits a verification
+          request to the service. Once the service validates the request, both
+          clients will negotiate a P2P channel to exchange messages.
         </Typography>
       </CardContent>
       <CardActions>

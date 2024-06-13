@@ -30,7 +30,7 @@ export function SessionMenu() {
     if (isConnected && !hasDataChannel) {
       setBadgeColor('warning');
     }
-  }, [dataChannel, isConnected]);
+  }, [dataChannel, isConnected, hasDataChannel]);
 
   return (
     <>

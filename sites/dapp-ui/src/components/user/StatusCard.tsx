@@ -6,6 +6,11 @@ import Typography from '@mui/material/Typography';
 import ShareIcon from '@mui/icons-material/Share';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { User } from './types.ts';
+import ListItem from '@mui/material/ListItem';
+import List from '@mui/material/List';
+import { SignalClientContext } from '@/hooks/useSignalClient.ts';
+import { useContext } from 'react';
+import { useUserState } from '@/hooks';
 export type ProfileCardProps = {
   socket: {
     isConnected: boolean;
@@ -26,29 +31,49 @@ export type ProfileCardProps = {
   user: User | null;
 };
 export function StatusCard({ session, user, socket }: ProfileCardProps) {
-  const { cookie, ...sessionData } = session;
+  const { refetch } = useUserState();
+  const { client, setDataChannel } = useContext(SignalClientContext);
   return (
     <Card sx={{ maxWidth: 300, zIndex: 1000 }} raised>
       <CardContent>
-        <Typography variant="h5" color="text.secondary">
-          Session
-        </Typography>
-        <pre>{JSON.stringify(sessionData, null, 2)}</pre>
-        <Typography variant="h5" color="text.secondary">
-          Signaling Service
-        </Typography>
-        <pre>{JSON.stringify(socket, null, 2)}</pre>
-        <Typography variant="h5" color="text.secondary">
-          Cookie
-        </Typography>
-        <pre>{JSON.stringify(cookie, null, 2)}</pre>
+        <List subheader="Session">
+          <ListItem>
+            <Typography variant="h6" color="text.secondary">
+              Address:{' '}
+              {session?.wallet
+                ? `${session.wallet.substring(
+                    0,
+                    4,
+                  )}...${session.wallet.substring(
+                    session.wallet.length - 4,
+                    session.wallet.length,
+                  )}`
+                : 'Anonymous'}
+            </Typography>
+          </ListItem>
+        </List>
+        <List subheader="Service">
+          <ListItem>
+            <Typography variant="h6" color="text.secondary">
+              Connected: {socket.isConnected ? 'Yes' : 'No'}
+            </Typography>
+          </ListItem>
+          <ListItem>
+            <Typography variant="h6" color="text.secondary">
+              DataChannel: {socket.hasDataChannel ? 'Yes' : 'No'}
+            </Typography>
+          </ListItem>
+        </List>
       </CardContent>
       {user && (
         <CardActions disableSpacing>
           <IconButton
             aria-label="sign out"
-            onClick={() => {
-              fetch('/auth/logout');
+            onClick={async () => {
+              await fetch('/auth/logout');
+              await refetch();
+              client && client.close();
+              setDataChannel(null);
             }}
           >
             <LogoutIcon />
