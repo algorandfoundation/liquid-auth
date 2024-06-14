@@ -83,6 +83,14 @@ export default function ProviderApp() {
     if (!client) return;
     function handleDataChannel(dc: RTCDataChannel) {
       console.log('SignalClient datachannel', dc);
+      if(client && typeof client.peerClient !== 'undefined') {
+        client.peerClient.onconnectionstatechange = () => {
+          if(client.peerClient?.connectionState === 'failed'){
+            client.close()
+            setDataChannel(null)
+          }
+        }
+      }
       setDataChannel(dc);
     }
     client.on('offer-description', (description) => {
