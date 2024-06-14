@@ -1,7 +1,6 @@
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
 import { useTheme } from '@mui/material';
@@ -29,10 +28,7 @@ export default function Layout({ children }: PropsWithChildren) {
 
   return (
     <>
-      <AppBar
-        position="sticky"
-        sx={isDarkMode ? { background: 'transparent', boxShadow: 'none' } : {}}
-      >
+      <AppBar position="sticky" sx={isDarkMode ? { background: 'black' } : {}}>
         <Toolbar>
           <SessionMenu />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
@@ -78,9 +74,14 @@ export default function Layout({ children }: PropsWithChildren) {
       <Container
         component="main"
         maxWidth="md"
-        sx={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'auto' }}
+        sx={{
+          my: 4,
+          display: 'flex',
+          flexDirection: 'column',
+          maxWidth: '100vw',
+        }}
       >
-        <Box sx={{ my: 4, flex: 1 }}>{children}</Box>
+        {children}
       </Container>
       <div className="ocean">
         <div className="bubble bubble--1" style={bubbleStyle}></div>

@@ -28,13 +28,13 @@ export function ConnectModal({
   color,
 }: {
   color?:
-  | 'inherit'
-  | 'primary'
-  | 'secondary'
-  | 'success'
-  | 'error'
-  | 'info'
-  | 'warning';
+    | 'inherit'
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'error'
+    | 'info'
+    | 'warning';
 }) {
   const { client, dataChannel } = useSignalClient();
   const navigate = useNavigate();
@@ -60,10 +60,10 @@ export function ConnectModal({
           },
           {
             urls: [
-              "turn:global.relay.metered.ca:80",
-              "turn:global.relay.metered.ca:80?transport=tcp",
-              "turn:global.relay.metered.ca:443",
-              "turns:global.relay.metered.ca:443?transport=tcp"
+              'turn:global.relay.metered.ca:80',
+              'turn:global.relay.metered.ca:80?transport=tcp',
+              'turn:global.relay.metered.ca:443',
+              'turns:global.relay.metered.ca:443?transport=tcp',
             ],
             // default username and credential when the turn server doesn't
             // use auth, the client still requires a value
@@ -102,32 +102,32 @@ export function ConnectModal({
               <Box sx={style}>
                 <Box
                   sx={{
-                    position: "relative"
+                    position: 'relative',
                   }}
                 >
                   <Box
                     component="img"
                     src={barcode}
                     sx={{
-                      maxHeight: "50vh",
-                      maxWidth: "50vh",
+                      maxHeight: '50vh',
+                      maxWidth: '50vh',
                       height: {
                         xs: 250,
                         sm: 600,
                         md: 900,
                         lg: 1200,
-                        xl: 1536
+                        xl: 1536,
                       },
                       width: {
                         xs: 250,
                         sm: 600,
                         md: 900,
                         lg: 1200,
-                        xl: 1536
+                        xl: 1536,
                       },
-                      position: "absolute",
-                      transform: "translate(-50%, -50%)",
-                      top: "50%"
+                      position: 'absolute',
+                      transform: 'translate(-50%, -50%)',
+                      top: '50%',
                     }}
                   />
                 </Box>
