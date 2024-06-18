@@ -9,6 +9,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'Liquid\nAuth',
+      favicon: './public/logo.svg',
       logo: {
         src: './public/logo.svg'
       },
@@ -16,7 +17,7 @@ export default defineConfig({
         github: 'https://github.com/algorandfoundation/liquid-auth'
       },
       sidebar: [{
-        label: 'Guides',
+        label: 'Deep Dive',
         items: [
         // Each item here is one entry in the navigation menu
         {

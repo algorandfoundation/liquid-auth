@@ -1,0 +1,58 @@
+---
+
+---
+<style>
+.liquid-purple-burst {
+  position: absolute;
+  top: 50px;
+  right: -200px;
+  height: 800px;
+  width: 800px;
+  background: radial-gradient(circle, rgba(153, 102, 255, .4), rgba(153, 102, 255, 0) 75%);
+  border-radius: 50%;
+}
+
+@media (max-width: 1024px) {
+  .liquid-purple-burst {
+    top: unset;
+    bottom: 0px;
+    left: -250px;
+  }
+}
+</style>
+
+<div class="overflow-hidden py-10 lg:py-32 relative">
+  <div class="mx-auto max-w-7xl px-10 lg:px-8">
+    <div
+      class="mt-40 lg:my-40 grid grid-cols-1 gap-x-8 gap-y-16 sm:gap-y-20 lg:mx-0 lg:max-w-none lg:grid-cols-2"
+    >
+      <div class="lg:pr-8 lg:pt-4">
+        <div class="lg:max-w-lg">
+          <h2 class="text-4xl font-semibold text-liquid-purple">
+            Peer to Peer
+          </h2>
+          <p
+            class="mt-2 text-7xl font-bold tracking-tight text-white"
+          >
+            Authenticated Communication
+          </p>
+          <p class="my-6 max-w-96 lg:max-w-none text-2xl text-gray-400">
+            Liquid auth enables any supported authentication challenge to establish a connection between two peers.<br/>
+            FIDO2? We got you<br/>
+            Passkeys? Like there&apos;s no tomorrow<br/>
+            Want to learn how we achieve this?<br/>
+          </p>
+          <a href="/dive" class="px-10 py-2 text-md font-poppins leading-6 border-2 border-liquid-purple text-white">Deep Dive</a>
+        </div>
+      </div>
+      <img
+        src="./auth_illustration.png"
+        alt="Product screenshot"
+        class="w-[48rem] place-self-end -translate-y-40 max-w-none sm:w-[40rem] md:-ml-4 lg:-ml-0"
+        width="2432"
+        height="1442"
+      />
+      <div class="liquid-purple-burst"></div>
+    </div>
+  </div>
+</div>
