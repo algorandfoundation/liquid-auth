@@ -79,6 +79,7 @@ export default function ProviderApp() {
   const [status, setStatus] = useState<'connected' | 'disconnected'>(
     'disconnected',
   );
+  const [loading, setLoading] = useState<boolean>(false);
   useEffect(() => {
     if (!client) return;
     function handleDataChannel(dc: RTCDataChannel) {
@@ -91,6 +92,7 @@ export default function ProviderApp() {
           }
         }
       }
+      setLoading(false);
       setDataChannel(dc);
     }
     client.on('offer-description', (description) => {
@@ -114,6 +116,7 @@ export default function ProviderApp() {
     client.on('connect', handleSocketConnect);
     function handleLinkMessage(msg: LinkMessage) {
       console.log('LinkMessage', msg);
+      setLoading(true);
       setAddress(msg.wallet);
     }
     client.on('link-message', handleLinkMessage);
@@ -138,6 +141,8 @@ export default function ProviderApp() {
         setClient,
         status,
         setStatus,
+        loading,
+        setLoading,
         dataChannel,
         setDataChannel,
       }}

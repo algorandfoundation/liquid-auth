@@ -33,6 +33,9 @@ export type ProfileCardProps = {
 export function StatusCard({ session, user, socket }: ProfileCardProps) {
   const { refetch } = useUserState();
   const { client, setDataChannel } = useContext(SignalClientContext);
+
+  const isLoading = socket.isConnected && !socket.hasDataChannel;
+
   return (
     <Card sx={{ maxWidth: 300, zIndex: 1000 }} raised>
       <CardContent>
@@ -81,6 +84,13 @@ export function StatusCard({ session, user, socket }: ProfileCardProps) {
           <IconButton aria-label="share">
             <ShareIcon />
           </IconButton>
+          {
+            isLoading && (
+              <Typography variant="h6" color="text.secondary">
+                Loading...
+              </Typography>
+            )
+          }
         </CardActions>
       )}
     </Card>

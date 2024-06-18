@@ -4,6 +4,7 @@ import Button from '@mui/material/Button';
 import Modal from '@mui/material/Modal';
 import { useState } from 'react';
 import { Fade } from '@mui/material';
+import CircularProgress from '@mui/material/CircularProgress';
 import { useNavigate } from 'react-router-dom';
 import { useSignalClient } from '@/hooks/useSignalClient.ts';
 import { SignalClient } from '@algorandfoundation/liquid-client';
@@ -28,15 +29,15 @@ export function ConnectModal({
   color,
 }: {
   color?:
-    | 'inherit'
-    | 'primary'
-    | 'secondary'
-    | 'success'
-    | 'error'
-    | 'info'
-    | 'warning';
+  | 'inherit'
+  | 'primary'
+  | 'secondary'
+  | 'success'
+  | 'error'
+  | 'info'
+  | 'warning';
 }) {
-  const { client, dataChannel } = useSignalClient();
+  const { client, loading, dataChannel } = useSignalClient();
   const navigate = useNavigate();
   const [requestId] = useState(SignalClient.generateRequestId());
 
@@ -130,6 +131,22 @@ export function ConnectModal({
                       top: '50%',
                     }}
                   />
+                  {loading && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        height: '80px',
+                        width: '80px',
+                      }}
+                    >    
+                      <CircularProgress
+                        size={80}
+                      />
+                    </Box>
+                  )}
                 </Box>
               </Box>
             </Fade>
