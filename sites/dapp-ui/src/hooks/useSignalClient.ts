@@ -18,6 +18,10 @@ export const SignalClientContext = createContext({
   setStatus: (_: 'connected' | 'disconnected') => {
     console.log(_);
   },
+  loading: false,
+  setLoading: (_: boolean) => {
+    console.log(_);
+  },
   dataChannel: null,
   setDataChannel: (_: RTCDataChannel) => {
     console.log(_);
@@ -25,10 +29,10 @@ export const SignalClientContext = createContext({
 } as SignalClientState);
 
 export function useSignalClient() {
-  const { client, status, dataChannel } = useContext(SignalClientContext);
+  const { client, status, loading, dataChannel } = useContext(SignalClientContext);
   if (!client)
     throw new Error(
       'SignalClient not found, make sure to wrap your component with <SignalClientProvider>',
     );
-  return { client, status, dataChannel };
+  return { client, status, loading, dataChannel };
 }
