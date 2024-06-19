@@ -136,23 +136,51 @@ declare module 'astro:content' {
 
 	type ContentEntryMap = {
 		"docs": {
-"guides/example.md": {
-	id: "guides/example.md";
-  slug: "guides/example";
+"guides/getting-started.md": {
+	id: "guides/getting-started.md";
+  slug: "guides/getting-started";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
-"index.mdx": {
-	id: "index.mdx";
-  slug: "index";
+"guides/registration.md": {
+	id: "guides/registration.md";
+  slug: "guides/registration";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
-} & { render(): Render[".mdx"] };
-"reference/example.md": {
-	id: "reference/example.md";
-  slug: "reference/example";
+} & { render(): Render[".md"] };
+"introduction.md": {
+	id: "introduction.md";
+  slug: "introduction";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"reference/typescript/auth/README.md": {
+	id: "reference/typescript/auth/README.md";
+  slug: "reference/typescript/auth/readme";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"reference/typescript/auth/attestation/functions/attestation.md": {
+	id: "reference/typescript/auth/attestation/functions/attestation.md";
+  slug: "reference/typescript/auth/attestation/functions/attestation";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"reference/typescript/auth/attestation/functions/fetchAttestationRequest.md": {
+	id: "reference/typescript/auth/attestation/functions/fetchAttestationRequest.md";
+  slug: "reference/typescript/auth/attestation/functions/fetchattestationrequest";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"reference/typescript/auth/attestation/functions/fetchAttestationResponse.md": {
+	id: "reference/typescript/auth/attestation/functions/fetchAttestationResponse.md";
+  slug: "reference/typescript/auth/attestation/functions/fetchattestationresponse";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">

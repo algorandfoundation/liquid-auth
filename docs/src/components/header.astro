@@ -24,14 +24,14 @@ const links = [
       <img class="h-12 w-auto" src={logo} alt="">
       <div class="h-16 flex flex-col items-stretch justify-between">
         <h1 class="text-2xl text-white font-extrabold uppercase">Liquid</h1>
-        <h1 class="text-2xl [font-stretch:expanded] text-white stretch font-extrabold uppercase">Auth</h1>
+        <h1 class="text-2xl [font-stretch:expanded] text-white font-extrabold uppercase">Auth</h1>
       </div>
     </div>
     <div class="hidden lg:flex lg:flex-1 lg:gap-x-12 items-center lg:justify-end">
       {links.map(({ title, href }) =>
         <a href={href} class="font-poppins text-md leading-6 text-white">{title}</a>
       )}
-      <a href="/docs" class="px-6 py-2 font-poppins uppercase rounded-full leading-6 bg-liquid-purple text-white">Documentation</a>
+      <a href="/guides/getting-started" class="px-6 py-2 font-poppins uppercase rounded-full leading-6 bg-liquid-purple text-white">Documentation</a>
     </div>
   </nav>
 </header>

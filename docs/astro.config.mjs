@@ -17,18 +17,16 @@ export default defineConfig({
         github: 'https://github.com/algorandfoundation/liquid-auth'
       },
       sidebar: [{
-        label: 'Deep Dive',
-        items: [
-        // Each item here is one entry in the navigation menu
-        {
-          label: 'Example Guide',
-          link: '/guides/example/'
-        }]
+        label: 'Guides',
+        autogenerate: {
+          directory: 'guides'
+        }
       }, {
         label: 'Reference',
         autogenerate: {
-          directory: 'reference'
-        }
+          directory: 'reference',
+        },
+        collapsed: true,
       }]
     }),
     tailwind()]
