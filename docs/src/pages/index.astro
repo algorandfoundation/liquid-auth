@@ -1,0 +1,25 @@
+---
+import '@fontsource/poppins/400.css';
+import '@fontsource/poppins/500.css';
+import '@fontsource/poppins/700.css';
+
+import Header from '../components/header.astro';
+import HeroSection from '../components/marketing/hero.astro';
+import AuthenticationSection from '../components/marketing/authentication.astro';
+import SovereigntySection from '../components/marketing/sovereignty.astro';
+
+---
+<style is:global>
+  html, body {
+    height: 100%;
+    background: black;
+  }
+</style>
+
+
+<div class="min-h-full">
+  <Header />
+  <HeroSection />
+  <AuthenticationSection />
+  <SovereigntySection />
+</div>

@@ -1,0 +1,5 @@
+{
+    "eslint.workingDirectories": [
+        ["sites/dapp-ui", "sites/express-dapp", "services/liquid-auth-api-js"]
+    ]
+}
