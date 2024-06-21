@@ -1,6 +1,6 @@
 ---
 const name = 'Liquid Auth';
-const logo = '../../public/logo.svg';
+const logo = '/logo.svg';
 
 const links = [
   {
@@ -13,7 +13,8 @@ const links = [
   },
   {
     title: 'Demo',
-    href: '/demo'
+    target: '_blank',
+    href: 'https://liquid-auth.onrender.com'
   }
 ];
 
@@ -28,8 +29,8 @@ const links = [
       </div>
     </div>
     <div class="hidden lg:flex lg:flex-1 lg:gap-x-12 items-center lg:justify-end">
-      {links.map(({ title, href }) =>
-        <a href={href} class="font-poppins text-md leading-6 text-white">{title}</a>
+      {links.map(({ title, target, href }) =>
+        <a target={!!target ? target : "_self"} href={href} class="font-poppins text-md leading-6 text-white">{title}</a>
       )}
       <a href="/guides/getting-started" class="px-6 py-2 font-poppins uppercase rounded-full leading-6 bg-liquid-purple text-white">Documentation</a>
     </div>

@@ -4,6 +4,9 @@ const titleEmph = 'Authentication';
 
 const descPartOne = 'Enabled by FIDO2/WebAuthn Liquid Auth unlocks the power of everyday authenication syustems and bridges it to elliptic curves.';
 const descPartTwo = 'Give your users an unmatched UX'
+
+const demoURL = 'https://liquid-auth.onrender.com'
+
 ---
 <div class="h-full w-full flex flex-col items-center">
   <div class="min-h-full h-[100dvh] w-full flex justify-center items-center relative isolate">
@@ -15,7 +18,7 @@ const descPartTwo = 'Give your users an unmatched UX'
         <h1 class="text-8xl font-poppins font-bold tracking-tight text-white">{title}</h1>
         <h1 class="mt-4 text-8xl font-poppins font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-liquid-blue to-liquid-alt-purple to-60%">{titleEmph}</h1>
         <p class="mt-6 mb-10 max-w-xl mx-auto font-poppins text-xl leading-8 text-gray-300">{descPartOne}<br>{descPartTwo}</p>
-        <a href="/demo" class="px-10 py-2 text-md font-poppins leading-6 border-2 border-liquid-purple text-white">Try the demo</a>
+        <a target="_blank" href={demoURL} class="px-10 py-2 text-md font-poppins leading-6 border-2 border-liquid-purple text-white">Try the demo</a>
       </div>
     </div>
     <div class="absolute inset-x-0 -bottom-40 lg:bottom-[unset] lg:top-40 -z-10 transform-gpu overflow-hidden" aria-hidden="true">

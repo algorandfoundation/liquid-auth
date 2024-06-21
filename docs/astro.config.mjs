@@ -26,7 +26,6 @@ export default defineConfig({
         autogenerate: {
           directory: 'reference',
         },
-        collapsed: true,
       }]
     }),
     tailwind()]
