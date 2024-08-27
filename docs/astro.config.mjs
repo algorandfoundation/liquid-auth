@@ -120,29 +120,7 @@ export default defineConfig({
           },
           {
             label: "Provider Service",
-            collapsed: true,
-            items: [
-              {
-                label: "Introduction",
-                link: "/clients/android/provider-service/introduction",
-              },
-              {
-                label: "Create Passkey",
-                link: "/clients/android/provider-service/create-passkey",
-                badge: {
-                  text: "TODO",
-                  variant: "danger"
-                },
-              },
-              {
-                label: "Get Passkey",
-                link: "/clients/android/provider-service/get-passkey",
-                badge: {
-                  text: "TODO",
-                  variant: "danger"
-                },
-              }
-            ],
+            link: "/clients/android/provider-service/introduction",
               badge: {
               text: "^14",
               variant: "danger"

@@ -2,7 +2,7 @@
 title: "Android: Provider Service"
 ---
 
-import {Aside} from '@astrojs/starlight/components';
+import { Aside, CardGrid, LinkCard } from "@astrojs/starlight/components";
 
 <Aside type="danger">
   The API is relatively unstable and not all features are available.
@@ -20,137 +20,38 @@ just their Android devices.
 
 - **Mobile Wallets** that want to act as a roaming authenticator for non-crypto sites
 
+## Get Started
 
-## Provider Service
+Start by reviewing the [official guide](https://developer.android.com/identity/sign-in/credential-provider) from the documentation.
+During the discovery of the Credential Provider Service,
+[this blog post](https://developers.kddi.com/blog/2esxXGTcSBSaGLTJO0dC67) by [ko-koiwai](https://github.com/ko-koiwai) outlines some of the
+difficulties in implementing the service.
+There are still outstanding issues and experimental interfaces as of this writing.
 
+### Creating Passkeys
+
+In the [handling entry selection;](https://developer.android.com/identity/sign-in/credential-provider#handle-passkey-creation)
+you can use the [deterministic-P256](https://github.com/algorandfoundation/deterministic-P256-kt) library
+to derive Passkeys from a BIP39 mnemonic
+
+#### Main Key
 ```kotlin
-@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-class LiquidCredentialProviderService: CredentialProviderService() {
-    private val credentialRepository = CredentialRepository()
-    private val job = SupervisorJob()
-    private val scope = CoroutineScope(Dispatchers.IO + job)
+val DP256 = DeterministicP256()
 
-    companion object {
-        const val TAG = "LiquidCredentialProviderService"
-        //TODO: App Lock Intents
-        const val GET_PASSKEY_INTENT = 1
-        const val CREATE_PASSKEY_INTENT = 2
-        const val GET_PASSKEY_ACTION = "foundation.algorand.demo.GET_PASSKEY"
-        const val CREATE_PASSKEY_ACTION = "foundation.algorand.demo.CREATE_PASSKEY"
-    }
-    /**
-     * Handle Create Credential Requests
-     */
-    override fun onBeginCreateCredentialRequest(
-        request: BeginCreateCredentialRequest,
-        cancellationSignal: CancellationSignal,
-        callback: OutcomeReceiver<BeginCreateCredentialResponse, CreateCredentialException>
-    ) {
-        val response: BeginCreateCredentialResponse? = processCreateCredentialRequest(request)
-        if (response != null) {
-            callback.onResult(response)
-        } else {
-            callback.onError(CreateCredentialUnknownException())
-        }
-    }
-
-    /**
-     * Process incoming Create Credential Requests
-     */
-    private fun processCreateCredentialRequest(request: BeginCreateCredentialRequest): BeginCreateCredentialResponse? {
-        when (request) {
-            is BeginCreatePublicKeyCredentialRequest -> {
-                return handleCreatePasskeyQuery(request)
-            }
-        }
-        return null
-    }
-
-    /**
-     * Create a new PassKey Entry
-     *
-     * This returns an Entry list for the user to interact with.
-     * A PendingIntent must be configured to receive the data from the WebAuthn client
-     */
-    private fun handleCreatePasskeyQuery(
-        request: BeginCreatePublicKeyCredentialRequest
-    ): BeginCreateCredentialResponse {
-        Log.d(TAG, request.requestJson)
-
-
-        val createEntries: MutableList<CreateEntry> = mutableListOf()
-        val name =  JSONObject(request.requestJson).getJSONObject("user").get("name").toString()
-
-        createEntries.add( CreateEntry(
-            name,
-            createNewPendingIntent(CREATE_PASSKEY_ACTION, CREATE_PASSKEY_INTENT, null)
-        )
-        )
-        return BeginCreateCredentialResponse(createEntries)
-    }
-    /**
-     * Handle Get Credential Requests
-     */
-    override fun onBeginGetCredentialRequest(
-        request: BeginGetCredentialRequest,
-        cancellationSignal: CancellationSignal,
-        callback: OutcomeReceiver<BeginGetCredentialResponse, GetCredentialException>,
-    ) {
-        try {
-            callback.onResult(processGetCredentialRequest(request))
-        } catch (e: GetCredentialException) {
-            callback.onError(GetCredentialUnknownException())
-        }
-    }
-
-    /**
-     * Fake a list of available PublicKeyCredential Entries
-     */
-    private fun processGetCredentialRequest(request: BeginGetCredentialRequest): BeginGetCredentialResponse{
-        Log.v(TAG, "processing GetCredentialRequest")
-        val deferredCredentials: Deferred<List<Credential>> = scope.async {
-            credentialRepository.getDatabase(this@LiquidCredentialProviderService).credentialDao().getAllRegular()
-        }
-        val credentials = runBlocking {
-            deferredCredentials.await()
-        }
-        return BeginGetCredentialResponse(credentials.map {
-            val data = Bundle()
-            data.putString("credentialId", it.credentialId)
-            data.putString("userHandle", it.userHandle)
-            PublicKeyCredentialEntry.Builder(
-                this@LiquidCredentialProviderService,
-                it.userHandle,
-                createNewPendingIntent(GET_PASSKEY_ACTION, GET_PASSKEY_INTENT, data),
-                // TODO: filter the request for PublicKeyCredentialOptions
-                request.beginGetCredentialOptions[0] as BeginGetPublicKeyCredentialOption
-            )
-                .setIcon(Icon.createWithResource(this@LiquidCredentialProviderService, R.mipmap.ic_launcher))
-                .build()
-        })
-    }
-    override fun onClearCredentialStateRequest(
-        request: ProviderClearCredentialStateRequest,
-        cancellationSignal: CancellationSignal,
-        callback: OutcomeReceiver<Void?, ClearCredentialException>
-    ) {
-        Log.d(TAG, "onClearCredentialStateRequest")
-        TODO("Not yet implemented")
-    }
-
-    private fun createNewPendingIntent(action: String, requestCode: Int, extra: Bundle?): PendingIntent{
-        val intent = Intent(action).setPackage("foundation.algorand.demo")
-        if (extra != null) {
-            intent.putExtra("CREDENTIAL_DATA", extra)
-        }
-        return PendingIntent.getActivity(
-            applicationContext, requestCode,
-            intent, (PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        )
-    }
-    override fun onDestroy() {
-        super.onDestroy()
-        job.cancel()
-    }
-}
+// Generate the derived main key by passing along a BIP39 mnemonic:
+val derivedMainKey = DP256.genDerivedMainKeyWithBIP39("salon zoo engage submit smile frost later decide wing sight chaos renew lizard rely canal coral scene hobby scare step bus leaf tobacco slice")
 ```
+
+#### Derived Keys
+```kotlin
+val origin = "https://webauthn.guide"
+val userId = "a2bd8bf7-2145-4a5a-910f-8fdc9ef421d3"
+
+val keyPair = DP256.genDomainSpecificKeypair(derivedMainKey, origin, userId)
+```
+
+## References
+<CardGrid>
+  <LinkCard title="Activites" description="Demo Activities for Android 14" href="https://github.com/algorandfoundation/liquid-auth-android/tree/develop/demo/src/main/java/foundation/algorand/demo/headless"/>
+  <LinkCard title="Credential Provider Service" description="Demo Service for Android 14" href="https://github.com/algorandfoundation/liquid-auth-android/blob/develop/demo/src/main/java/foundation/algorand/demo/services/LiquidCredentialProviderService.kt"/>
+</CardGrid>
