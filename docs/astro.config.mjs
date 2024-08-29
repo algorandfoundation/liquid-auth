@@ -3,14 +3,24 @@ import starlight from "@astrojs/starlight";
 import rehypeMermaid from "rehype-mermaid";
 import tailwind from "@astrojs/tailwind";
 import starlightOpenAPI, { openAPISidebarGroups } from "starlight-openapi";
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 // import starlightTypeDoc, { typeDocSidebarGroup } from "starlight-typedoc";
 import react from "@astrojs/react";
-
 import mdx from "@astrojs/mdx";
 import basicSsl from '@vitejs/plugin-basic-ssl'
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 // https://astro.build/config
 export default defineConfig({
   vite: {
+    resolve: {
+      alias: {
+        '@/lib': path.resolve(__dirname, './src/lib'),
+        '@/assets': path.resolve(__dirname, './src/assets'),
+        '@/components': path.resolve(__dirname, './src/components'),
+      },
+    },
     plugins: [basicSsl()],
     server: {
       https: true,
@@ -120,11 +130,24 @@ export default defineConfig({
           },
           {
             label: "Provider Service",
-            link: "/clients/android/provider-service/introduction",
-              badge: {
+            badge: {
               text: "^14",
               variant: "danger"
             },
+            items: [
+              {
+                label: "Introduction",
+                link: "/clients/android/provider-service/introduction",
+              },
+              {
+                label: "Registration",
+                link: "/clients/android/provider-service/registration",
+              },
+              {
+                label: "Authentication",
+                link: "/clients/android/provider-service/authentication",
+              }
+            ]
           },
           {
             label: "Reference",

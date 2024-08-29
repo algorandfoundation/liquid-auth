@@ -1,0 +1,15 @@
+---
+import { Code } from '@astrojs/starlight/components';
+import { fetchAndExtract } from '@/lib/fetchAndExtract.js';
+
+const { uri, lines, lang, title, mark, frame } = Astro.props;
+
+// 'lines' can optionally be specified in the following formats:
+// - '1-3' (inclusive range)
+// - '5' (single line)
+// - '1-10,15-20' (multiple ranges)
+// - '1-3,5,7-9' (mixed)
+const selectedCode = await fetchAndExtract(uri, lines);
+---
+
+<Code code={selectedCode} lang={lang} title={title} frame={frame} mark={mark} />
