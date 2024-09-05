@@ -1,0 +1,71 @@
+---
+import { App } from "../App";
+const baseURL = import.meta.env.BASE_URL;
+const base = baseURL === '/' ? './' : baseURL;
+
+const REPOSITORY_NAME = "algorandfoundation/liquid-auth-android"
+const RELEASE_URL = `https://api.github.com/repos/${REPOSITORY_NAME}/releases`;
+const REPO_URL = `https://github.com/${REPOSITORY_NAME}`
+
+
+async function getRelease(){
+  // Get latest download
+  try{
+    const releases = await fetch(RELEASE_URL).then(res => res.json());
+    const assets = await fetch(releases[0].assets_url).then(res => res.json());
+    return assets[0].browser_download_url
+  } catch(e){
+    return "https://github.com/algorandfoundation/liquid-auth-android/releases"
+  }
+}
+
+const release = await getRelease()
+---
+
+<div class="overflow-hidden w-full py-10 lg:py-32 relative">
+  <div class="mx-auto max-w-7xl px-10 lg:px-8">
+    <div
+      class="w-full mb-40 grid grid-cols-1 gap-x-8 gap-y-16 sm:gap-y-20 lg:mx-0 lg:max-w-none lg:grid-cols-2"
+    >
+      <div class="lg:ml-auto lg:pl-4 lg:pt-4">
+        <div class="lg:max-w-lg">
+          <a id="get-connected" class="demo-anchor relative"></a>
+          <h2  class="text-4xl font-semibold text-liquid-blue">
+            Get Connected
+          </h2>
+          <p
+            class="mt-2 text-7xl font-bold tracking-tight text-white"
+          >
+            Try it out now
+          </p>
+          <p id="demo-description" class="my-6 max-w-96 lg:max-w-none text-2xl text-gray-400">
+            Download the reference Android application and scan the QR code to create a P2P connection.
+          </p>
+          <a href={`${release}`} class="px-10 py-2 text-md font-poppins leading-6 border-2 border-liquid-blue text-white">Download</a>
+        </div>
+      </div>
+      <div class="w-full flex items-start justify-end lg:order-first">
+        <App client:only="react"/>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+  .demo-anchor {
+      top: -40vh;
+  }
+  @media(max-width: 400px){
+      .demo-anchor{
+          top: 10px;
+      }
+  }
+</style>
+<script>
+  let user_agent;
+  if(navigator != undefined && navigator.userAgent != undefined) {
+    user_agent = navigator.userAgent.toLowerCase();
+    document.getElementById("demo-description")!!.innerHTML = user_agent.indexOf('android') > -1 ?
+      "Install the reference Android application and touch the QR Code to create a P2P connection." :
+      "Download the reference Android application and scan the QR code to create a P2P connection."
+  }
+</script>

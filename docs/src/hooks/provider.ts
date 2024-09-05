@@ -1,6 +1,6 @@
 import {decode} from 'cbor-x'
 import { decodeUnsignedTransaction } from "algosdk";
-import { IARC0001Transaction, ResponseMessage, Results, fromBase64Url } from "@algorandfoundation/provider";
+import { type IARC0001Transaction, ResponseMessage, type Results, fromBase64Url } from "@algorandfoundation/provider";
 
 export function attachEncodedSignature(address: string, txn: string, signature: string){
   return decodeUnsignedTransaction(fromBase64Url(txn))
