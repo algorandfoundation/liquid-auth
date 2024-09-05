@@ -110,7 +110,10 @@ describe('SignalsGateway', () => {
     expect(gateway.logger.debug).toHaveBeenCalled();
   });
   it('should handle a link event', async () => {
-    await gateway.link({ requestId: '019097ff-bb8c-7d5d-9822-7c9eb2c0d419' }, clientMock);
+    await gateway.link(
+      { requestId: '019097ff-bb8c-7d5d-9822-7c9eb2c0d419' },
+      clientMock,
+    );
     expect(clientMock.join).toHaveBeenCalledWith(
       sessionFixtures.authorized.wallet,
     );
@@ -119,7 +122,12 @@ describe('SignalsGateway', () => {
       globalThis.handleObserver({ next: jest.fn(), complete: jest.fn() }),
     ).toBeUndefined();
     expect(
-      linkEventFn(null, JSON.stringify({ data: { requestId: '019097ff-bb8c-7d5d-9822-7c9eb2c0d419' } })),
+      linkEventFn(
+        null,
+        JSON.stringify({
+          data: { requestId: '019097ff-bb8c-7d5d-9822-7c9eb2c0d419' },
+        }),
+      ),
     ).resolves.toBeUndefined();
     expect(globalThis.handleObserverMap).toBeInstanceOf(Function);
     expect(
@@ -128,7 +136,13 @@ describe('SignalsGateway', () => {
         requestId: '019097ff-bb8c-7d5d-9822-7c9eb2c0d419',
         wallet: '0.1',
       }),
-    ).toStrictEqual({ data: { credId: '0.1', requestId: '019097ff-bb8c-7d5d-9822-7c9eb2c0d419', wallet: '0.1' } });
+    ).toStrictEqual({
+      data: {
+        credId: '0.1',
+        requestId: '019097ff-bb8c-7d5d-9822-7c9eb2c0d419',
+        wallet: '0.1',
+      },
+    });
   });
   it('should signal a offer-description', async () => {
     await gateway.onOfferDescription(sdpFixtures.call, clientMock);

@@ -1,6 +1,6 @@
 import { Controller, Get, Logger, Req } from '@nestjs/common';
 //@ts-ignore, required for jest
-import assetLinks from '../../assetlinks.json' assert { type: 'json' };
+import assetLinks from '../../assetlinks.json' with { type: 'json' };
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 @Controller('.well-known')
 @ApiTags('.well-known')

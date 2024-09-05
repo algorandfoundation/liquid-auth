@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useAlgod } from './useAlgod.ts';
+import { useAlgod } from './useAlgod.js';
 
 export function useAccountInfo(
   address: string | null,

@@ -95,9 +95,7 @@ export class SignalsGateway
   async link(
     @MessageBody() body: { requestId: string },
     @ConnectedSocket() client: Socket,
-  ): Promise<
-    Observable<{ data: { requestId: string; wallet: string } }>
-  > {
+  ): Promise<Observable<{ data: { requestId: string; wallet: string } }>> {
     const request = client.request as Record<string, any>;
     this.logger.debug(
       `(link): link for Session: ${request.sessionID} with RequestId: ${body.requestId}`,

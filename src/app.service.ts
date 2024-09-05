@@ -4,7 +4,7 @@ import UAParser from 'ua-parser-js';
 import { toBase64URL } from './encoding/index.js';
 
 //@ts-ignore, required for jest
-import assetLinks from '../assetlinks.json' assert { type: 'json' };
+import assetLinks from '../assetlinks.json' with { type: 'json' };
 
 @Injectable()
 export class AppService {

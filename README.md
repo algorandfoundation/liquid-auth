@@ -39,10 +39,10 @@ ngrok will ask you to add your auth token to your configuration file.
 ngrok config add-authtoken <NGROK_AUTH_TOKEN>
 ```
 
-Will then ask you to deploy your static domain, make sure to change the port to **5173** like this:
+Will then ask you to deploy your static domain, make sure to change the port to **3000** like this:
 
 ``` bash
-ngrok http --domain=<NGROK_STATIC_DOMAIN> 5173
+ngrok http --domain=<NGROK_STATIC_DOMAIN> 3000
 ```
 
 #### Configure NGROK
@@ -55,7 +55,7 @@ version: 2
 authtoken: <NGROK_AUTH_TOKEN>
 tunnels:
   website:
-    addr: liquid-auth:5173
+    addr: liquid-auth:3000
     proto: http
     domain: <NGROK_STATIC_DOMAIN>
 
@@ -79,3 +79,37 @@ Run the following command to start the backend:
 docker-compose up -d
 ```
 
+### Documentation
+
+A quick way to test the service is using the Astro documentation site. 
+To run the documentation, navigate to the `docs` directory:
+
+```bash
+cd docs
+```
+
+Copy the `.env.template` file to `.env`:
+
+```bash
+cp .env.template .env
+```
+
+Update the `.env` file with the <NGROK_STATIC_DOMAIN>
+
+```bash
+LIQUID_ORIGIN=<NGROK_STATIC_DOMAIN>
+```
+
+Install the dependencies:
+
+```bash
+npm install
+```
+
+Run the documentation:
+
+```bash
+npm run dev
+```
+
+Navigate to [https://localhost:4321](https://localhost:4321/#get-connected) to view the documentation.

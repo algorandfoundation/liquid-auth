@@ -15,20 +15,41 @@ import {
 } from "@algorandfoundation/provider";
 import { fromResult } from "../hooks/provider.ts";
 
-const url = "liquid-auth.onrender.com";
-
+const url = import.meta.env.PUBLIC_LIQUID_ORIGIN || "liquid-auth.onrender.com";
 const INITIAL = "Initializing 🚀";
 const PEER_CONNECTED = "Peer connected 🎉";
-const SENDING_TRANSACTION = "Sending Transaction 🚀";
+const SENDING_TRANSACTION = "Requesting Signature 📲";
 const RECEIVED_SIGNATURE = "Received Signature 🔏";
 const SUBMITTED_TRANSACTION = "Submitted Transaction 🚀";
-const TRANSACTION_CONFIRMED = "Confirmed Transaction 🎉";
+const TRANSACTION_CONFIRMED = "Transaction Confirmed ✅";
 const LINK_REQUEST = "Link Requested 🚚";
 const WAITING = "Waiting for Link ⌛";
 const LINKED = "Linked 🔗";
 const CLOSED = "Closed 🚪";
 const ERROR = "Something went wrong 🛑";
 
+type FundAccountProps = {
+  address?: string
+  onCancel?: React.MouseEventHandler<HTMLButtonElement>
+}
+function FundAccount({address = "Loading...", onCancel = console.log}){
+  return (
+    <>
+      <h1 className="text-white text-2xl mb-2">Fund Account</h1>
+      <p className="text-white">Account is missing funds, you need at least the minimum transaction fee to test</p>
+      <input value={address} onChange={()=>{}}/>
+      <div className="flex flex-col mt-4 mx-auto gap-2">
+        <a role="button" target="_blank" href="https://bank.testnet.algorand.network/" className="px-10 py-2 text-md font-poppins leading-6 border-2 border-liquid-purple text-white">
+          Dispenser
+        </a>
+        <button className="px-10 py-2 text-md font-poppins leading-6 border-2 border-red-600 text-white"
+                onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </>
+  )
+}
 
 type SendTransactionProps = {
   disabled?: boolean,
@@ -41,12 +62,12 @@ function SendTransaction({ disabled = false, onCancel = console.log, onSubmit = 
     <>
       <h1 className="text-white text-2xl mb-2">Send Transaction</h1>
       <p className="text-white">Send a simple transaction with 0 Amount</p>
-      <div className="flex mt-2 mx-auto">
-        <button disabled={disabled} className="px-10 py-2 text-md font-poppins leading-6 border-2 border-liquid-purple text-white"
+      <div className="flex mt-2 mx-auto gap-2">
+        <button disabled={disabled} className="px-10 py-2 text-md font-poppins leading-6 border-2 border-liquid-green text-white"
                 onClick={onSubmit}>
           Send
         </button>
-        <button className="px-10 py-2 text-md font-poppins leading-6 border-2 border-liquid-purple text-white"
+        <button className="px-10 py-2 text-md font-poppins leading-6 border-2 border-red-600 text-white"
                 onClick={onCancel}>
           Cancel
         </button>
@@ -125,17 +146,15 @@ export function QrCode({ label = true }: { label?: boolean }) {
             setStatus(ERROR);
           } else {
             algod.sendRawTransaction(stxns).do().then(({txId})=>{
-              console.log('wow')
               setStatus(SUBMITTED_TRANSACTION)
               waitForConfirmation(algod, txId, 4).then(()=>{
-                setStatus(TRANSACTION_CONFIRMED)
-                setIsInflight(false)
+                  setStatus(TRANSACTION_CONFIRMED)
+                  setIsInflight(false)
               });
             }).catch(handleError);
           }
         }
       }
-
       setStatus(PEER_CONNECTED);
     }).catch(handleError);
 
@@ -181,8 +200,13 @@ export function QrCode({ label = true }: { label?: boolean }) {
       .catch(handleError);
   }
 
+  function Status() {
+    if(status === TRANSACTION_CONFIRMED) return <a role="button" target="_blank" href={`https://testnet.explorer.perawallet.app/tx/${_txn?.txID()}`} className="relative -inset-y-14 text-xl text-liquid-blue mt-2 inline">{status}</a>;
+    return <h6 className="relative -inset-y-14 text-white text-xl mt-2 inline">{status}</h6>;
+  }
+
   return <div className="w-80 h-80 flex justify-center">
-    {label && <h6 className="relative -inset-y-14 text-white text-xl mt-2 inline">{status}</h6>}
+    {label && <Status />}
     {qrCodeUrl &&
       <a className={"absolute max-w-80"} href={client.deepLink(requestId)}>
         <img className="!mt-0" src={qrCodeUrl} alt="Algorand QRCode" />
@@ -191,6 +215,7 @@ export function QrCode({ label = true }: { label?: boolean }) {
     {isConnected && <div className="absolute flex flex-col bg-gray-800/[.98] p-6 h-80 justify-center max-w-80">
       {isFunded &&
         <SendTransaction disabled={isInFlight} onSubmit={handleSubmit} onCancel={() => setRequestId(SignalClient.generateRequestId())} />}
+      {!isFunded && <FundAccount address={accountInfo.data!!.address} onCancel={() => setRequestId(SignalClient.generateRequestId())} />}
     </div>}
   </div>;
 }
