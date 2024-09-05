@@ -79,27 +79,3 @@ Run the following command to start the backend:
 docker-compose up -d
 ```
 
-Navigate to the ngrok URL in your browser to test the FIDO2 feature.
-
-
-## Using the app
-
-#### Install the [Android client](https://github.com/algorandfoundation/liquid-auth-android/releases) to your device.
-
-![Step-1.png](.docs%2FStep-1.png)
-
-
-### QR Connect
-
-Open the Connect Modal on the website and scan the QR code using the "Connect" button on the Android device.
-Follow the instructions on the Android device to register a credential.
-
-
-![Step-1-QRCode.png](.docs%2FStep-1-QRCode.png)
-
-
-### Peer to Peer
-
-Once the credential is registered, you can send messages over the peer connection.
-
-![Step-2.png](.docs%2FStep-2.png)
