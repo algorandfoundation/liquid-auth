@@ -1,9 +1,8 @@
 {
-  "name": "@liquid/auth-api",
+  "name": "@algorandfoundation/liquid-server",
   "version": "1.0.0-beta.1",
-  "description": "",
-  "author": "",
-  "private": true,
+  "description": "Liquid Auth API Service",
+  "author": "Algorand Foundation",
   "type": "module",
   "license": "MIT",
   "files": [
