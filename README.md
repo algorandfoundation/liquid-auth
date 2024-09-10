@@ -13,6 +13,9 @@ A user must prove ownership of a private key to associate PublicKeyCredentials
 
 ## Getting started
 
+This guide is designed to get the project running locally in a dockerized container.
+See the full [Service Documentation](https://liquidauth.com/server/introduction/) for more information
+
 ### Prerequisites
 - Node.js 18+
 - Docker
@@ -29,21 +32,7 @@ git clone git@github.com:algorandfoundation/liquid-auth.git && cd liquid-auth
 
 Sign up for a free account at [ngrok](https://ngrok.com/) and follow the instructions to get your <NGROK_AUTH_TOKEN> and <NGROK_STATIC_DOMAIN>.
 
-#### With Docker
 Don't run the ngrok commands directly as expressed in the ngrok guide as it will create run-time port conflicts.
-
-#### Without Docker
-ngrok will ask you to add your auth token to your configuration file.
-
-``` bash
-ngrok config add-authtoken <NGROK_AUTH_TOKEN>
-```
-
-Will then ask you to deploy your static domain, make sure to change the port to **3000** like this:
-
-``` bash
-ngrok http --domain=<NGROK_STATIC_DOMAIN> 3000
-```
 
 #### Configure NGROK
 
@@ -62,7 +51,7 @@ tunnels:
 ```
 *Make sure to update the `authtoken` and `domain` in the `ngrok.yml` file with your ngrok details.*
 
-#### Update the Service's .env.docker file
+### Service Configuration
 
 Update the [.env.docker](.env.docker) file with the following keys with the values from ngrok:
 
@@ -71,18 +60,11 @@ HOSTNAME=<NGROK_STATIC_DOMAIN>
 ORIGIN=https://<NGROK_STATIC_DOMAIN>
 ```
 
-### Start services
+### User Interface
 
-Run the following command to start the backend:
+A quick way to test the service is using the documentation site included in this repository. 
 
-```bash
-docker-compose up -d
-```
-
-### Documentation
-
-A quick way to test the service is using the Astro documentation site. 
-To run the documentation, navigate to the `docs` directory:
+Navigate to the `docs` directory:
 
 ```bash
 cd docs
@@ -97,19 +79,16 @@ cp .env.template .env
 Update the `.env` file with the <NGROK_STATIC_DOMAIN>
 
 ```bash
-LIQUID_ORIGIN=<NGROK_STATIC_DOMAIN>
+PUBLIC_LIQUID_ORIGIN=<NGROK_STATIC_DOMAIN>
 ```
 
-Install the dependencies:
+### Start services
+
+Run the following command to start the backend:
 
 ```bash
-npm install
+docker-compose up -d
 ```
 
-Run the documentation:
-
-```bash
-npm run dev
-```
-
-Navigate to [https://localhost:4321](https://localhost:4321/#get-connected) to view the documentation.
+Navigate to [https://localhost:4321](https://localhost:4321/#get-connected)
+to view the documentation and try the demo on the landing page.

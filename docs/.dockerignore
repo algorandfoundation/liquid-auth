@@ -1,0 +1,17 @@
+dist
+node_modules
+.decisions
+.github
+.vscode
+docs
+__mocks__
+.eslintrc.json
+.gitignore
+.prettierrc
+ARCHITECTURE.md
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+docker-compose.yml
+Dockerfile
+README.md
+SEQUENCE.md

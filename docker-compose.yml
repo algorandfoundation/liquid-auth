@@ -1,4 +1,14 @@
 services:
+  documentation:
+    build:
+      context: ./docs
+      target: DEV
+    depends_on:
+      - liquid-auth
+    ports:
+      - "4321:4321"
+    volumes:
+      - ./docs:/home/node
   liquid-auth:
     build: .
     env_file:
@@ -18,7 +28,7 @@ services:
     volumes:
       - ./ngrok.yml:/etc/ngrok.yml
     ports:
-      - 4040:4040
+      - "4040:4040"
   redis:
     image: redis
     ports:
