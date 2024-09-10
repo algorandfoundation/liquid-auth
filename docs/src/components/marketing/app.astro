@@ -1,11 +1,8 @@
 ---
-import { App } from "../App";
-const baseURL = import.meta.env.BASE_URL;
-const base = baseURL === '/' ? './' : baseURL;
+import { App as DemoApp } from "../App.tsx";
 
 const REPOSITORY_NAME = "algorandfoundation/liquid-auth-android"
 const RELEASE_URL = `https://api.github.com/repos/${REPOSITORY_NAME}/releases`;
-const REPO_URL = `https://github.com/${REPOSITORY_NAME}`
 
 
 async function getRelease(){
@@ -45,7 +42,7 @@ const release = await getRelease()
         </div>
       </div>
       <div class="w-full flex items-start justify-end lg:order-first">
-        <App client:only="react"/>
+        <DemoApp client:only="react"/>
       </div>
     </div>
   </div>
