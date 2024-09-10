@@ -202,7 +202,7 @@ export function QrCode({ label = true }: { label?: boolean }) {
 
   function Status() {
     if(status === TRANSACTION_CONFIRMED) return <a role="button" target="_blank" href={`https://testnet.explorer.perawallet.app/tx/${_txn?.txID()}`} className="relative -inset-y-14 text-xl text-liquid-blue mt-2 inline">{status}</a>;
-    return <h6 className="relative -inset-y-14 text-white text-xl mt-2 inline">{status}</h6>;
+    return <p className="relative -inset-y-14 text-white text-xl mt-2 inline">{status}</p>;
   }
 
   return <div className="w-80 h-80 flex justify-center">
