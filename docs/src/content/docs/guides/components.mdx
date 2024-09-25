@@ -10,22 +10,24 @@ import { Aside } from '@astrojs/starlight/components';
 
 <Aside>You can find more information in the <a href="../../server/introduction">Server</a> guide</Aside>
 
-The responsibilities of the service are limited to authentication and brokering connections between peers.
-Authentication is handled using [Passkeys](../concepts#-passkeys) with a custom `Liquid Extension`
-which attests an additional KeyPair (ie Algorand Account).
-Once a client is authenticated, the service can be used to broker a [Peer to Peer](../concepts#-peer-to-peer) connection.
+The responsibilities of the service are limited to:
+- Authentication
+- Brokering connections between peers
+
+Authentication is handled using [Passkeys](../concepts#-passkeys) with a custom `Liquid Extension`, which attests an additional KeyPair (i.e., Algorand Account). Once a client is authenticated, the service can be used to broker a [Peer to Peer](../concepts#-peer-to-peer) connection.
 
 
 #### Who should use this service?
 
-The service should be deployed by decentralized applications
-that want to leverage `Passkeys` and `Signaling` between peers.
+The service should be deployed by decentralized applications that want to leverage `Passkeys` and `Signaling` between peers.
 
 #### Why should I deploy this service?
 
-The majority of communications on the internet are centralized.
-**Liquid Auth Server** offloads communication from the server and allows for direct communication between peers.
-Not only is this generally more secure and decentralized, it also reduces the load on the server.
+The majority of communications on the internet are centralized. **Liquid Auth Server** offloads communication from the server and allows for direct communication between peers. This approach is:
+- More secure
+- More decentralized
+- Reduces the load on the server
+
 
 
 

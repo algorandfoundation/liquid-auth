@@ -47,9 +47,11 @@ git clone git@github.com:algorandfoundation/liquid-auth.git && cd liquid-auth
 > ngrok will not work with VPNs. 
 > To run the project locally, you have two options: either **disable** your VPN entirely or **configure** your VPN's split tunneling settings to allow ngrok traffic. This will ensure that ngrok can function properly without interference from the VPN.
 
-To get started with ngrok, **sign up for a free account at the [ngrok official website](https://ngrok.com/)**. Once registered, follow the on-screen instructions to obtain your **<NGROK_AUTH_TOKEN>** and **<NGROK_STATIC_DOMAIN>** keys.
+To get started with ngrok, **sign up for a free account at the [ngrok official website](https://ngrok.com/)**. Once registered, follow the on-screen instructions to obtain your **<NGROK_AUTH_TOKEN>** and **<NGROK_STATIC_DOMAIN>** keys. 
 
-#### With Docker
+If you are unable to figure out the values after installing and running ngrok successfully, navigate to **Getting Started** > **Your Authtoken** and **Cloud Edge** > **Endpoints** on your ngrok dashboard.
+
+#### With Dxocker
 Don't run the ngrok commands directly as expressed in the ngrok guide, as it will create run-time port conflicts.
 
 #### Without Docker
