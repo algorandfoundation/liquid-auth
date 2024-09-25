@@ -8,12 +8,15 @@ next: false
 
 ### NGINX
 
-The official Docker image supports ENV variable substitution in the template folder.
-Add your distribution to the container under `/usr/share/nginx/html`
-Make sure to configure a `LIQUID_API_HOST` ENV variable that points to your deployed Liquid Auth API.
+The official Docker image supports environment variable substitution in the template folder. To integrate NGINX with your Liquid Auth API:
+
+1. Add your distribution files to the container under `/usr/share/nginx/html`.
+2. Set the `LIQUID_API_HOST` environment variable to point to your deployed Liquid Auth API.
+
+Here’s a sample NGINX configuration:
 
 ```nginx
-///etc/nginx/template/default.conf.template
+# /etc/nginx/template/default.conf.template
 
 server {
     listen            80;
@@ -39,10 +42,12 @@ server {
 ```
 
 ### Vite
-> We recommend running a proxy server like Nginx in production. This will work for local development
+> For local development, Vite can run without a proxy. However, we recommend using a proxy server like NGINX in production.
+
+Below is an example configuration for Vite:
 
 ```typescript
-//vite.config.ts
+// vite.config.ts
 
 const DEFAULT_PROXY_URL = 'http://localhost:3000';
 const DEFAULT_WSS_PROXY_URL = 'ws://localhost:3000';
@@ -63,12 +68,12 @@ export default defineConfig({
 ```
 
 ### Next.js
-> We recommend running a proxy server like Nginx in production. This will work in a pinch or to test locally.
+> We also recommend running a proxy server like Nginx in production. This will work in a pinch or to test locally.
 
 Deploy the service to a platform like Render or AWS then configure the Proxy in `next.config.js`.
 
 ```typescript
-//next.config.js
+// next.config.js
 /** @type {import('next').NextConfig} */
 
 const serverURL = "https://my-liquid-service.com";
@@ -110,17 +115,19 @@ export default nextConfig;
 ```
 
 ### Nest.js[WIP]
-> Warning, the Service package is not available publicly.
-> Please contact if you are interested in mounting the server
+> Warning: The service package is not publicly available.
+> Please contact us if you are interested in integrating the server.
 
-See the [Demo Express](https://github.com/algorandfoundation/liquid-auth/blob/develop/sites/express-dapp/src/main.ts) app for an example of how to mount the server.
+Refer to the [Demo Express](https://github.com/algorandfoundation/liquid-auth/blob/develop/sites/express-dapp/src/main.ts) app for an example of how to mount the server.
+
+To install the Liquid server package:
 
 ```shell
 npm install @algorandfoundation/liquid-server --save
 ```
 
 ```typescript
-//src/main.ts
+// src/main.ts
 import { AppModule, RedisIoAdapter } from '@algorandfoundation/liquid-server';
 
 async function bootstrap() {
@@ -131,10 +138,10 @@ async function bootstrap() {
 ```
 
 ### Vercel
-> We recommend running a proxy server like Nginx in production. This will work in a pinch
+> For deploying on Vercel, you can configure the proxy as shown below. We recommend using a proxy server like NGINX in production for optimal performance.
 
 ```json
-//vercel.json
+// vercel.json
 {
   "rewrites": [
     {
