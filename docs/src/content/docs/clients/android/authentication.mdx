@@ -6,7 +6,10 @@ import {Aside, Tabs,  TabItem } from "@astrojs/starlight/components";
 
 Authenticate an existing [Passkey](../../guides/concepts#passkeys) with the [Service](../../server/introduction).
 
-Get started by initializing the AssertionApi with an OkHttpClient and CookieJar.
+## Getting Started
+
+Begin by initializing the `AssertionApi` with an `OkHttpClient` and `CookieJar` to manage session cookies across requests.
+
 ```kotlin
 val httpClient = OkHttpClient.Builder()
     .cookieJar(cookieJar) // Use Cookie jar to share cookies between requests
@@ -26,7 +29,8 @@ val userAgent = "${BuildConfig.APPLICATION_ID}/${BuildConfig.VERSION_NAME} " +
 
 ## 🧮 Options
 
-Fetch assertion options from the service.
+Retrieve assertion options from the service by making a request with the origin server and the Base64URL encoded `credentialId`.
+
 ```kotlin
 val response = assertionApi.postAssertionOptions(
     origin, // Origin Server
@@ -38,8 +42,7 @@ val response = assertionApi.postAssertionOptions(
 ## 🎉 Retrieving
 
 There are several ways to handle the retrieval of an existing Passkey.
-We recommend
-using the [FIDO2ApiClient](https://developers.google.com/identity/fido/android/native-apps) or [CredentialManager](https://developer.android.com/identity/sign-in/credential-manager)
+We recommend using the [FIDO2ApiClient](https://developers.google.com/identity/fido/android/native-apps) or [CredentialManager](https://developer.android.com/identity/sign-in/credential-manager)
 
 <Tabs>
   <TabItem label="FIDO2ApiClient">
@@ -107,10 +110,7 @@ using the [FIDO2ApiClient](https://developers.google.com/identity/fido/android/n
 
 ## 🔐 Liquid Extension
 
-The liquid extension is optional for authentication requests.
-
-This is  useful when you already have a passkey
-and want to peer with a device that is not signed in.
+The Liquid extension is optional for authentication requests. It is particularly useful when you have a Passkey and want to authenticate and peer with a device that is not signed in.
 
 ```kotlin
 
@@ -122,6 +122,8 @@ liquidExtJSON.put("requestId", requestId)
 
 
 ## 🚚 Response
+
+Send the assertion response to the server along with the User-Agent and the Liquid Extension JSON.
 
 ```kotlin
 // MainActivity.kt
