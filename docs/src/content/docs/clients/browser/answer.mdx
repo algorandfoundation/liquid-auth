@@ -2,20 +2,19 @@
 title: 'Browser: Peer Answer'
 ---
 
-The answer client is used to respond to a remote client's offer.
-The remote client will have sent an offer to the answer client, which will then respond with an answer.
+The **Answer Client** is responsible for responding to a remote client's offer in a peer-to-peer connection. The remote client will initiate the connection by sending an offer, and the answer client will respond accordingly.
 
 ### Who is this for?
 
-- **dApps** that want to leverage liquid-auth to connect to other clients
-- **Mobile Wallets** that want to tailor the onboarding and connect experience
-- **Browser Wallets** that want to communicate with other clients
+
+- **dApps** leveraging `liquid-auth` to connect with other clients.
+- **Mobile Wallets** focused on onboarding and streamlining the connection experience.
+- **Browser Wallets** that want to communicate with remote clients.
 
 ### Request ID
 
-Answer clients are responsible for creating the request id.
-Request IDs are given to the remote peer, usually as a deep-link encoded into a QR Code.
-This ID is used by the remote peer to authenticate the current client.
+The answer client is responsible for generating a **Request ID**, which is provided to the remote peer. Typically, the Request ID is encoded into a deep-link represented as a QR code and serves as an identifier for the remote peer to authenticate the current client.
+
 
 ```typescript
 import { SignalClient } from '@algorandfoundation/liquid-client';
@@ -24,19 +23,21 @@ const requestId = SignalClient.generateRequestId();
 
 ## Signaling
 
+Once the Request ID is generated, the answer client will listen for a peer connection offer using the generated `requestId`. Upon receiving the offer, it will handle the peer connection using a data channel.
+
 ```typescript
 // Wait for a remote offer for the current request id
 client
     .peer(requestId, 'offer')
     .then(handleDataChannel)
 
-// Display QR Code
+// Display the QR Code
 const blob = await client.qrCode()
 ```
 
 ## Data Channel
 
-Handling the Datachannel can be done with the `@algorandfoundation/provider` library
+The @algorandfoundation/provider library is used to handle the data channel for communication between the answer client and the remote peer.
 
 ```typescript
 import {encode as cborEncode, decode as cborDecode} from 'cbor-x';
@@ -53,7 +54,7 @@ import {
 
 let dc: RTCDataChannel
 
-// Provider ID of the Wallet, otherwise it should be the default Liquid UUID
+// Provider ID of the Wallet (default Liquid UUID)
 const providerId = uuidv7()
 
 // Create an encoded transaction using your algorand specific library

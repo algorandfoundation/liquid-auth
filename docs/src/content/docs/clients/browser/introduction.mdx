@@ -4,32 +4,30 @@ prev: false
 ---
 import {Aside} from "@astrojs/starlight/components";
 
-The `SignalClient` is an EventEmitter interface
-that can be used
-to communicate with the [Service](../../server/introduction).
-It's designed to facilitate authentication and peer-to-peer communications.
-The interface is composed of methods that can be manually executed.
+The **`SignalClient`** is an EventEmitter interface used to communicate with the [Service](../../server/introduction). It facilitates both authentication and peer-to-peer communications through a variety of methods that can be executed manually.
 
-## Install
+## Installation
+
+To install the SignalClient, run the following command:
+
 ```bash
 npm install algorandfoundation/liquid-auth-js --save
 ````
 
 ## Get Started
 
-<Aside>The service must be running as the origin server. See the [server integrations](../../server/integrations) documentation</Aside>
+<Aside>The service must be running as the origin server. See the [server integrations](../../server/integrations) documentation for more information.</Aside>
 
 ### Use-Wallet [WIP]
-We recommend using [use-wallet](https://github.com/TxnLab/use-wallet) from [TxnLabs](https://www.txnlab.dev/).
+We recommend using [use-wallet](https://github.com/TxnLab/use-wallet) from [TxnLabs](https://www.txnlab.dev/) for enhanced wallet integration.
 Check back soon for more details.
 
 ### Manual Integration
 
-
+To manually integrate the `SignalClient`, use the following code snippet:
 
 ```typescript
 //app.ts
 import {SignalClient} from '@algorandfoundation/liquid-client';
 const client = new SignalClient(window.origin);
 ```
-
