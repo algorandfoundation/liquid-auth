@@ -2,14 +2,15 @@
 title: "Android: Peer Answer"
 ---
 
-The answer client is used to respond to a remote client's offer.
-The remote client will have sent an offer to the answer client, which will then respond with an answer.
+The **Answer Client** is designed to respond to offers from remote clients. When a remote client sends an offer, the answer client will respond appropriately.
 
 ### Who is this for?
 
-- **Mobile Apps** that want to leverage liquid-auth to connect to other mobile apps
+- **Mobile Apps** that want to leverage liquid-auth for seamless connections with other mobile applications.
 
 ## Signaling
+
+To initiate a signaling response, use the following code:
 
 ```kotlin
 val requestID = SignalClient.generateRequestId() // Create a new Request ID
@@ -26,7 +27,7 @@ val dc = client.peer(requestId, "offer" )
 
 ## Data Channel
 
-Handling the Datachannel can be done with the `foundation.algorand.provider` library.
+Managing the Data Channel can be accomplished with the `foundation.algorand.provider` library. Below is an example demonstrating how to handle the data channel:
 
 ```kotlin
 // Example.kt
@@ -48,9 +49,9 @@ val request = RequestMessage("UUID_OF_MESSAGE", "arc0027:sign_transactions:reque
 // Send the request
 dc.send(Base64.UrlSafe.encode(request.toByteArray(EncoderType.CBOR)))
 
-// Handle Response Messages
+// Handle incoming Response Messages
 client.handleDataChannel(dc, {
-    // Decode Message
+    // Decode the Response Message
     val response = encoder.decode<ResponseMessage>(Base64.UrlSafe.decode($it), EncoderType.CBOR)
     when (response.reference) {
         "arc0027:sign_transactions:response" -> {
@@ -72,6 +73,6 @@ client.handleDataChannel(dc, {
 })
 
 
-// Send Message to Peer
+// Send Message to to the connected peer
 client.send("Hello World!")
 ```

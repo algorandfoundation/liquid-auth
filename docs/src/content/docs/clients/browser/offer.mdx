@@ -7,21 +7,24 @@ sidebar:
 import {Aside} from "@astrojs/starlight/components";
 
 <Aside type="caution">
-  Ensure both clients have a valid session before attempting to create peer connections.
-  See the [Authentication](/docs/clients/browser/authentication) and [Registration]() guides for more information.
+  Ensure both clients have an active session before attempting to establish peer connections. Refer to the [Authentication](/docs/clients/browser/authentication) and [Registration](/docs/clients/browser/registration) guides for more information.
 </Aside>
 
-[Peer-to-Peer](/guides/concepts/#peer-to-peer) connections can only be done using the `SignalClient`.
-Wallets are responsible for creating offers to connect.
+[Peer-to-Peer](/guides/concepts/#peer-to-peer) connections in the browser are facilitated through the `SignalClient`.
+Wallets are responsible for initiating the peer connection by creating offers.
 
 ### Who is this for?
 
-- **Browser Wallets** that want to communicate with other clients
+- **Browser Wallets** that need to communicate directly with other clients
 
 ## Signaling
 
+To create a peer connection offer, first initialize the `SignalClient` and obtain the `requestId` from the peer willing to respond.
+
 ```typescript
 import { SignalClient } from "@algorandfoundation/liquid-client";
+
+// Initialize SignalClient using an origin, typically from a QR code
 const client = new SignalClient("<ORIGIN-FROM-QR-CODE>")
 
 // Receive the RequestID from the Peer willing to Answer this offer
@@ -43,7 +46,7 @@ const dc = await client.peer(
 
 ## Data Channel
 
-Handling the Datachannel can be done with the `@algorandfoundation/provider` library
+After establishing the peer connection, you can handle data exchange using the `@algorandfoundation/provider` library.
 
 ```typescript
 import {encode as cborEncode, decode as cborDecode} from 'cbor-x'

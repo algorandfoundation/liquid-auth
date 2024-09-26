@@ -43,9 +43,9 @@ await assertion(
 If you want to manually handle the process of creating a passkey, you can use the following methods and preforming
 the three steps of the process.
 
-### 🧮 Options
+### 🧮 1. Fetch Options
 
-Manually fetching the `Options` from the service.
+First, manually fetch the `Options` required for authentication from the service.
 
 ```typescript
 import {fetchAssertionRequestOptions} from '@algorandfoundation/liquid-client/assertion'
@@ -53,9 +53,9 @@ import {fetchAssertionRequestOptions} from '@algorandfoundation/liquid-client/as
 const encodedOptions = await fetchAssertionRequestOptions("https://my-liquid-service.com", "<KNOWN_CREDENTIAL_ID>")
 ```
 
-### 🎉 Retrieving
+### 🎉 2. Retrieve Passkey
 
-Decode the options and fetch the Passkey.
+Next, decode the options and fetch the passkey.
 
 ```typescript
 import {fromBase64Url} from "@algorandfoundation/liquid-client/encoding";
@@ -73,9 +73,9 @@ const credential = navigator.credentials.get({
 })
 ```
 
-### 🔐 Liquid Extension
+### 🔐 3. Liquid Extension
 
-Optionally, Authenticate a remote user with the Liquid Extension.
+Optionally, authenticate a remote peer with the Liquid Extension.
 
 ```typescript
 credential.clientExtensionResults = {
@@ -84,9 +84,9 @@ credential.clientExtensionResults = {
 }
 ```
 
-### 🚚 Response
+### 🚚 4. Submit Response
 
-Encode and submit the passkey to the service.
+Finally, encode and submit the passkey back to the service.
 
 ```typescript
 import {fetchAssertionResponse} from '@algorandfoundation/liquid-client/assertion'

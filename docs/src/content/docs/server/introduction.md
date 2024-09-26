@@ -6,17 +6,21 @@ sidebar:
   label: 'Introduction'
 ---
 
-Liquid Auth is a self-hosted authentication service that provides a simple way to associate Passkeys to KeyPair(s) commonly found in cryptocurrencies.
+Liquid Auth is a self-hosted authentication service designed to seamlessly associate Passkeys with KeyPairs, a concept commonly used in cryptocurrency ecosystems.
 
-#### Technical Details
 
-It is built using the [NestJS](https://nestjs.com/) framework
-and uses [mongoose](https://docs.nestjs.com/techniques/mongodb) to interact with MongoDB.
-Signaling is handled using [Socket.IO](https://docs.nestjs.com/websockets/gateways)
-backed by a [Redis Adapter](https://socket.io/docs/v4/redis-adapter/).
+### Technical Details
 
-The service request to be running on the same origin as the dApp.
-We recommend configuring your frontend service to proxy requests to the authentication service.
+- **Framework:** Built with the robust [NestJS](https://nestjs.com/) framework, providing a scalable and modular architecture.
+
+- **Database Integration:** Utilizes [Mongoose](https://docs.nestjs.com/techniques/mongodb) for MongoDB interactions, ensuring efficient data handling.
+
+- **Real-Time Signaling:** Implements [Socket.IO](https://docs.nestjs.com/websockets/gateways) for real-time communication, enhanced by a [Redis Adapter](https://socket.io/docs/v4/redis-adapter/) to handle distributed systems and scale.
+
+### Deployment Configurations
+
+For optimal performance, Liquid Auth should run on the same origin as your dApp. It's also recommended that your frontend service proxies authentication requests to the Liquid Auth backend.
+
 
 
 

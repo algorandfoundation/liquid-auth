@@ -5,11 +5,10 @@ import {Aside} from "@astrojs/starlight/components";
 
 <Aside type="caution">
   Ensure both clients have a valid session before attempting to create peer connections.
-  See the [Authentication](./authentication) and [Registration](./registration) guides for more information.
+  For more information, see the [Authentication](./authentication) and [Registration](./registration) guides.
 </Aside>
 
-[Peer-to-Peer](/guides/concepts/#peer-to-peer) connections can only be done using the `SignalClient`.
-Wallets are responsible for creating offers to connect.
+[Peer-to-Peer](/guides/concepts/#peer-to-peer) connections can only be established using the `SignalClient`. Wallets are responsible for creating offers to connect.
 
 ### Who is this for?
 
@@ -29,10 +28,9 @@ val dc = client.peer(requestId, "answer" )
 
 ## Data Channel
 
-Handling the Datachannel can be done with the `foundation.algorand.provider` library.
-Wallets can implement their own Provider strategy for handling messages
+Managing the Data Channel can be achieved with the `foundation.algorand.provider` library. Wallets may implement their own Provider strategy to handle messages.
 
-The following is an example of a Provider Implementation:
+Below is an example of a Provider implementation:
 
 ```kotlin
 package com.example.my-wallet
@@ -102,7 +100,8 @@ class AVMProvider(val providerId: String) {
 }
 ```
 
-The following is using a Provider with the SignalClient
+### Using a Provider with the SignalClient
+Here’s how to use the Provider with the `SignalClient`:
 
 ```kotlin
 // Example.kt

@@ -6,31 +6,38 @@ sidebar:
 ---
 import {Aside, CardGrid, LinkCard} from '@astrojs/starlight/components';
 
-<Aside>The client must authenticate the request prior to sending the offer. See [Authentication](/guides/passkey/authentication/) for more information</Aside>
+<Aside>Note: The client must authenticate the request before sending an offer. See the [Authentication Guide](/guides/passkey/authentication/) for more details.</Aside>
 
-An **Offer** is a type of session that is initiated by a client
-and is used to create a P2P connection with an **Answer** client.
+An **Offer** is a session type initiated by a client to establish a peer-to-peer (P2P) connection with an **Answer** client. It serves as the foundation for creating secure P2P interactions between clients.
+
 
 ### Who is this for?
 
-- **Wallets/Credential Managers** that want to peer with dApps clients.
+
+- **Wallets/Credential Managers** looking to connect and peer with decentralized app (dApp) clients.
+- **Fintech Applications** seeking to leverage decentralized peer-to-peer exchanges for financial transactions or identity management.
+
+
 
 ### Additional Links
+
+For more detailed information on the exchange of messages between Offer and Answer clients, refer to the follwoing links:
+
 
 <LinkCard
   href="/guides/peer-to-peer/exchange"
   title="Exchange Sessions"
-  description="A detailed guide on how Offer and Answer clients exchange messages."
+  description="Learn how Offer and Answer clients exchange messages in peer-to-peer sessions."
 />
 <CardGrid>
   <LinkCard
     href="/clients/browser/offer"
     title="Browser: Peer Offer"
-    description="A detailed guide on using the Offer client in the browser."
+    description="A detailed guide for using the Offer client in a browser."
   />
   <LinkCard
     href="/clients/android/offer"
     title="Android: Peer Offer"
-    description="A detailed guide on using the Offer client in Android."
+    description="A detailed guide for using the Offer client on Android devices."
   />
 </CardGrid>

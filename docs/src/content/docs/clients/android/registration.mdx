@@ -4,12 +4,12 @@ title: "Android: Registration"
 
 import {Aside, Tabs,  TabItem } from "@astrojs/starlight/components";
 
-Register a [Passkey](../../guides/concepts#passkeys) with the [Service](../../server/introduction)
-and attest the knowledge of a KeyPair.
-This is done by creating a new Passkey with the [liquid extension](/guides/passkey/extension) enabled.
-The extension is used to sign the challenge with an additional KeyPair as well as authenticate a remote peer.
+Register a [Passkey](../../guides/concepts#passkeys) with the [Service](../../server/introduction) and attest the knowledge of a KeyPair. This is accomplished by creating a new Passkey with the [liquid extension](/guides/passkey/extension) enabled. The extension facilitates signing the challenge with an additional KeyPair and authenticating a remote peer.
 
-Get started by initializing the AttestationApi with an OkHttpClient and CookieJar.
+### Getting Started
+
+Get started by initializing the `AttestationApi` with an `OkHttpClient` and `CookieJar`:
+
 ```kotlin
 val httpClient = OkHttpClient.Builder()
     .cookieJar(cookieJar) // Use Cookie jar to share cookies between requests
@@ -19,7 +19,7 @@ val attestationApi = AttestationApi(httpClient)
 
 ## 👤 User Agent
 
-The User-Agent string is used to authenticate the device.
+The User-Agent string is used to authenticate the device:
 
 ```kotlin
 // UA used to authenticate the device
@@ -30,7 +30,8 @@ val userAgent = "${BuildConfig.APPLICATION_ID}/${BuildConfig.VERSION_NAME} " +
 ## 🧮 Options
 
 Fetch attestation options from the service.
-The remote client should present a [Deep Link](/guides/linking/#deep-link) which contains the Origin.
+The remote client should present a [Deep Link](/guides/linking/#deep-link) which includes the Origin:
+
 ```kotlin
 // Create Options for FIDO2 Server
 val options = JSONObject()
@@ -52,16 +53,15 @@ val response = attestationApi.postAttestationOptions(
 
 ## ✨ Creating
 
-There are several ways to handle the creation of a new Passkey.
-We recommend
-using the [FIDO2ApiClient](https://developers.google.com/identity/fido/android/native-apps) or [CredentialManager](https://developer.android.com/identity/sign-in/credential-manager)
+There are several approaches to creating a new Passkey. We recommend using the [FIDO2ApiClient](https://developers.google.com/identity/fido/android/native-apps) or [CredentialManager](https://developer.android.com/identity/sign-in/credential-manager)
 
 <Tabs>
   <TabItem label="FIDO2ApiClient">
     <Aside>
-      FIDO2Client is deprecated which has been replaced by the CredentialManager.
+      The FIDO2Client is deprecated which has been replaced by the CredentialManager.
       Not all features are available as of this writing in the CredentialManager.
     </Aside>
+
 ```kotlin
 // MainActivity.kt
 
@@ -93,11 +93,10 @@ fun handleAuthenticatorAttestationResult(activityResult: ActivityResult){
 
         else -> {
             /**
-             * Handle the PublicKeyCredential
-             *
-             * Now you can combine the PublicKeyCredential with the Liquid Extension JSON
-             * and submit it to the service for verification
-             */
+            * Handle the PublicKeyCredential
+            * Combine the PublicKeyCredential with the Liquid Extension JSON
+            * and submit it to the service for verification
+            */
             val credential = PublicKeyCredential.deserializeFromBytes(bytes)
         }
     }
@@ -116,6 +115,7 @@ attestationIntentLauncher.launch(
 )
 
 ```
+
   </TabItem>
   <TabItem label="CredentialManager[WIP]">
     ```kotlin
@@ -129,7 +129,7 @@ attestationIntentLauncher.launch(
 
 ## 🔐 Liquid Extension
 
-Sign the challenge with an additional KeyPair and optionally authenticate a remote peer.
+Sign the challenge with an additional KeyPair and optionally authenticate a remote peer:
 
 ```kotlin
 // Create the Liquid Extension JSON
@@ -148,6 +148,8 @@ liquidExtJSON.put("device", Build.MODEL)
 ```
 
 ## 🚚 Response
+
+Submit the attestation response:
 
 ```kotlin
 val response = attestationApi.postAttestationResponse(
