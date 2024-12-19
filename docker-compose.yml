@@ -7,8 +7,6 @@ services:
       - liquid-auth
     ports:
       - "4321:4321"
-    volumes:
-      - ./docs:/home/node
   liquid-auth:
     build: .
     env_file:
