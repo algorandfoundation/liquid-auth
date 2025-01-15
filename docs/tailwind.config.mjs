@@ -1,5 +1,3 @@
-import defaultTheme from 'tailwindcss/defaultTheme';
-
 /** @type {import('tailwindcss').Config} */
 export default {
 	content: ['./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}'],
@@ -13,6 +11,7 @@ export default {
       },
       colors: {
         'liquid-purple': '#9966FF',
+        'liquid-purple-contrast': '#844DFF',
         'liquid-blue': '#6699FF',
         'liquid-alt-purple': '#906FFF',
         'liquid-green': '#00773a'

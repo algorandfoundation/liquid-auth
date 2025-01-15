@@ -1,22 +1,128 @@
 {
-  "name": "liquid-auth",
-  "private": true,
-  "scripts": {
-    "dev": "concurrently \"npm:dev:*\"",
-    "dev:api": "npm run dev --if-present --workspace @liquid/auth-api",
-    "dev:ui": "npm run dev --if-present --workspace dapp-ui",
-    "build": "npm run build --workspace @liquid/auth-api && npm run build --workspace dapp-ui && npm run build --workspace express-dapp",
-    "lint": "npm run lint --if-present --ws",
-    "test": "npm run test --if-present --ws",
-    "test:cov": "npm run test:cov --if-present --ws",
-    "start": "npm run start:prod --workspace @liquid/auth-api",
-    "start:ssr": "npm run start:prod --workspace express-dapp"
-  },
-  "workspaces": [
-    "services/**",
-    "sites/**"
+  "name": "@algorandfoundation/liquid-server",
+  "version": "1.0.0-beta.1",
+  "description": "Liquid Auth API Service",
+  "author": "Algorand Foundation",
+  "type": "module",
+  "license": "MIT",
+  "files": [
+    "./src/**/*.md"
   ],
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "default": "./dist/src/index.js",
+      "types": "./dist/src/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "start": "nest start",
+    "dev": "nest start --watch",
+    "start:debug": "cross-env NODE_ENV=development nest start --debug --watch",
+    "start:prod": "node dist/src/main.js",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "preinstall": "node bin/bootstrap.js && node bin/update-well-known.js",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org phearzero --project node-express dist && sentry-cli sourcemaps upload --org phearzero --project node-express dist"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.2.6",
+    "@nestjs/config": "^3.1.1",
+    "@nestjs/core": "^10.2.6",
+    "@nestjs/microservices": "^10.2.7",
+    "@nestjs/mongoose": "^10.0.1",
+    "@nestjs/platform-express": "^10.2.6",
+    "@nestjs/platform-socket.io": "^10.2.7",
+    "@nestjs/swagger": "^7.3.1",
+    "@nestjs/websockets": "^10.2.7",
+    "@sentry/node": "^7.74.1",
+    "@sentry/profiling-node": "^1.2.1",
+    "@simplewebauthn/server": "^0.10.3",
+    "@socket.io/redis-adapter": "^8.2.1",
+    "algosdk": "^2.7.0",
+    "base64url": "^3.0.1",
+    "connect-mongo": "^5.0.0",
+    "express-session": "^1.17.3",
+    "express-socket.io-session": "^1.3.5",
+    "ioredis": "^5.4.1",
+    "mongoose": "^7.6.3",
+    "redis": "^4.6.10",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.8.1",
+    "tweetnacl": "^1.0.3",
+    "ua-parser-js": "^1.0.36",
+    "uuid": "^10.0.0"
+  },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "@faker-js/faker": "^8.4.1",
+    "@nestjs/cli": "^10.1.18",
+    "@nestjs/schematics": "^10.0.2",
+    "@nestjs/testing": "^10.2.6",
+    "@types/express": "^4.17.18",
+    "@types/express-session": "^1.17.8",
+    "@types/express-socket.io-session": "^1.3.7",
+    "@types/hbs": "^4.0.2",
+    "@types/jest": "^29.5.5",
+    "@types/node": "^20.7.0",
+    "@types/supertest": "^2.0.13",
+    "@types/ua-parser-js": "^0.7.37",
+    "@typescript-eslint/eslint-plugin": "^6.7.3",
+    "@typescript-eslint/parser": "^6.7.3",
+    "cross-env": "^7.0.3",
+    "eslint": "^8.50.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.0.3",
+    "source-map-support": "^0.5.21",
+    "supertest": "^6.3.3",
+    "ts-jest": "^29.1.1",
+    "ts-loader": "^9.4.4",
+    "ts-node": "^10.9.1",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "jest": {
+    "testTimeout": 10000,
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coveragePathIgnorePatterns": [
+      "index.ts",
+      "/node_modules/",
+      "/test/",
+      "/dist/",
+      "/src/main.ts",
+      "/src/adapters/redis-io.adapter.ts",
+      "/src/encoding/"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
   }
 }

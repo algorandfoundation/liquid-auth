@@ -1,4 +1,6 @@
-FROM node:20.12-alpine AS BUILDER
+FROM node:22.8.0-alpine AS BUILDER
+
+WORKDIR /home/node
 
 ENV PYTHONUNBUFFERED=1
 RUN apk add --update --no-cache g++ make py3-pip pkgconfig pixman-dev cairo-dev pango-dev && ln -sf python3 /usr/bin/python
@@ -9,19 +11,19 @@ RUN npm ci
 
 RUN npm run build
 
-FROM node:20.12-alpine
+FROM node:22.8.0-alpine
+
+WORKDIR /home/node
+
+# Dependencies
+COPY --from=BUILDER /home/node/node_modules ./node_modules
 
 # App Files
-COPY --from=BUILDER ./node_modules ./node_modules
-COPY --from=BUILDER ./package.json ./package.json
-COPY --from=BUILDER ./package-lock.json ./package-lock.json
-# Sites Files
-COPY --from=BUILDER ./sites ./sites
-# Service Files
-COPY --from=BUILDER ./services/liquid-auth-api-js/ ./services/liquid-auth-api-js/
+COPY --from=BUILDER /home/node/dist ./dist
+COPY --from=BUILDER /home/node/src ./src
+COPY --from=BUILDER /home/node/package.json ./package.json
 
 # Expose the port on which the app will run
 EXPOSE 3000
-EXPOSE 5173
 
-CMD ["npm", "run", "start"]
+CMD ["npm", "run", "start:prod"]

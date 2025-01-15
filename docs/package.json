@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "astro dev --host",
     "start": "astro dev",
     "build": "astro check && astro build",
     "preview": "astro preview",
@@ -11,16 +11,19 @@
   },
   "dependencies": {
     "@algorandfoundation/liquid-client": "github:algorandfoundation/liquid-auth-js",
+    "@algorandfoundation/provider": "github:algorandfoundation/wallet-provider-ts",
     "@astrojs/check": "^0.5.10",
     "@astrojs/mdx": "^3.1.2",
     "@astrojs/react": "^3.6.2",
     "@astrojs/starlight": "^0.24.2",
     "@astrojs/tailwind": "^5.1.0",
     "@fontsource/poppins": "^5.0.13",
+    "@tanstack/react-query": "^5.54.1",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "algosdk": "^2.9.0",
     "astro": "^4.3.5",
-    "qr-code-styling": "github:awesome-algorand/qr-code-styling",
+    "cbor-x": "^1.6.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "rehype-mermaid": "^2.1.0",
@@ -33,6 +36,7 @@
     "typescript": "^5.4.5"
   },
   "devDependencies": {
+    "@tanstack/react-query-devtools": "^5.54.1",
     "@vitejs/plugin-basic-ssl": "^1.1.0",
     "socket.io-client": "^4.7.5",
     "tweetnacl": "^1.0.3",

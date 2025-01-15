@@ -1,18 +1,23 @@
 services:
+  documentation:
+    build:
+      context: ./docs
+      target: DEV
+    depends_on:
+      - liquid-auth
+    ports:
+      - "4321:4321"
   liquid-auth:
     build: .
-    restart: no
     env_file:
       - .env.docker
     ports:
-      - "5173:5173"
+      - "3000:3000"
     depends_on:
       - redis
       - mongo
-    command: ["npm", "run", "start:ssr"]
   ngrok:
     image: ngrok/ngrok:latest
-    restart: no
     command:
       - "start"
       - "--all"
@@ -21,15 +26,13 @@ services:
     volumes:
       - ./ngrok.yml:/etc/ngrok.yml
     ports:
-      - 4040:4040
+      - "4040:4040"
   redis:
     image: redis
-    restart: always
     ports:
       - "6379:6379"
   mongo:
     image: mongo:7.0
-    restart: no
     environment:
       - MONGO_INITDB_DATABASE=${DB_NAME:-fido}
       - MONGO_INITDB_ROOT_USERNAME=${DB_USERNAME:-algorand}
@@ -38,23 +41,5 @@ services:
       - "27017:27017"
     volumes:
       - mongo:/data/db
-  turn:
-    image: coturn/coturn
-    restart: no
-    deploy:
-      replicas: 0
-    depends_on:
-      - mongo
-    ports:
-      - "3478:3478"
-      - "3478:3478/udp"
-      - "5349:5349"
-      - "5349:5349/udp"
-    command:
-      - "--no-auth"
-      - "--mongo-userdb"
-      - "mongodb://${DB_USERNAME:-algorand}:${DB_PASSWORD:-algorand}@mongo:27017/${DB_NAME:-coturn}?authSource=admin&retryWrites=true&w=majority"
-      - "--redis-userdb"
-      - "ip=redis dbname=0"
 volumes:
   mongo:

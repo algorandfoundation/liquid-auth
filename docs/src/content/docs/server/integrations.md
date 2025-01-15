@@ -109,14 +109,12 @@ const nextConfig = {
 export default nextConfig;
 ```
 
-### Nest.js[WIP]
-> Warning, the Service package is not available publicly.
+### Nest.js
+> Warning, the Service package is still a work in progress.
 > Please contact if you are interested in mounting the server
 
-See the [Demo Express](https://github.com/algorandfoundation/liquid-auth/blob/develop/sites/express-dapp/src/main.ts) app for an example of how to mount the server.
-
 ```shell
-npm install @algorandfoundation/liquid-server --save
+npm install algorandfoundation/liquid-auth --save
 ```
 
 ```typescript
@@ -124,9 +122,60 @@ npm install @algorandfoundation/liquid-server --save
 import { AppModule, RedisIoAdapter } from '@algorandfoundation/liquid-server';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.useWebSocketAdapter(new RedisIoAdapter(app));
-  await app.listen(3000);
+  // Create Application
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: ['error', 'warn', 'debug', 'log', 'verbose'],
+  });
+  
+  // Get Configuration
+  const config = app.get<ConfigService>(ConfigService);
+ 
+  // Enable Swagger Docs
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Liquid Dapp')
+    .setDescription('Authenticated Dapp API')
+    .setVersion('1.0')
+    .addCookieAuth('connect.sid')
+    .build();
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('docs', app, document);
+ 
+  // Setup Session Storeage
+  const username = config.get('database.username');
+  const host = config.get('database.host');
+  const password = config.get('database.password');
+  const name = config.get('database.name');
+  const isAtlas = config.get('database.atlas');
+ 
+  const uri = `mongodb${
+    isAtlas ? '+srv' : ''
+  }://${username}:${password}@${host}/${name}?authSource=admin&retryWrites=true&w=majority`;
+
+  const store = MongoStore.create({
+    mongoUrl: uri,
+    ttl: 20000,
+  });
+
+  const sessionHandler = session({
+    secret: "REPLACE_WITH_SESSION_SECRET",
+    saveUninitialized: true,
+    resave: true,
+    cookie: {
+      httpOnly: true,
+      secure: true,
+    },
+    store,
+  });
+  app.use(sessionHandler);
+  
+  // Configure Redis Adapter
+  const redisIoAdapter = new RedisIoAdapter(app, sessionHandler);
+  await redisIoAdapter.connectToRedis(config);
+
+  app.useWebSocketAdapter(redisIoAdapter);
+
+  // Start Service
+  await app.listen(process.env.PORT || 3000);
 }
 ```
 
