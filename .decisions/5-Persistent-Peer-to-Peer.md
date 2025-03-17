@@ -23,21 +23,23 @@ broker.onMessage(()=>{})
 broker.add([...manyOtherServices])
 ```
 
-## Solutions:
+# Actionable Items
 
-### 1. Current Solution
+## Refactor (TBD):
 
 > [!Note]
 > By refactoring slightly, we could achieve a similar result 
 
-TLDR: Sometimes the best solution is no solution! 
+TLDR: Sometimes the best solution is the one with the least number of changes 
 
-Avoids the problem by restricting to direct negotiation at the origin service using QRCodes to pass unique requestIds
+Avoids the problem by restricting to direct negotiation at the origin service using QRCodes to pass unique requestIds. 
+Once the user receives the credentialId of the passkey,
+they can then request it again from their client over the Hybrid transport.
 This requires a trusted execution environment such as the Browser and Liquid Auth Service to avoid
 [phishing attempts](https://danielfett.de/2025/03/10/cross-device-session-fixation/)
 
-If we simply request the passkey from the hybrid transport at the time of signing, we could then safely renegotiate.
-To the end user this would be most likely seamless.
+Requesting the passkey from the hybrid transport at the time of signing will allow us to safely renegotiate.
+(To the end user this would be most likely seamless).
 
 #### Pros:
 
@@ -51,9 +53,10 @@ To the end user this would be most likely seamless.
 - Requires display of the RequestId to initiate connections with peers
 - Keepalive and persistence with origin servers are non-trivial
 - Requires federation for cross-origin requests (less decentralized)
-- Brokering messages is non-trivial and relies on third party
+- Brokering messages is non-trivial and relies on a third party (Google caBLE/Hybrid)
+- Uses socket.io for message ordering
 
-### 2. Larger Refactor (TBD)
+### Larger Refactor (TBD)
 
 > [!NOTE]
 > We should consider this as an option to separate the concerns of Authentication and Communication
@@ -66,16 +69,17 @@ Removes WebRTC communications to become a stand-alone product (See SecretBox, Pu
 
 #### Pros:
 
-- Origin validation is strongly enforced (origin, requestId and Passkey credential)
-- Connections are managed by third parties
+- Connections are managed by third parties from the perspective of liquid-auth (only passkey management)
 - Allows Passkey adoption in services without requiring peer support (hash-vault)
 - Allows adoption of WebRTC at a future date
 
 #### Cons:
-- Third party trust
-- Limited control over the messages
 
-### 3. NaCl SecretBox Approach (TBD):
+- Larger effort required
+
+## Needs Refinement
+
+### 1. NaCl SecretBox (TBD):
 
 > [!Note]
 > By far the most promising long-term solution, parties can negotiate directly using the Credential API. 
@@ -124,7 +128,7 @@ Web Authn Extension Example (TBD by architect):
 - Distribution of secret boxes is non-trivial (federation requirements)
 - Abuse/maintenance overhead for each resolver
 
-### 4. Pub/Sub Approach (TBD):
+### 2. Pub/Sub (TBD):
 
 > [!NOTE]
 > Leveraging trusted technology providers can help mitigate the design requirements.
@@ -148,7 +152,7 @@ we can create decentralized|federated networks which allow message passing.
 - Federation is likely a requirement (Could benefit from a SecretBox strategy)
 
 
-### 5. Gossip Approach (TBD):
+### 3. Gossip (TBD):
 
 > [!WARNING]
 > This is the least viable as of the time of writing. 
