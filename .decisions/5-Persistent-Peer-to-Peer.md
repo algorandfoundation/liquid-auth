@@ -11,6 +11,7 @@ Allow for persistent connections between peers that can survive disconnections
 The liveliness of the network is correlated to its interconnectivity.
 As connections increase, the liveliness decreases and eventually halts (ie [Amdahl's Law](https://en.wikipedia.org/wiki/Amdahl%27s_law)).
 
+
 Client Code Illustration:
 
 ```typescript
@@ -26,12 +27,17 @@ broker.add([...manyOtherServices])
 
 ### 1. Current Solution
 
+> [!Note]
+> By refactoring slightly, we could achieve a similar result 
+
 TLDR: Sometimes the best solution is no solution! 
 
 Avoids the problem by restricting to direct negotiation at the origin service using QRCodes to pass unique requestIds
-
 This requires a trusted execution environment such as the Browser and Liquid Auth Service to avoid
 [phishing attempts](https://danielfett.de/2025/03/10/cross-device-session-fixation/)
+
+If we simply request the passkey from the hybrid transport at the time of signing, we could then safely renegotiate.
+To the end user this would be most likely seamless.
 
 #### Pros:
 
@@ -41,16 +47,22 @@ This requires a trusted execution environment such as the Browser and Liquid Aut
 
 #### Cons:
 
+- Requires securing of the RequestId to prevent impersonation
+- Requires display of the RequestId to initiate connections with peers
 - Keepalive and persistence with origin servers are non-trivial
 - Requires federation for cross-origin requests (less decentralized)
 - Brokering messages is non-trivial and relies on third party
 
-### 2. Refactor
+### 2. Larger Refactor (TBD)
 
-TLDR: Refactor WebRTC into a stand-alone product, separating the concerns (viable in all contexts)
+> [!NOTE]
+> We should consider this as an option to separate the concerns of Authentication and Communication
+> This will allow us to adopt Passkeys independently of communication in use cases like HashiCorp-Vault
+
+TLDR: Refactor WebRTC into a stand-alone product, with the above current solution
 
 Produce credential provider services and limit use to caBLE/Hybrid from the browser.
-Removes WebRTC communications to become a stand-alone product that is integrated into other products (See SecretBox).
+Removes WebRTC communications to become a stand-alone product (See SecretBox, PubSub, Gossip).
 
 #### Pros:
 
@@ -63,7 +75,7 @@ Removes WebRTC communications to become a stand-alone product that is integrated
 - Third party trust
 - Limited control over the messages
 
-### 3. NaCl SecretBox Approach:
+### 3. NaCl SecretBox Approach (TBD):
 
 > [!Note]
 > By far the most promising long-term solution, parties can negotiate directly using the Credential API. 
@@ -79,6 +91,7 @@ Parties can read from the resolver and decrypt the session information.
 This has been used in the past to demonstrate [shared secret storage](https://github.com/jo/pouch-box?tab=readme-ov-file#permit-permitpermit-id).
 The CIP-45 approach could be augmented to support DID documents, storing the session information which all nodes could resolve
 
+Pseudo DID (TBD by architect):
 ```json
 {
   "@context": [
@@ -90,7 +103,7 @@ The CIP-45 approach could be augmented to support DID documents, storing the ses
   ]
 }
 ```
-Web Authn Extension Example:
+Web Authn Extension Example (TBD by architect):
 ```json
 {
   "type": "liquid",
@@ -102,20 +115,49 @@ Web Authn Extension Example:
 #### Pros:
 
 - Requires a single connection to the dataset (did-resolve, torrent, blockchain, etc)
-- Trustless environment with every party presenting their credentials
+- Trust-less environment with every party presenting their credentials
 - Aligns with Wallet Foundation work and Identity Wallet/DID
 
 #### Cons:
 
+- Requires a high level of resources for designing security model/architecture (all hands on deck)
 - Distribution of secret boxes is non-trivial (federation requirements)
-- Abuse/maintenance overhead for each resolver (enforce TTL)
+- Abuse/maintenance overhead for each resolver
+
+### 4. Pub/Sub Approach (TBD):
+
+> [!NOTE]
+> Leveraging trusted technology providers can help mitigate the design requirements.
+
+TLDR: Create our own federated event source
+
+Using traditional systems ([kafka](https://kafka.apache.org/), [ZMQ](https://zeromq.org/),
+we can create decentralized|federated networks which allow message passing.
+
+#### Pros:
+
+- Supports many protocols (HTTP, Websockets, etc)
+- Enterprise grade software (Kafka, SQS, etc)
+- Allows complex interactions and extending of messages
+- Large developer networks
+
+#### Cons:
+
+- Minimal overhead in creating requirements
+- As the network grows larger, the liveliness decreases. Making the system appear slow or unresponsive at times
+- Federation is likely a requirement (Could benefit from a SecretBox strategy)
 
 
-### 4. Gossip Approach:
+### 5. Gossip Approach (TBD):
+
+> [!WARNING]
+> This is the least viable as of the time of writing. 
+> Very little pure/private P2P support with little benefit over the current solution
 
 TLDR: Leverage existing P2P frameworks
 
-Frameworks (ie Libp2p, Iroh) provide a relay feature and a gossip protocol which maintains paths to peers
+Frameworks (ie [Libp2p](https://libp2p.io/), [Iroh](https://www.iroh.computer/)))
+provide a relay feature and a gossip protocol which maintains paths to peers
 through the network, thereby reducing the connections to the available relay nodes in the network.
  
 #### Pros:
@@ -126,23 +168,7 @@ through the network, thereby reducing the connections to the available relay nod
 
 #### Cons:
 
+- Relaiblity issues compared to enterprise software
 - As the network grows larger, the livelness decreases. Making the system appear slow or unresponsive at times
 - Brokering is non-trivial and message delivery is not guaranteed
 
-### 5. Pub/Sub Approach:
-
-TLDR: Create our own federated event source
-
-Using traditional systems ([kafka](https://kafka.apache.org/), [ZMQ](https://zeromq.org/), 
-we can create decentralized|federated networks which allow message passing. 
-
-#### Pros:
-
-- Supports many protocols (HTTP, Websockets, etc)
-- Enterprise grade software
-- Large developer networks
-
-#### Cons:
-
-- Federation is most likely a requirement
-- Message delivery is not always guaranteed
