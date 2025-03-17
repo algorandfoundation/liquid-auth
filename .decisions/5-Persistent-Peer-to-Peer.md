@@ -24,7 +24,9 @@ broker.add([...manyOtherServices])
 
 ## Solutions:
 
-### Current Solution
+### 1. Current Solution
+
+TLDR: Sometimes the best solution is no solution! 
 
 Avoids the problem by restricting to direct negotiation at the origin service using QRCodes to pass unique requestIds
 
@@ -41,12 +43,30 @@ This requires a trusted execution environment such as the Browser and Liquid Aut
 
 - Keepalive and persistence with origin servers are non-trivial
 - Requires federation for cross-origin requests (less decentralized)
-- Brokering messages is non-trivial
+- Brokering messages is non-trivial and relies on third party
 
-### NaCl SecretBox Approach:
+### 2. Refactor
+
+TLDR: Refactor WebRTC into a stand-alone product, separating the concerns (viable in all contexts)
+
+Produce credential provider services and limit use to caBLE/Hybrid from the browser.
+Removes WebRTC communications to become a stand-alone product that is integrated into other products (See SecretBox).
+
+#### Pros:
+
+- Origin validation is strongly enforced (origin, requestId and Passkey credential)
+- Connections are managed by third parties
+- Allows Passkey adoption in services without requiring peer support (hash-vault)
+- Allows adoption of WebRTC at a future date
+
+#### Cons:
+- Third party trust
+- Limited control over the messages
+
+### 3. NaCl SecretBox Approach:
 
 > [!Note]
-> By far the most promising, parties can negotiate directly using the Credential API. 
+> By far the most promising long-term solution, parties can negotiate directly using the Credential API. 
 > It could extend the liquid auth and DID work into a cohesive product
 
 TLDR: Have the connection information publicly available, guarded by the identity of the parties
@@ -60,9 +80,22 @@ This has been used in the past to demonstrate [shared secret storage](https://gi
 The CIP-45 approach could be augmented to support DID documents, storing the session information which all nodes could resolve
 
 ```json
-// TODO: Example DID document with WebRTC SDP SecretBox
 {
-  
+  "@context": [
+    "https://w3id.org/connectivity/suites/webrtc/v1"
+  ],
+  "id": "did:rtc:<BoxPubKey>",
+  "devices": [
+    "<PUB_KEY>"
+  ]
+}
+```
+Web Authn Extension Example:
+```json
+{
+  "type": "liquid",
+  "peerId": "<BOX_KEY>",
+  "identities": ["<BrowserID>", "<ServiceID>"]
 }
 ```
 
@@ -78,7 +111,7 @@ The CIP-45 approach could be augmented to support DID documents, storing the ses
 - Abuse/maintenance overhead for each resolver (enforce TTL)
 
 
-### Gossip Approach:
+### 4. Gossip Approach:
 
 TLDR: Leverage existing P2P frameworks
 
@@ -96,8 +129,20 @@ through the network, thereby reducing the connections to the available relay nod
 - As the network grows larger, the livelness decreases. Making the system appear slow or unresponsive at times
 - Brokering is non-trivial and message delivery is not guaranteed
 
-### Pub/Sub Approach:
+### 5. Pub/Sub Approach:
 
-Using traditional systems, we can create decentralized networks which allow simple message passing. 
+TLDR: Create our own federated event source
 
-TODO: https://zeromq.org/ vs https://kafka.apache.org/
+Using traditional systems ([kafka](https://kafka.apache.org/), [ZMQ](https://zeromq.org/), 
+we can create decentralized|federated networks which allow message passing. 
+
+#### Pros:
+
+- Supports many protocols (HTTP, Websockets, etc)
+- Enterprise grade software
+- Large developer networks
+
+#### Cons:
+
+- Federation is most likely a requirement
+- Message delivery is not always guaranteed
