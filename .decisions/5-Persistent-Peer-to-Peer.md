@@ -25,7 +25,7 @@ broker.add([...manyOtherServices])
 
 # Actionable Items
 
-## Refactor (TBD):
+## ✅ Refactor (Selected Decision):
 
 > [!Note]
 > By refactoring slightly, we could achieve a similar result 
@@ -49,14 +49,14 @@ Requesting the passkey from the hybrid transport at the time of signing will all
 
 #### Cons:
 
-- Requires securing of the RequestId to prevent impersonation
-- Requires display of the RequestId to initiate connections with peers
+- Requires securing of the initial RequestId to prevent impersonation
+- Requires display of the RequestId to initiate the first connection with peers
 - Keepalive and persistence with origin servers are non-trivial
 - Requires federation for cross-origin requests (less decentralized)
 - Brokering messages is non-trivial and relies on a third party (Google caBLE/Hybrid)
 - Uses socket.io for message ordering
 
-### Larger Refactor (TBD)
+### Larger Refactor
 
 > [!NOTE]
 > We should consider this as an option to separate the concerns of Authentication and Communication
@@ -77,7 +77,7 @@ Removes WebRTC communications to become a stand-alone product (See SecretBox, Pu
 
 - Larger effort required
 
-## Needs Refinement
+## Needs Refinement (To be continued at a later date)
 
 ### 1. NaCl SecretBox (TBD):
 
