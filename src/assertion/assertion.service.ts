@@ -1,13 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import * as fido2 from '@simplewebauthn/server';
+import {
+  generateAuthenticationOptions,
+  verifyAuthenticationResponse,
+} from '@simplewebauthn/server';
 import { User } from '../auth/auth.schema.js';
 import {
-  AssertionCredentialJSON,
-  AuthenticatorDevice,
+  AuthenticationResponseJSON,
   PublicKeyCredentialRequestOptions,
-} from '@simplewebauthn/typescript-types';
+} from '@simplewebauthn/server';
 import { AppService } from '../app.service.js';
 import { ConfigService } from '@nestjs/config';
+import { fromBase64Url } from "../encoding/index.js";
 
 @Injectable()
 export class AssertionService {
@@ -15,7 +18,7 @@ export class AssertionService {
     private appService: AppService,
     private configService: ConfigService,
   ) {}
-  request(
+  async request(
     user: User,
     credId: string | undefined,
     options: PublicKeyCredentialRequestOptions,
@@ -33,7 +36,7 @@ export class AssertionService {
       }
     }
 
-    return fido2.generateAssertionOptions({
+    return generateAuthenticationOptions({
       timeout: this.configService.get<number>('timeout'),
       rpID: this.configService.get<string>('hostname'),
       allowCredentials,
@@ -45,9 +48,9 @@ export class AssertionService {
     });
   }
 
-  response(
+  async response(
     user: User,
-    credential: AssertionCredentialJSON,
+    credential: AuthenticationResponseJSON,
     challenge: string,
     ua: string,
   ) {
@@ -62,21 +65,25 @@ export class AssertionService {
       throw 'Authenticating credential not found.';
     }
 
-    const verification = fido2.verifyAssertionResponse({
-      credential,
+    const verification = await verifyAuthenticationResponse({
+      response: credential,
       expectedChallenge: challenge,
       expectedOrigin,
       expectedRPID,
-      authenticator: userCredential as unknown as AuthenticatorDevice,
+      credential: {
+        publicKey: fromBase64Url(userCredential.publicKey),
+        counter: userCredential.prevCounter,
+        id: userCredential.credId
+      }
     });
 
-    const { verified, authenticatorInfo } = verification;
+    const { verified, authenticationInfo } = verification;
 
     if (!verified) {
       throw 'User verification failed.';
     }
 
-    userCredential.prevCounter = authenticatorInfo.counter;
+    userCredential.prevCounter = authenticationInfo.newCounter;
 
     return user;
   }

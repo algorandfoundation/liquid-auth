@@ -1,9 +1,15 @@
+import * as process from "node:process";
+
 export default () => ({
   env: process.env.NODE_ENV || 'development',
   timeout: 30 * 1000 * 60,
   rpName: process.env.RP_NAME || 'Algorand Foundation FIDO2 Server',
   hostname: process.env.HOSTNAME || 'localhost',
   origin: process.env.ORIGIN || 'http://localhost',
+  session: {
+    secure: process.env.SESSION_SECURE === 'true',
+    secret: process.env.SESSION_SECRET || 'secret',
+  },
   socket: {
     host: process.env.REDIS_HOST || 'localhost',
     port: parseInt(process.env.REDIS_PORT, 10) || 6379,

@@ -4,6 +4,10 @@
   "rpName": "Algorand Foundation FIDO2 Server",
   "hostname": "catfish-pro-wolf.ngrok-free.app",
   "origin": "http://catfish-pro-wolf.ngrok-free.app",
+  "session": {
+    "secure": false,
+    "secret": "secret"
+  },
   "socket": {
     "host": "localhost",
     "port": 6379,

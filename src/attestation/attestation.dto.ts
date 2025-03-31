@@ -1,4 +1,4 @@
-import type { AttestationCredentialJSON } from '@simplewebauthn/typescript-types';
+import type { RegistrationResponseJSON } from '@simplewebauthn/server';
 
 export type AttestationSelectorDto = {
   username: string;
@@ -7,7 +7,7 @@ export type AttestationSelectorDto = {
   attestationType?: AttestationConveyancePreference;
   extensions?: LiquidAttestationExtensionsClientInput;
 };
-export type AttestationCredentialJSONDto = AttestationCredentialJSON & {
+export type AttestationCredentialJSONDto = RegistrationResponseJSON & {
   clientExtensionResults: LiquidAuthClientExtensionResults;
 };
 

@@ -64,12 +64,13 @@ async function bootstrap() {
   });
 
   const sessionHandler = session({
-    secret: 'my-secret',
+    secret: config.get('session.secret'),
+    // TODO: optimize session
     saveUninitialized: true,
     resave: true,
     cookie: {
       httpOnly: true,
-      secure: false, // TODO: Secure the cookie
+      secure: config.get('session.secure'),
     },
     store,
   });
