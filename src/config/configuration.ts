@@ -1,4 +1,4 @@
-import * as process from "node:process";
+import * as process from 'node:process';
 
 export default () => ({
   env: process.env.NODE_ENV || 'development',

@@ -27,7 +27,7 @@ describe('AttestationController', () => {
   let userModel: Model<User>;
   let authService: AuthService;
   beforeEach(async () => {
-    jest.resetAllMocks()
+    jest.resetAllMocks();
     userModel = mongoose.model('User', UserSchema);
 
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -69,27 +69,29 @@ describe('AttestationController', () => {
 
   describe('POST /request', () => {
     it('should create PublicKeyCredentialCreationOptions', async () => {
-      await Promise.all(attestationRequestBodyFixtures.map(async (fixture, i) => {
-        const setChallengeSpy = jest.fn();
-        const setLiquidExtensionSpy = jest.fn();
-        const response = await attestationController.request(
-          {
-            set challenge(str: string) {
-              setChallengeSpy(str);
+      await Promise.all(
+        attestationRequestBodyFixtures.map(async (fixture, i) => {
+          const setChallengeSpy = jest.fn();
+          const setLiquidExtensionSpy = jest.fn();
+          const response = await attestationController.request(
+            {
+              set challenge(str: string) {
+                setChallengeSpy(str);
+              },
+              set liquidExtension(val: boolean) {
+                setLiquidExtensionSpy(val);
+              },
             },
-            set liquidExtension(val: boolean) {
-              setLiquidExtensionSpy(val);
-            },
-          },
-          fixture as AttestationSelectorDto,
-        );
-        expect(response).toEqual({
-          ...attestationRequestResponseFixtures[i],
-          challenge: response.challenge,
-        });
-        expect(setChallengeSpy).toHaveBeenCalledWith(response.challenge);
-        expect(setLiquidExtensionSpy).toHaveBeenCalledWith(true);
-      }));
+            fixture as AttestationSelectorDto,
+          );
+          expect(response).toEqual({
+            ...attestationRequestResponseFixtures[i],
+            challenge: response.challenge,
+          });
+          expect(setChallengeSpy).toHaveBeenCalledWith(response.challenge);
+          expect(setLiquidExtensionSpy).toHaveBeenCalledWith(true);
+        }),
+      );
     });
     it('should fail if liquid extension is not enabled', async () => {
       attestationRequestBodyFixtures.forEach((fixture) => {

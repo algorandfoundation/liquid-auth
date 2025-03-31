@@ -28,7 +28,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { User } from '../auth/auth.schema.js';
-import { AuthenticationResponseJSON } from "@simplewebauthn/server";
+import { AuthenticationResponseJSON } from '@simplewebauthn/server';
 // TODO: make a loader for descriptions
 const requestDescription = '';
 const responseDescription = '';

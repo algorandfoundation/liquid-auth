@@ -2,11 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppService } from '../app.service.js';
 import {
-  generateRegistrationOptions, RegistrationResponseJSON,
-  verifyRegistrationResponse
-} from "@simplewebauthn/server";
+  generateRegistrationOptions,
+  RegistrationResponseJSON,
+  verifyRegistrationResponse,
+} from '@simplewebauthn/server';
 import { AttestationSelectorDto } from './attestation.dto.js';
-import { decodeAddress, fromBase64Url, toBase64URL } from "../encoding/index.js";
+import {
+  decodeAddress,
+  fromBase64Url,
+  toBase64URL,
+} from '../encoding/index.js';
 import nacl from 'tweetnacl';
 import { AlgodService } from '../algod/algod.service.js';
 @Injectable()
@@ -77,10 +82,10 @@ export class AttestationService {
       },
     });
     // Patch the options to match v1
-    _options.user.id = options.username
-    delete _options.extensions.credProps
-    delete _options.hints
-    return _options
+    _options.user.id = options.username;
+    delete _options.extensions.credProps;
+    delete _options.hints;
+    return _options;
   }
 
   /**

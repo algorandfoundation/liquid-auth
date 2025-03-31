@@ -10,7 +10,7 @@ import {
 } from '@simplewebauthn/server';
 import { AppService } from '../app.service.js';
 import { ConfigService } from '@nestjs/config';
-import { fromBase64Url } from "../encoding/index.js";
+import { fromBase64Url } from '../encoding/index.js';
 
 @Injectable()
 export class AssertionService {
@@ -73,8 +73,8 @@ export class AssertionService {
       credential: {
         publicKey: fromBase64Url(userCredential.publicKey),
         counter: userCredential.prevCounter,
-        id: userCredential.credId
-      }
+        id: userCredential.credId,
+      },
     });
 
     const { verified, authenticationInfo } = verification;
