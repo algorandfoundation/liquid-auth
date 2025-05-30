@@ -39,7 +39,7 @@ export class AttestationController {
    */
   @Post('/request')
   @ApiOperation({ summary: 'Attestation Request' })
-  request(
+  async request(
     @Session() session: Record<string, any>,
     @Body() options: AttestationSelectorDto,
   ) {
@@ -56,7 +56,7 @@ export class AttestationController {
     }
     session.liquidExtension = true;
     // Request Attestation Options
-    const attestationOptions = this.attestationService.request(options);
+    const attestationOptions = await this.attestationService.request(options);
     // This challenge is used to verify the response
     session.challenge = attestationOptions.challenge;
     // Return the Attestation Options

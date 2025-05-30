@@ -1,10 +1,11 @@
 import {
   PublicKeyCredentialRequestOptionsJSON as PublicKeyCredentialRequestOptionsJSONType,
   PublicKeyCredentialDescriptorJSON as PublicKeyCredentialDescriptorJSONType,
-  AssertionCredentialJSON as AssertionCredentialJSONType,
+  AuthenticationResponseJSON as AssertionCredentialJSONType,
   AuthenticatorAssertionResponseJSON as AuthenticatorAssertionResponseJSONType,
   PublicKeyCredentialRequestOptions as PublicKeyCredentialRequestOptionsType,
-} from '@simplewebauthn/typescript-types';
+  AuthenticationExtensionsClientOutputs,
+} from '@simplewebauthn/server';
 import { ApiProperty } from '@nestjs/swagger';
 
 type AuthenticatorTransport = 'usb' | 'nfc' | 'ble' | 'internal';
@@ -71,7 +72,8 @@ export class AssertionCredentialJSON implements AssertionCredentialJSONType {
   @ApiProperty({ type: AuthenticatorAssertionResponseJSON })
   response: AuthenticatorAssertionResponseJSON;
   @ApiProperty()
-  readonly type: string;
+  readonly type: 'public-key' = 'public-key';
+  clientExtensionResults: AuthenticationExtensionsClientOutputs;
 }
 export type LiquidAssertionCredentialJSON = AssertionCredentialJSON & {
   clientExtensionResults: { liquid: { requestId: string } };

@@ -28,6 +28,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { User } from '../auth/auth.schema.js';
+import { AuthenticationResponseJSON } from '@simplewebauthn/server';
 // TODO: make a loader for descriptions
 const requestDescription = '';
 const responseDescription = '';
@@ -93,7 +94,7 @@ export class AssertionController {
     }
 
     // Get options, save challenge and respond
-    const options = this.assertionService.request(user, credId, body);
+    const options = await this.assertionService.request(user, credId, body);
 
     session.challenge = options.challenge;
 
@@ -132,7 +133,7 @@ export class AssertionController {
     @Headers()
     headers: Record<string, any>,
     @Body()
-    body: AssertionCredentialJSON & {
+    body: AuthenticationResponseJSON & {
       clientExtensionResults: { liquid: { requestId: string } };
     },
   ) {
@@ -156,7 +157,7 @@ export class AssertionController {
     }
     let user: User;
     try {
-      user = this.assertionService.response(
+      user = await this.assertionService.response(
         savedUser,
         body,
         expectedChallenge,

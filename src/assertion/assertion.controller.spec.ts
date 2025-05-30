@@ -20,9 +20,9 @@ import assertionResponseResponseFixtures from './__fixtures__/assertion.response
 
 import { UnauthorizedException } from '@nestjs/common';
 import {
-  PublicKeyCredentialRequestOptions,
-  LiquidAssertionCredentialJSON,
   AssertionCredentialJSON,
+  LiquidAssertionCredentialJSON,
+  PublicKeyCredentialRequestOptions,
 } from './assertion.dto.js';
 import configurationFixture from '../__fixtures__/configuration.fixture.json';
 import androidUserAgentFixtures from '../__fixtures__/user-agent.android.fixtures.json';
@@ -37,7 +37,7 @@ const dummyAssertionCredentialJSON = {
     clientDataJSON: '',
     signature: '',
   },
-} as LiquidAssertionCredentialJSON;
+} as unknown as LiquidAssertionCredentialJSON;
 
 describe('AssertionController', () => {
   let assertionController: AssertionController;
@@ -128,9 +128,17 @@ describe('AssertionController', () => {
     it('should verify the assertion from the client', async () => {
       await Promise.all(
         assertionResponseBodyFixtures.map(async (fixture, i) => {
-          authService.search = jest
-            .fn()
-            .mockResolvedValue(assertionResponseResponseFixtures[i]);
+          authService.search = jest.fn().mockResolvedValue({
+            ...assertionResponseResponseFixtures[i],
+            credentials: [
+              {
+                ...assertionResponseResponseFixtures[i].credentials[0],
+                prevCounter:
+                  assertionResponseResponseFixtures[i].credentials[0]
+                    .prevCounter - 1,
+              },
+            ],
+          });
 
           const session = {
             challenge: assertionRequestResponseFixtures[i].challenge,
@@ -141,7 +149,7 @@ describe('AssertionController', () => {
           };
           await expect(
             assertionController.response(session, headers, body),
-          ).resolves.toBe(assertionResponseResponseFixtures[i]);
+          ).resolves.toStrictEqual(assertionResponseResponseFixtures[i]);
         }),
       );
     });
@@ -166,9 +174,17 @@ describe('AssertionController', () => {
     it('should fail if the signature is invalid', async () => {
       await Promise.all(
         assertionResponseBodyFixtures.map(async (fixture, i) => {
-          authService.search = jest
-            .fn()
-            .mockResolvedValue(assertionResponseResponseFixtures[i]);
+          authService.search = jest.fn().mockResolvedValue({
+            ...assertionResponseResponseFixtures[i],
+            credentials: [
+              {
+                ...assertionResponseResponseFixtures[i].credentials[0],
+                prevCounter:
+                  assertionResponseResponseFixtures[i].credentials[0]
+                    .prevCounter - 1,
+              },
+            ],
+          });
 
           const session = {
             challenge: assertionRequestResponseFixtures[i].challenge,
@@ -177,7 +193,8 @@ describe('AssertionController', () => {
           const body = fixture as unknown as AssertionCredentialJSON & {
             clientExtensionResults: { liquid: { requestId: string } };
           };
-          body.response.signature = 'INVALIDSIGNATURE';
+          body.response.signature =
+            'WEUCIQDcV2y6ub3Qh8pyTCCLdWKRH_cmR2xlFuNy1Fn1QsSUygIgTZh9b6mB77C-aQrBj7Evb8u3S4j3vjlnSPAKcR7Kld4';
           await expect(
             assertionController.response(session, headers, body),
           ).rejects.toThrow(UnauthorizedException);
@@ -210,10 +227,12 @@ describe('AssertionController', () => {
       session.challenge = 0;
 
       const req = {} as any as Request;
-      const body = dummyAssertionCredentialJSON;
-
       await expect(
-        assertionController.response(session, req, body),
+        assertionController.response(
+          session,
+          req,
+          dummyAssertionCredentialJSON,
+        ),
       ).rejects.toThrow(UnauthorizedException);
     });
   });

@@ -1,14 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppService } from '../app.service.js';
-import * as fido2 from '@simplewebauthn/server';
+import {
+  generateRegistrationOptions,
+  RegistrationResponseJSON,
+  verifyRegistrationResponse,
+} from '@simplewebauthn/server';
 import { AttestationSelectorDto } from './attestation.dto.js';
-import type { AttestationCredentialJSON } from '@simplewebauthn/typescript-types';
-import { decodeAddress, fromBase64Url } from '../encoding/index.js';
+import {
+  decodeAddress,
+  fromBase64Url,
+  toBase64URL,
+} from '../encoding/index.js';
 import nacl from 'tweetnacl';
 import { AlgodService } from '../algod/algod.service.js';
 @Injectable()
 export class AttestationService {
+  encoder: TextEncoder = new TextEncoder();
   constructor(
     private appService: AppService,
     private algodService: AlgodService,
@@ -56,34 +64,28 @@ export class AttestationService {
     }
     return false;
   }
-  request(options: AttestationSelectorDto) {
+  async request(options: AttestationSelectorDto) {
     //https://www.iana.org/assignments/cose/cose.xhtml#algorithms
     // EdDSA is -8
-    const pubKeyCredParams = [];
     // const params = [-7, -35, -36, -257, -258, -259, -37, -38, -39, -8];
-    const params = [-7, -257];
-    for (const param of params) {
-      pubKeyCredParams.push({ type: 'public-key', alg: param });
-    }
-    // TOOD: Investigate fido2 simple server to breakdown what it is doing
-    const attestationOptions = fido2.generateAttestationOptions({
-      ...options,
+    const _options = await generateRegistrationOptions({
       rpName: this.configService.get('rpName'),
       rpID: this.configService.get('hostname'),
-      userID: options.username,
       userName: options.username,
+      userDisplayName: options.username,
       timeout: this.configService.get('timeout'),
+      extensions: options.extensions,
+      supportedAlgorithmIDs: [-7, -257],
+      authenticatorSelection: {
+        // residentKey: 'preferred',
+        userVerification: 'required',
+      },
     });
-
-    // Temporary hack until SimpleWebAuthn supports `pubKeyCredParams`
-    attestationOptions.pubKeyCredParams = [];
-    for (const param of params) {
-      attestationOptions.pubKeyCredParams.push({
-        type: 'public-key',
-        alg: param,
-      });
-    }
-    return attestationOptions;
+    // Patch the options to match v1
+    _options.user.id = options.username;
+    delete _options.extensions.credProps;
+    delete _options.hints;
+    return _options;
   }
 
   /**
@@ -95,7 +97,7 @@ export class AttestationService {
   async response(
     expectedChallenge: string,
     ua: string,
-    credential: AttestationCredentialJSON & {
+    credential: RegistrationResponseJSON & {
       clientExtensionResults?: {
         liquid: {
           type: string;
@@ -110,13 +112,13 @@ export class AttestationService {
     const expectedRPID = this.configService.get<string>('hostname');
 
     // Validate the passkey
-    const verifiedAttestation = await fido2.verifyAttestationResponse({
-      credential,
+    const verifiedAttestation = await verifyRegistrationResponse({
+      response: credential,
       expectedChallenge,
       expectedOrigin,
       expectedRPID,
     });
-    const { authenticatorInfo } = verifiedAttestation;
+    const { registrationInfo } = verifiedAttestation;
     let { verified } = verifiedAttestation;
 
     // Handle Liquid Extension
@@ -142,9 +144,9 @@ export class AttestationService {
     return {
       device:
         credential?.clientExtensionResults?.liquid?.device || 'Unknown Device',
-      publicKey: authenticatorInfo.base64PublicKey,
-      credId: authenticatorInfo.base64CredentialID,
-      prevCounter: authenticatorInfo.counter,
+      publicKey: toBase64URL(registrationInfo.credential.publicKey),
+      credId: registrationInfo.credential.id,
+      prevCounter: registrationInfo.credential.counter,
     };
   }
 }
