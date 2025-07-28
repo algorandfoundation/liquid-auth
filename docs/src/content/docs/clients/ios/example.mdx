@@ -1,0 +1,722 @@
+---
+title: "iOS: Complete Example"
+sidebar:
+  order: 5
+---
+
+import { Aside, Tabs, TabItem } from "@astrojs/starlight/components";
+
+A complete implementation example showing how to integrate Liquid Auth into an iOS wallet application, covering both liquid:// URI handling and Autofill Credential Extension support.
+
+<Aside type="tip">
+This example is based on the [liquid-auth-ios-example](https://github.com/algorandfoundation/liquid-auth-ios-example) repository. Refer to it for the complete working implementation.
+</Aside>
+
+## Project Structure
+
+```
+LiquidAuthWallet/
+├── LiquidAuthWallet/              # Main app target
+│   ├── LiquidAuthManager.swift    # Core Liquid Auth integration
+│   ├── WalletService.swift        # Wallet functionality
+│   ├── QRScannerView.swift        # QR code scanning
+│   └── ContentView.swift          # Main UI
+├── LiquidAuthExtension/           # Autofill Credential Extension
+│   ├── CredentialProviderViewController.swift
+│   └── Info.plist
+└── Shared/                        # Shared between targets
+    ├── Models/
+    ├── Services/
+    └── Utilities/
+```
+
+## Main App Implementation
+
+### 1. Core Liquid Auth Manager
+
+```swift
+// LiquidAuthManager.swift
+import Foundation
+import CryptoKit
+import LiquidAuthSDK
+import LocalAuthentication
+
+@MainActor
+class LiquidAuthManager: ObservableObject {
+    @Published var connectionState: ConnectionState = .disconnected
+    @Published var lastMessage: String = ""
+    @Published var isProcessing: Bool = false
+    
+    private let walletService = WalletService.shared
+    private let keyManager = KeyManager.shared
+    
+    enum ConnectionState {
+        case disconnected
+        case connecting 
+        case connected
+        case error(String)
+    }
+    
+    // MARK: - Public Interface
+    
+    func handleQRCode(_ qrContent: String) async {
+        isProcessing = true
+        defer { isProcessing = false }
+        
+        do {
+            if qrContent.hasPrefix("liquid://") {
+                try await handleLiquidURI(qrContent)
+            } else if qrContent.hasPrefix("FIDO:/") {
+                // FIDO URIs are handled by the system and Autofill Extension
+                lastMessage = "Please use the system passkey flow for FIDO authentication"
+            } else {
+                lastMessage = "Unsupported QR code format"
+            }
+        } catch {
+            connectionState = .error(error.localizedDescription)
+            lastMessage = "Error: \(error.localizedDescription)"
+        }
+    }
+    
+    private func handleLiquidURI(_ uri: String) async throws {
+        guard let url = URL(string: uri),
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let host = url.host,
+              let requestId = components.queryItems?.first(where: { $0.name == "requestId" })?.value
+        else {
+            throw LiquidAuthError.invalidURI
+        }
+        
+        let origin = host
+        
+        // Check if we have an existing credential for this origin
+        if let existingCredential = try? await findExistingCredential(for: origin) {
+            try await performAuthentication(
+                origin: origin,
+                requestId: requestId,
+                credential: existingCredential
+            )
+        } else {
+            try await performRegistration(
+                origin: origin,
+                requestId: requestId
+            )
+        }
+    }
+    
+    // MARK: - Registration Flow
+    
+    private func performRegistration(origin: String, requestId: String) async throws {
+        connectionState = .connecting
+        lastMessage = "Registering new credential..."
+        
+        // 1. Get user's selected account
+        guard let account = await requestUserAccount() else {
+            throw LiquidAuthError.userCancelled
+        }
+        
+        // 2. Generate P256 key pair
+        let p256KeyPair = try await keyManager.generateKeyPair(for: account.address)
+        
+        // 3. Perform registration
+        let result = try await registration(
+            origin: origin,
+            requestId: requestId,
+            algorandAddress: account.address,
+            p256KeyPair: p256KeyPair,
+            userAgent: buildUserAgent(),
+            device: UIDevice.current.name
+        )
+        
+        if result.success {
+            // 4. Store credential for future use
+            try await storeCredential(
+                origin: origin,
+                algorandAddress: account.address,
+                p256KeyPair: p256KeyPair
+            )
+            
+            // 5. Start WebRTC communication
+            try await startSignaling(origin: "wss://\(origin)", requestId: requestId)
+            
+            connectionState = .connected
+            lastMessage = "Registration successful! Ready for communication."
+        } else {
+            throw LiquidAuthError.registrationFailed(result.errorMessage ?? "Unknown error")
+        }
+    }
+    
+    // MARK: - Authentication Flow
+    
+    private func performAuthentication(
+        origin: String,
+        requestId: String,
+        credential: StoredCredential
+    ) async throws {
+        connectionState = .connecting
+        lastMessage = "Authenticating with existing credential..."
+        
+        // 1. Retrieve P256 key pair
+        let p256KeyPair = try keyManager.retrieveKeyPair(for: credential.credentialId)
+        
+        // 2. Perform authentication
+        let result = try await authentication(
+            origin: origin,
+            requestId: requestId,
+            algorandAddress: credential.algorandAddress,
+            p256KeyPair: p256KeyPair,
+            userAgent: buildUserAgent(),
+            device: UIDevice.current.name
+        )
+        
+        if result.success {
+            // 3. Start WebRTC communication
+            try await startSignaling(origin: "wss://\(origin)", requestId: requestId)
+            
+            connectionState = .connected
+            lastMessage = "Authentication successful! Ready for communication."
+        } else {
+            throw LiquidAuthError.authenticationFailed(result.errorMessage ?? "Unknown error")
+        }
+    }
+    
+    // MARK: - WebRTC Communication
+    
+    private func startSignaling(origin: String, requestId: String) async throws {
+        try await startSignaling(origin: origin, requestId: requestId)
+        
+        // Setup message handling is done in the startSignaling function
+        // which calls the message handler defined there
+    }
+    
+    func handleIncomingMessage(_ message: String) async {
+        lastMessage = "Received: \(message)"
+        
+        // Parse and handle different message types
+        if let messageData = message.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: messageData) as? [String: Any],
+           let messageType = json["type"] as? String {
+            
+            switch messageType {
+            case "transaction_request":
+                await handleTransactionRequest(json)
+            case "ping":
+                SignalService.shared.sendMessage("pong")
+                lastMessage = "Responded to ping"
+            default:
+                lastMessage = "Unknown message type: \(messageType)"
+            }
+        }
+    }
+    
+    private func handleTransactionRequest(_ json: [String: Any]) async {
+        guard let txnData = json["transaction"] as? [String: Any],
+              let requestId = json["requestId"] as? String else {
+            return
+        }
+        
+        do {
+            // Parse transaction
+            let transaction = try parseAlgorandTransaction(txnData)
+            
+            // Request user approval
+            let approved = await requestTransactionApproval(transaction)
+            
+            if approved {
+                // Sign and send response
+                let signedTxn = try await walletService.signTransaction(transaction)
+                let response = [
+                    "type": "transaction_response",
+                    "requestId": requestId,
+                    "status": "success",
+                    "signedTransaction": signedTxn.base64EncodedString()
+                ]
+                
+                sendMessage(response)
+                lastMessage = "Transaction signed and sent"
+            } else {
+                let response = [
+                    "type": "transaction_response",
+                    "requestId": requestId,
+                    "status": "rejected"
+                ]
+                
+                sendMessage(response)
+                lastMessage = "Transaction rejected by user"
+            }
+        } catch {
+            let response = [
+                "type": "transaction_response",
+                "requestId": requestId,
+                "status": "error",
+                "error": error.localizedDescription
+            ]
+            
+            sendMessage(response)
+            lastMessage = "Transaction error: \(error.localizedDescription)"
+        }
+    }
+    
+    private func sendMessage(_ message: [String: Any]) {
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: message)
+            let jsonString = String(data: jsonData, encoding: .utf8) ?? ""
+            SignalService.shared.sendMessage(jsonString)
+        } catch {
+            lastMessage = "Failed to send message: \(error)"
+        }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func buildUserAgent() -> String {
+        let bundle = Bundle.main
+        let appName = bundle.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "LiquidAuthWallet"
+        let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+        let systemVersion = UIDevice.current.systemVersion
+        let model = UIDevice.current.model
+        
+        return "\(appName)/\(version) (iOS \(systemVersion); \(model))"
+    }
+    
+    private func findExistingCredential(for origin: String) async throws -> StoredCredential? {
+        return try await keyManager.findCredential(for: origin)
+    }
+    
+    private func storeCredential(
+        origin: String,
+        algorandAddress: String,
+        p256KeyPair: P256.Signing.PrivateKey
+    ) async throws {
+        let credentialId = Data([UInt8](Utility.hashSHA256(p256KeyPair.publicKey.rawRepresentation)))
+            .base64URLEncodedString()
+        
+        let credential = StoredCredential(
+            credentialId: credentialId,
+            origin: origin,
+            algorandAddress: algorandAddress
+        )
+        
+        try keyManager.storeKeyPair(p256KeyPair, for: credentialId)
+        try await keyManager.storeCredential(credential)
+    }
+    
+    private func requestUserAccount() async -> AlgorandAccount? {
+        return await withCheckedContinuation { continuation in
+            // Show account selection UI
+            // For this example, we'll use the first available account
+            let accounts = walletService.getAvailableAccounts()
+            continuation.resume(returning: accounts.first)
+        }
+    }
+    
+    private func requestTransactionApproval(_ transaction: AlgorandTransaction) async -> Bool {
+        return await withCheckedContinuation { continuation in
+            DispatchQueue.main.async {
+                // In a real app, show a proper confirmation dialog
+                let alert = UIAlertController(
+                    title: "Transaction Request",
+                    message: "Approve transaction to \(transaction.receiver)",
+                    preferredStyle: .alert
+                )
+                
+                alert.addAction(UIAlertAction(title: "Approve", style: .default) { _ in
+                    continuation.resume(returning: true)
+                })
+                
+                alert.addAction(UIAlertAction(title: "Reject", style: .cancel) { _ in
+                    continuation.resume(returning: false)
+                })
+                
+                if let topController = UIApplication.shared.topViewController {
+                    topController.present(alert, animated: true)
+                } else {
+                    continuation.resume(returning: false)
+                }
+            }
+        }
+    }
+    
+    func disconnect() {
+        SignalService.shared.disconnect()
+        connectionState = .disconnected
+        lastMessage = "Disconnected"
+    }
+}
+```
+
+### 2. Main App UI (SwiftUI)
+
+```swift
+// ContentView.swift
+import SwiftUI
+import CodeScanner
+
+struct ContentView: View {
+    @StateObject private var liquidAuth = LiquidAuthManager()
+    @State private var showingScanner = false
+    @State private var manualURI = ""
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                headerView
+                statusView
+                actionButtons
+                manualInputSection
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Liquid Auth Wallet")
+        }
+    }
+    
+    private var headerView: some View {
+        VStack {
+            Image(systemName: "key.fill")
+                .font(.system(size: 60))
+                .foregroundColor(.blue)
+            
+            Text("Liquid Auth Wallet")
+                .font(.title)
+                .fontWeight(.bold)
+        }
+    }
+    
+    private var statusView: some View {
+        VStack(spacing: 10) {
+            HStack {
+                Circle()
+                    .fill(statusColor)
+                    .frame(width: 12, height: 12)
+                
+                Text(statusText)
+                    .font(.headline)
+                
+                Spacer()
+            }
+            
+            if !liquidAuth.lastMessage.isEmpty {
+                Text(liquidAuth.lastMessage)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.leading)
+            }
+        }
+        .padding()
+        .background(Color.secondary.opacity(0.1))
+        .cornerRadius(10)
+    }
+    
+    private var actionButtons: some View {
+        VStack(spacing: 15) {
+            Button(action: { showingScanner = true }) {
+                HStack {
+                    Image(systemName: "qrcode.viewfinder")
+                    Text("Scan QR Code")
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+            }
+            .disabled(liquidAuth.isProcessing)
+            
+            if liquidAuth.connectionState == .connected {
+                Button(action: liquidAuth.disconnect) {
+                    HStack {
+                        Image(systemName: "xmark.circle")
+                        Text("Disconnect")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.red)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                }
+            }
+        }
+    }
+    
+    private var manualInputSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Manual URI Entry")
+                .font(.headline)
+            
+            TextField("liquid://example.com/?requestId=...", text: $manualURI)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .disabled(liquidAuth.isProcessing)
+            
+            Button("Connect") {
+                Task {
+                    await liquidAuth.handleQRCode(manualURI)
+                }
+            }
+            .disabled(manualURI.isEmpty || liquidAuth.isProcessing)
+        }
+    }
+    
+    private var statusColor: Color {
+        switch liquidAuth.connectionState {
+        case .disconnected:
+            return .gray
+        case .connecting:
+            return .orange
+        case .connected:
+            return .green
+        case .error:
+            return .red
+        }
+    }
+    
+    private var statusText: String {
+        switch liquidAuth.connectionState {
+        case .disconnected:
+            return "Disconnected"
+        case .connecting:
+            return "Connecting..."
+        case .connected:
+            return "Connected"
+        case .error(let message):
+            return "Error: \(message)"
+        }
+    }
+}
+
+// QR Code Scanner
+extension ContentView {
+    private var qrScanner: some View {
+        CodeScannerView(
+            codeTypes: [.qr],
+            showViewfinder: true,
+            completion: handleScanResult
+        )
+    }
+    
+    private func handleScanResult(result: Result<ScanResult, ScanError>) {
+        showingScanner = false
+        
+        switch result {
+        case .success(let scanResult):
+            Task {
+                await liquidAuth.handleQRCode(scanResult.string)
+            }
+        case .failure(let error):
+            print("Scanning failed: \(error)")
+        }
+    }
+}
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+    }
+}
+```
+
+### 3. Supporting Models and Services
+
+```swift
+// Models/StoredCredential.swift
+import Foundation
+
+struct StoredCredential: Codable {
+    let credentialId: String
+    let origin: String
+    let algorandAddress: String
+    let createdAt: Date
+    
+    init(credentialId: String, origin: String, algorandAddress: String) {
+        self.credentialId = credentialId
+        self.origin = origin
+        self.algorandAddress = algorandAddress
+        self.createdAt = Date()
+    }
+}
+
+// Models/AlgorandAccount.swift
+struct AlgorandAccount: Codable {
+    let address: String
+    let name: String?
+    let balance: Double
+}
+
+// Models/AlgorandTransaction.swift
+struct AlgorandTransaction: Codable {
+    let receiver: String
+    let amount: Double
+    let fee: Int
+    let note: String?
+}
+```
+
+```swift
+// Services/WalletService.swift
+import Foundation
+
+class WalletService {
+    static let shared = WalletService()
+    
+    private init() {}
+    
+    func getAvailableAccounts() -> [AlgorandAccount] {
+        // Return mock accounts for this example
+        return [
+            AlgorandAccount(address: "ALICE123...", name: "Main Account", balance: 100.0),
+            AlgorandAccount(address: "BOB456...", name: "Secondary Account", balance: 50.0)
+        ]
+    }
+    
+    func signTransaction(_ transaction: AlgorandTransaction) async throws -> Data {
+        // Implement your transaction signing logic here
+        // This would typically involve your Algorand SDK
+        
+        // Mock implementation
+        await Task.sleep(nanoseconds: 1_000_000_000) // Simulate signing delay
+        return "signed_transaction_data".data(using: .utf8) ?? Data()
+    }
+}
+```
+
+## Autofill Credential Extension
+
+### Extension Implementation
+
+```swift
+// LiquidAuthExtension/CredentialProviderViewController.swift
+import AuthenticationServices
+import CryptoKit
+import LiquidAuthSDK
+
+class CredentialProviderViewController: ASCredentialProviderViewController {
+    
+    override func prepareInterface(forPasskeyRegistration request: ASCredentialRequest) {
+        // Implementation from the Autofill Extension documentation
+        Task {
+            do {
+                let credential = try await handleRegistration(request)
+                await extensionContext.completeRegistrationRequest(using: credential)
+            } catch {
+                await extensionContext.cancelRequest(withError: error)
+            }
+        }
+    }
+    
+    override func prepareInterfaceToProvideCredential(for request: ASCredentialRequest) {
+        // Implementation from the Autofill Extension documentation
+        Task {
+            do {
+                let credential = try await handleAuthentication(request)
+                await extensionContext.completeAssertionRequest(using: credential)
+            } catch {
+                await extensionContext.cancelRequest(withError: error)
+            }
+        }
+    }
+    
+    private func handleRegistration(_ request: ASCredentialRequest) async throws -> ASPasskeyRegistrationCredential {
+        // Full implementation as shown in Autofill Extension documentation
+        // ...
+    }
+    
+    private func handleAuthentication(_ request: ASCredentialRequest) async throws -> ASPasskeyAssertionCredential {
+        // Full implementation as shown in Autofill Extension documentation
+        // ...
+    }
+}
+```
+
+## Configuration Files
+
+### 1. Main App Info.plist
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<dict>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>liquid-auth</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>liquid</string>
+            </array>
+        </dict>
+    </array>
+    <key>NSCameraUsageDescription</key>
+    <string>This app needs camera access to scan QR codes for authentication</string>
+</dict>
+```
+
+### 2. Extension Info.plist
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<dict>
+    <key>NSExtension</key>
+    <dict>
+        <key>NSExtensionPointIdentifier</key>
+        <string>com.apple.authentication-services.credential-provider</string>
+        <key>NSExtensionPrincipalClass</key>
+        <string>$(PRODUCT_MODULE_NAME).CredentialProviderViewController</string>
+        <key>ASCredentialProviderExtensionCapabilities</key>
+        <dict>
+            <key>ProvidesPasskeys</key>
+            <true/>
+        </dict>
+    </dict>
+</dict>
+```
+
+## Testing the Complete Example
+
+### 1. Setup
+
+1. Clone or create the project structure
+2. Install dependencies (LiquidAuthSDK, CodeScanner)
+3. Configure signing and provisioning profiles
+4. Enable App Groups and Autofill capabilities
+
+### 2. Testing Liquid Auth Flow
+
+1. Run the main app on a physical device
+2. Visit [liquidauth.com](https://liquidauth.com) on a computer
+3. Scan the QR code with the app
+4. Follow the registration/authentication flow
+5. Test WebRTC communication
+
+### 3. Testing Autofill Extension
+
+1. Enable the extension in iOS Settings
+2. Visit webauthn.io or another passkey site
+3. Create a new passkey using your extension
+4. Test authentication flow
+
+## Deployment Considerations
+
+### 1. Code Signing
+
+```bash
+# Sign the main app
+codesign --force --verify --verbose --sign "iPhone Distribution: Your Company" LiquidAuthWallet.app
+
+# Sign the extension
+codesign --force --verify --verbose --sign "iPhone Distribution: Your Company" LiquidAuthWallet.app/PlugIns/LiquidAuthExtension.appex
+```
+
+### 2. App Store Guidelines
+
+- Clearly describe the app's passkey functionality
+- Follow App Store Review Guidelines for authentication apps
+- Ensure proper privacy policy covering biometric data usage
+
+### 3. Security Best Practices
+
+- Use production ICE servers for WebRTC
+- Implement proper error handling and logging
+- Validate all incoming messages and origins
+- Use secure key storage throughout the app
+
+This complete example provides a solid foundation for integrating Liquid Auth into an iOS wallet application with both liquid:// URI support and native passkey management through Autofill Credential Extensions.

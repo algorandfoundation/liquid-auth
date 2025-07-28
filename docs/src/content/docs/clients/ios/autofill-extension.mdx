@@ -1,0 +1,544 @@
+---
+title: "iOS: Autofill Credential Extension"
+sidebar:
+  order: 4
+---
+
+import { Aside, Tabs, TabItem } from "@astrojs/starlight/components";
+
+Implement Liquid Auth as part of an iOS Autofill Credential Extension to provide passkey management for standard Web2 sites using `FIDO://` URIs.
+
+<Aside type="tip">
+This integration allows your app to appear under **Settings → General → AutoFill & Passwords** as a passkey provider, enabling users to authenticate with standard Web2 sites.
+</Aside>
+
+## Overview
+
+The Autofill Credential Extension enables:
+
+- **Native iOS passkey integration** with sites like GitHub, webauthn.io, passkeys.com
+- **QR code scanning** support through the Camera app
+- **System-level passkey management** alongside other credential providers
+- **Seamless user experience** for Web2 authentication
+
+When users scan a `FIDO://` QR code with the Camera app, iOS presents "Save a passkey" option, allowing them to use your app for authentication.
+
+## Setup Requirements
+
+### 1. App Configuration
+
+Add the Autofill Credential Extension capability to your app:
+
+```xml
+<!-- In your app's entitlements file -->
+<dict>
+    <key>com.apple.developer.authentication-services.autofill-credential-provider</key>
+    <true/>
+</dict>
+```
+
+### 2. Extension Target
+
+Create a new Autofill Credential Extension target in Xcode:
+
+1. **File → New → Target**
+2. Choose **AutoFill Credential Provider Extension**
+3. Configure your extension identifier and settings
+
+### 3. Extension Entitlements
+
+```xml
+<!-- Extension.entitlements -->
+<dict>
+    <key>com.apple.developer.authentication-services.autofill-credential-provider</key>
+    <true/>
+    <key>com.apple.application-identifier</key>
+    <string>$(AppIdentifierPrefix)$(CFBundleIdentifier)</string>
+</dict>
+```
+
+## Implementation
+
+### Core Extension Controller
+
+```swift
+// CredentialProviderViewController.swift
+import AuthenticationServices
+import CryptoKit
+import LiquidAuthSDK
+import SwiftCBOR
+
+class CredentialProviderViewController: ASCredentialProviderViewController {
+    
+    private let keyManager = KeyManager.shared
+    private let walletService = WalletService.shared
+    
+    // MARK: - Registration (Attestation)
+    
+    override func prepareInterface(forPasskeyRegistration request: ASCredentialRequest) {
+        print("🔑 Preparing interface for passkey registration")
+        
+        Task {
+            do {
+                try await handlePasskeyRegistration(request)
+            } catch {
+                print("❌ Registration failed: \(error)")
+                await extensionContext.cancelRequest(withError: error)
+            }
+        }
+    }
+    
+    private func handlePasskeyRegistration(_ request: ASCredentialRequest) async throws {
+        // 1. Get user's Algorand account
+        let algorandAccount = try await requestUserAccount()
+        
+        // 2. Generate or retrieve P256 key pair
+        let p256KeyPair = try await generateKeyPair(for: algorandAccount.address)
+        
+        // 3. Build WebAuthn credential
+        let credential = try buildRegistrationCredential(
+            request: request,
+            p256KeyPair: p256KeyPair,
+            algorandAccount: algorandAccount
+        )
+        
+        // 4. Complete registration with iOS system
+        await extensionContext.completeRegistrationRequest(using: credential) 
+    }
+    
+    private func buildRegistrationCredential(
+        request: ASCredentialRequest,
+        p256KeyPair: P256.Signing.PrivateKey,
+        algorandAccount: AlgorandAccount
+    ) throws -> ASPasskeyRegistrationCredential {
+        
+        // Generate deterministic credential ID
+        let credentialID = Data([UInt8](Utility.hashSHA256(p256KeyPair.publicKey.rawRepresentation)))
+        
+        // Create attestation object
+        let aaguid = UUID(uuidString: "1F59713A-C021-4E63-9158-2CC5FDC14E52")! // Your app's unique AAGUID
+        
+        let attestedCredData = Utility.getAttestedCredentialData(
+            aaguid: aaguid,
+            credentialId: credentialID,
+            publicKey: p256KeyPair.publicKey.rawRepresentation
+        )
+        
+        let rpIdHash = Utility.hashSHA256(request.credentialIdentity.relyingPartyIdentifier.data(using: .utf8)!)
+        
+        let authData = AuthenticatorData.attestation(
+            rpIdHash: rpIdHash,
+            userPresent: true,
+            userVerified: true,  // Must verify user!
+            backupEligible: true,
+            backupState: true,
+            signCount: 0,
+            attestedCredentialData: attestedCredData,
+            extensions: nil
+        ).toData()
+        
+        // Create CBOR attestation object
+        let attObj: [String: CBOR] = [
+            "attStmt": CBOR.map([:]),
+            "authData": CBOR.byteString([UInt8](authData)),
+            "fmt": CBOR.utf8String("none"),
+        ]
+        
+        let cborEncoded = try CBOR.encode(attObj)
+        let attestationObject = Data(cborEncoded)
+        
+        // Store key pair for future authentication
+        try keyManager.storeKeyPair(p256KeyPair, for: credentialID.base64URLEncodedString())
+        
+        return ASPasskeyRegistrationCredential(
+            relyingParty: request.credentialIdentity.relyingPartyIdentifier,
+            clientDataHash: request.clientDataHash,
+            credentialID: credentialID,
+            attestationObject: attestationObject
+        )
+    }
+    
+    // MARK: - Authentication (Assertion)
+    
+    override func prepareInterfaceToProvideCredential(for request: ASCredentialRequest) {
+        print("🔓 Preparing interface for credential authentication")
+        
+        Task {
+            do {
+                try await handlePasskeyAuthentication(request)
+            } catch {
+                print("❌ Authentication failed: \(error)")
+                await extensionContext.cancelRequest(withError: error)
+            }
+        }
+    }
+    
+    private func handlePasskeyAuthentication(_ request: ASCredentialRequest) async throws {
+        // 1. Verify we have the requested credential
+        let requestedCredentialId = request.credentialIdentity.credentialID
+        
+        guard let p256KeyPair = try? keyManager.retrieveKeyPair(for: requestedCredentialId.base64URLEncodedString())
+        else {
+            throw CredentialError.credentialNotFound
+        }
+        
+        // 2. Verify credential ID matches
+        let generatedCredentialId = Data([UInt8](Utility.hashSHA256(p256KeyPair.publicKey.rawRepresentation)))
+        
+        guard generatedCredentialId == requestedCredentialId else {
+            throw CredentialError.credentialMismatch
+        }
+        
+        // 3. Authenticate user
+        guard try await authenticateUser() else {
+            throw CredentialError.userVerificationFailed
+        }
+        
+        // 4. Build assertion credential
+        let credential = try buildAssertionCredential(
+            request: request,
+            p256KeyPair: p256KeyPair,
+            credentialId: requestedCredentialId
+        )
+        
+        // 5. Complete authentication with iOS system
+        await extensionContext.completeAssertionRequest(using: credential)
+    }
+    
+    private func buildAssertionCredential(
+        request: ASCredentialRequest,
+        p256KeyPair: P256.Signing.PrivateKey,
+        credentialId: Data
+    ) throws -> ASPasskeyAssertionCredential {
+        
+        // Create authenticator data
+        let rpIdHash = Utility.hashSHA256(request.credentialIdentity.relyingPartyIdentifier.data(using: .utf8)!)
+        let authenticatorData = AuthenticatorData.assertion(
+            rpIdHash: rpIdHash,
+            userPresent: true,
+            userVerified: true,  // Must verify user!
+            backupEligible: true,
+            backupState: true,
+            signCount: 0
+        ).toData()
+        
+        // Sign the challenge
+        let dataToSign = authenticatorData + request.clientDataHash
+        let signature = try p256KeyPair.signature(for: dataToSign)
+        
+        return ASPasskeyAssertionCredential(
+            userHandle: request.credentialIdentity.userHandle,
+            relyingParty: request.credentialIdentity.relyingPartyIdentifier,
+            signature: signature.derRepresentation,
+            clientDataHash: request.clientDataHash,
+            authenticatorData: authenticatorData,
+            credentialID: credentialId
+        )
+    }
+    
+    // MARK: - User Interaction
+    
+    @MainActor
+    private func requestUserAccount() async throws -> AlgorandAccount {
+        // Show account selection UI to user
+        // This should present your app's account selection interface
+        
+        return await withCheckedContinuation { continuation in
+            let storyboard = UIStoryboard(name: "Main", bundle: nil)
+            let accountSelector = storyboard.instantiateViewController(withIdentifier: "AccountSelector") as! AccountSelectorViewController
+            
+            accountSelector.onAccountSelected = { account in
+                continuation.resume(returning: account)
+            }
+            
+            accountSelector.onCancelled = {
+                continuation.resume(throwing: CredentialError.userCancelled)
+            }
+            
+            present(accountSelector, animated: true)
+        }
+    }
+    
+    private func authenticateUser() async throws -> Bool {
+        let context = LAContext()
+        var error: NSError?
+        
+        // Check for biometric availability
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
+            // Fall back to device passcode
+            guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
+                return false
+            }
+            
+            return try await context.evaluatePolicy(
+                .deviceOwnerAuthentication,
+                localizedReason: "Authenticate to use your passkey"
+            )
+        }
+        
+        return try await context.evaluatePolicy(
+            .deviceOwnerAuthenticationWithBiometrics,
+            localizedReason: "Use Touch ID or Face ID to authenticate"
+        )
+    }
+}
+```
+
+### Key Management
+
+```swift
+// KeyManager.swift
+import Foundation
+import Security
+import CryptoKit
+
+class KeyManager {
+    static let shared = KeyManager()
+    
+    private init() {}
+    
+    func generateKeyPair(for address: String) async throws -> P256.Signing.PrivateKey {
+        // Option 1: Generate deterministically from Algorand seed
+        if let seed = try? retrieveAlgorandSeed(for: address) {
+            return try generateDeterministicKeyPair(from: seed, address: address)
+        }
+        
+        // Option 2: Generate randomly and store
+        let keyPair = P256.Signing.PrivateKey()
+        let credentialId = Data([UInt8](Utility.hashSHA256(keyPair.publicKey.rawRepresentation)))
+        try storeKeyPair(keyPair, for: credentialId.base64URLEncodedString())
+        
+        return keyPair
+    }
+    
+    func storeKeyPair(_ keyPair: P256.Signing.PrivateKey, for credentialId: String) throws {
+        let keyData = keyPair.rawRepresentation
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: credentialId,
+            kSecAttrService as String: "liquid-auth-passkeys",
+            kSecValueData as String: keyData,
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        ]
+        
+        // Delete existing item if it exists
+        SecItemDelete(query as CFDictionary)
+        
+        // Add new item
+        let status = SecItemAdd(query as CFDictionary, nil)
+        guard status == errSecSuccess else {
+            throw KeyManagerError.storageError(status)
+        }
+    }
+    
+    func retrieveKeyPair(for credentialId: String) throws -> P256.Signing.PrivateKey {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: credentialId,
+            kSecAttrService as String: "liquid-auth-passkeys",
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        
+        guard status == errSecSuccess,
+              let keyData = result as? Data else {
+            throw KeyManagerError.keyNotFound
+        }
+        
+        return try P256.Signing.PrivateKey(rawRepresentation: keyData)
+    }
+    
+    private func generateDeterministicKeyPair(from seed: Data, address: String) throws -> P256.Signing.PrivateKey {
+        // Use your deterministic key derivation logic
+        // This should match the derivation used in your main app
+        let derivedSeed = deriveP256Seed(from: seed, address: address)
+        return try P256.Signing.PrivateKey(rawRepresentation: derivedSeed)
+    }
+    
+    private func retrieveAlgorandSeed(for address: String) throws -> Data? {
+        // Retrieve Algorand seed from shared keychain group or app group
+        // Implementation depends on your key sharing strategy
+        return nil
+    }
+}
+
+enum KeyManagerError: Error {
+    case storageError(OSStatus)
+    case keyNotFound
+    case invalidKeyData
+}
+```
+
+### Account Selection UI
+
+```swift
+// AccountSelectorViewController.swift
+import UIKit
+
+class AccountSelectorViewController: UIViewController {
+    @IBOutlet weak var tableView: UITableView!
+    @IBOutlet weak var titleLabel: UILabel!
+    @IBOutlet weak var cancelButton: UIButton!
+    
+    var accounts: [AlgorandAccount] = []
+    var onAccountSelected: ((AlgorandAccount) -> Void)?
+    var onCancelled: (() -> Void)?
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+        loadAccounts()
+    }
+    
+    private func setupUI() {
+        titleLabel.text = "Select Account for Passkey"
+        cancelButton.setTitle("Cancel", for: .normal)
+        
+        tableView.delegate = self
+        tableView.dataSource = self
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+    }
+    
+    private func loadAccounts() {
+        // Load user's Algorand accounts
+        accounts = WalletService.shared.getAvailableAccounts()
+        tableView.reloadData()
+    }
+    
+    @IBAction func cancelTapped(_ sender: UIButton) {
+        dismiss(animated: true) {
+            self.onCancelled?()
+        }
+    }
+}
+
+extension AccountSelectorViewController: UITableViewDataSource, UITableViewDelegate {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return accounts.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+        let account = accounts[indexPath.row]
+        
+        cell.textLabel?.text = account.name ?? "Account \(indexPath.row + 1)"
+        cell.detailTextLabel?.text = account.address.prefix(10) + "..."
+        
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        
+        let selectedAccount = accounts[indexPath.row]
+        dismiss(animated: true) {
+            self.onAccountSelected?(selectedAccount)
+        }
+    }
+}
+```
+
+## Error Handling
+
+```swift
+enum CredentialError: Error, LocalizedError {
+    case credentialNotFound
+    case credentialMismatch
+    case userVerificationFailed
+    case userCancelled
+    case keyGenerationFailed
+    case attestationFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .credentialNotFound:
+            return "Credential not found"
+        case .credentialMismatch:
+            return "Credential ID mismatch"
+        case .userVerificationFailed:
+            return "User verification failed"
+        case .userCancelled:
+            return "Operation cancelled by user"
+        case .keyGenerationFailed:
+            return "Failed to generate key pair"
+        case .attestationFailed:
+            return "Attestation failed"
+        }
+    }
+}
+```
+
+## App Group Integration
+
+<Aside type="tip">
+Use App Groups to share data between your main app and the extension.
+</Aside>
+
+### 1. Enable App Groups
+
+In both your main app and extension targets:
+1. **Capabilities → App Groups**
+2. Add a shared group ID (e.g., `group.com.yourcompany.liquidauth`)
+
+### 2. Shared Data Access
+
+```swift
+// SharedDataManager.swift
+import Foundation
+
+class SharedDataManager {
+    static let shared = SharedDataManager()
+    private let groupId = "group.com.yourcompany.liquidauth"
+    
+    private var sharedDefaults: UserDefaults? {
+        return UserDefaults(suiteName: groupId)
+    }
+    
+    func storeAccountInfo(_ accounts: [AlgorandAccount]) {
+        guard let data = try? JSONEncoder().encode(accounts) else { return }
+        sharedDefaults?.set(data, forKey: "accounts")
+    }
+    
+    func getAccountInfo() -> [AlgorandAccount] {
+        guard let data = sharedDefaults?.data(forKey: "accounts"),
+              let accounts = try? JSONDecoder().decode([AlgorandAccount].self, from: data)
+        else { return [] }
+        
+        return accounts
+    }
+}
+```
+
+## Testing
+
+### Manual Testing Steps
+
+1. **Install your app** with the Autofill Credential Extension
+2. **Enable the extension** in Settings → General → AutoFill & Passwords
+3. **Visit a passkey-enabled site** (e.g., webauthn.io)
+4. **Create a new passkey** - your extension should appear as an option
+5. **Test authentication** by signing in with the created passkey
+
+### QR Code Testing
+
+1. **Generate a FIDO QR code** on webauthn.io
+2. **Scan with Camera app** on iOS device
+3. **Tap "Save a passkey"** when prompted
+4. **Select your app** from the credential provider list
+
+## Security Considerations
+
+1. **Secure key storage** - Use Keychain with appropriate accessibility levels
+2. **User verification** - Always verify user presence and verification
+3. **App Group security** - Protect shared data between app and extension
+4. **Unique AAGUIDs** - Use a unique AAGUID for your application
+5. **Validate origins** - Only create credentials for trusted relying parties
+
+## Next Steps
+
+- **[Complete Example](./example)**: See a full implementation example
+- Test with popular passkey-enabled websites
+- Implement advanced features like credential management UI

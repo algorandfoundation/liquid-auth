@@ -1,0 +1,494 @@
+---
+title: "iOS: Peer Communication"
+sidebar:
+  order: 3
+---
+
+import { Aside, Tabs, TabItem } from "@astrojs/starlight/components";
+
+Set up WebRTC peer-to-peer communication between your iOS wallet and dApps after successful [registration](./registration) or [authentication](./authentication).
+
+<Aside type="caution">
+WebRTC requires testing on physical iOS devices. Simulators do not support WebRTC functionality.
+</Aside>
+
+## Overview
+
+Once authentication is complete, the `startSignaling` function establishes a WebRTC data channel for direct communication between the dApp (offerer) and your wallet (answerer). This enables:
+
+- **Transaction signing requests** from dApps
+- **Real-time communication** without centralized intermediaries  
+- **Authenticated messaging** using the established Liquid Auth session
+
+## Implementation
+
+### Complete Signaling Setup
+
+```swift
+import WebRTC
+import LiquidAuthSDK
+
+func startSignaling(
+    origin: String,
+    requestId: String
+) async throws {
+    let signalService = SignalService.shared
+    
+    // Initialize the signal service with the origin
+    signalService.start(url: origin, httpClient: URLSession.shared)
+    
+    // Configure ICE servers for NAT traversal
+    let iceServers = [
+        // Google STUN servers
+        RTCIceServer(
+            urlStrings: [
+                "stun:stun.l.google.com:19302",
+                "stun:stun1.l.google.com:19302", 
+                "stun:stun2.l.google.com:19302",
+                "stun:stun3.l.google.com:19302",
+                "stun:stun4.l.google.com:19302",
+            ]
+        ),
+        // Nodely TURN servers for more reliable connections
+        RTCIceServer(
+            urlStrings: [
+                "turn:global.turn.nodely.network:80?transport=tcp",
+                "turns:global.turn.nodely.network:443?transport=tcp",
+                "turn:eu.turn.nodely.io:80?transport=tcp", 
+                "turns:eu.turn.nodely.io:443?transport=tcp",
+                "turn:us.turn.nodely.io:80?transport=tcp",
+                "turns:us.turn.nodely.io:443?transport=tcp",
+            ],
+            username: "liquid-auth",
+            credential: "sqmcP4MiTKMT4TGEDSk9jgHY"
+        ),
+    ]
+    
+    // Connect as answerer (wallets are always answerers)
+    signalService.connectToPeer(
+        requestId: requestId,
+        type: "answer",
+        origin: origin,
+        iceServers: iceServers,
+        onMessage: { [weak self] message in
+            print("💬 Received message: \(message)")
+            
+            Task {
+                await self?.handleIncomingMessage(message)
+            }
+        },
+        onStateChange: { state in
+            print("🔄 Connection state changed: \(state)")
+            
+            if state == "open" {
+                print("✅ Data channel is OPEN")
+                // Send initial ping to confirm connection
+                signalService.sendMessage("ping")
+            }
+        }
+    )
+}
+```
+
+## Message Handling
+
+### Processing Incoming Messages
+
+<Aside type="tip">
+Integrate message handling with your existing wallet transaction flow and UI.
+</Aside>
+
+```swift
+class LiquidAuthMessageHandler {
+    private let walletService: WalletService
+    private let signalService = SignalService.shared
+    
+    init(walletService: WalletService) {
+        self.walletService = walletService
+    }
+    
+    func handleIncomingMessage(_ message: String) async {
+        do {
+            // Parse incoming message
+            guard let messageData = message.data(using: .utf8),
+                  let json = try JSONSerialization.jsonObject(with: messageData) as? [String: Any]
+            else {
+                print("❌ Failed to parse message: \(message)")
+                return
+            }
+            
+            // Route message based on type
+            if let messageType = json["type"] as? String {
+                switch messageType {
+                case "ping":
+                    handlePing()
+                    
+                case "transaction_request":
+                    await handleTransactionRequest(json)
+                    
+                case "sign_request": 
+                    await handleSignRequest(json)
+                    
+                case "account_info_request":
+                    await handleAccountInfoRequest(json)
+                    
+                default:
+                    print("⚠️ Unknown message type: \(messageType)")
+                    sendErrorResponse("Unknown message type: \(messageType)")
+                }
+            }
+        } catch {
+            print("❌ Error handling message: \(error)")
+            sendErrorResponse("Message processing error: \(error.localizedDescription)")
+        }
+    }
+    
+    private func handlePing() {
+        print("🏓 Received ping, sending pong")
+        signalService.sendMessage("pong")
+    }
+    
+    private func handleTransactionRequest(_ json: [String: Any]) async {
+        guard let txnData = json["transaction"] as? [String: Any],
+              let requestId = json["requestId"] as? String
+        else {
+            sendErrorResponse("Invalid transaction request format")
+            return
+        }
+        
+        do {
+            // Convert to Algorand transaction
+            let transaction = try parseAlgorandTransaction(txnData)
+            
+            // Show user confirmation UI
+            let userApproved = await requestUserApproval(for: transaction)
+            
+            if userApproved {
+                // Sign transaction with wallet
+                let signedTxn = try await walletService.signTransaction(transaction)
+                
+                // Send response back to dApp
+                let response = [
+                    "type": "transaction_response",
+                    "requestId": requestId,
+                    "status": "success",
+                    "signedTransaction": signedTxn.base64EncodedString()
+                ]
+                
+                sendResponse(response)
+            } else {
+                // User rejected transaction
+                let response = [
+                    "type": "transaction_response", 
+                    "requestId": requestId,
+                    "status": "rejected",
+                    "error": "User rejected transaction"
+                ]
+                
+                sendResponse(response)
+            }
+        } catch {
+            let response = [
+                "type": "transaction_response",
+                "requestId": requestId, 
+                "status": "error",
+                "error": error.localizedDescription
+            ]
+            
+            sendResponse(response)
+        }
+    }
+    
+    private func handleSignRequest(_ json: [String: Any]) async {
+        // Handle arbitrary message signing requests
+        guard let message = json["message"] as? String,
+              let requestId = json["requestId"] as? String
+        else {
+            sendErrorResponse("Invalid sign request format")
+            return
+        }
+        
+        // Implementation depends on your signing requirements
+        // This could be for signing arbitrary data, not just transactions
+    }
+    
+    private func handleAccountInfoRequest(_ json: [String: Any]) async {
+        guard let requestId = json["requestId"] as? String else {
+            sendErrorResponse("Invalid account info request format")
+            return
+        }
+        
+        // Get current account information
+        let accountInfo = await walletService.getCurrentAccountInfo()
+        
+        let response = [
+            "type": "account_info_response",
+            "requestId": requestId,
+            "status": "success", 
+            "account": [
+                "address": accountInfo.address,
+                "balance": accountInfo.balance,
+                // Add other relevant account details
+            ]
+        ] as [String : Any]
+        
+        sendResponse(response)
+    }
+    
+    private func sendResponse(_ response: [String: Any]) {
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: response)
+            let jsonString = String(data: jsonData, encoding: .utf8) ?? ""
+            signalService.sendMessage(jsonString)
+        } catch {
+            print("❌ Failed to send response: \(error)")
+        }
+    }
+    
+    private func sendErrorResponse(_ error: String) {
+        let response = [
+            "type": "error",
+            "error": error
+        ]
+        sendResponse(response)
+    }
+}
+```
+
+### User Interaction
+
+Implement user confirmation dialogs for transaction requests:
+
+```swift
+import UIKit
+
+extension LiquidAuthMessageHandler {
+    
+    @MainActor
+    private func requestUserApproval(for transaction: AlgorandTransaction) async -> Bool {
+        return await withCheckedContinuation { continuation in
+            let alert = UIAlertController(
+                title: "Transaction Request",
+                message: buildTransactionSummary(transaction),
+                preferredStyle: .alert
+            )
+            
+            alert.addAction(UIAlertAction(title: "Approve", style: .default) { _ in
+                continuation.resume(returning: true)
+            })
+            
+            alert.addAction(UIAlertAction(title: "Reject", style: .cancel) { _ in
+                continuation.resume(returning: false)
+            })
+            
+            // Present alert on the top view controller
+            if let topController = UIApplication.shared.topViewController {
+                topController.present(alert, animated: true)
+            } else {
+                continuation.resume(returning: false)
+            }
+        }
+    }
+    
+    private func buildTransactionSummary(_ transaction: AlgorandTransaction) -> String {
+        var summary = "Transaction Details:\n\n"
+        summary += "To: \(transaction.receiver)\n"
+        summary += "Amount: \(transaction.amount) ALGO\n"
+        
+        if let note = transaction.note {
+            summary += "Note: \(note)\n"
+        }
+        
+        summary += "Fee: \(transaction.fee) microALGO\n"
+        
+        return summary
+    }
+}
+
+// Helper extension to find top view controller
+extension UIApplication {
+    var topViewController: UIViewController? {
+        guard let windowScene = connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first(where: { $0.isKeyWindow }),
+              let rootViewController = window.rootViewController
+        else { return nil }
+        
+        return findTopViewController(rootViewController)
+    }
+    
+    private func findTopViewController(_ controller: UIViewController) -> UIViewController {
+        if let presentedController = controller.presentedViewController {
+            return findTopViewController(presentedController)
+        }
+        
+        if let navigationController = controller as? UINavigationController {
+            return findTopViewController(navigationController.topViewController ?? controller)
+        }
+        
+        if let tabController = controller as? UITabBarController {
+            return findTopViewController(tabController.selectedViewController ?? controller)
+        }
+        
+        return controller
+    }
+}
+```
+
+## Connection Management
+
+### Managing Connection State
+
+```swift
+class LiquidAuthConnectionManager: ObservableObject {
+    @Published var connectionState: ConnectionState = .disconnected
+    @Published var isConnected: Bool = false
+    
+    enum ConnectionState {
+        case disconnected
+        case connecting
+        case connected
+        case failed(Error)
+    }
+    
+    func startConnection(origin: String, requestId: String) async {
+        await MainActor.run {
+            connectionState = .connecting
+        }
+        
+        do {
+            try await startSignaling(origin: origin, requestId: requestId)
+            
+            await MainActor.run {
+                connectionState = .connected
+                isConnected = true
+            }
+        } catch {
+            await MainActor.run {
+                connectionState = .failed(error)
+                isConnected = false
+            }
+        }
+    }
+    
+    func disconnect() {
+        SignalService.shared.disconnect()
+        
+        Task { @MainActor in
+            connectionState = .disconnected
+            isConnected = false
+        }
+    }
+}
+```
+
+## Error Handling
+
+```swift
+enum PeerCommunicationError: Error {
+    case connectionFailed
+    case messageParsingFailed
+    case invalidMessageFormat
+    case userRejectedTransaction
+    case signingFailed(String)
+    case networkError(Error)
+}
+
+func handleSignalingError(_ error: Error) {
+    print("❌ Signaling error: \(error)")
+    
+    switch error {
+    case PeerCommunicationError.connectionFailed:
+        // Retry connection or show user error
+        break
+        
+    case PeerCommunicationError.networkError(let networkError):
+        // Handle network-specific errors
+        print("Network error: \(networkError)")
+        
+    default:
+        // Handle other errors
+        break
+    }
+}
+```
+
+## Security Considerations
+
+1. **Validate message origins** - Ensure messages come from authenticated dApps
+2. **User confirmation required** - Never auto-sign transactions without user approval  
+3. **Timeout handling** - Implement timeouts for user interactions
+4. **Connection security** - WebRTC provides encryption, but validate message integrity
+5. **Resource management** - Properly clean up WebRTC resources
+
+## Integration with SwiftUI
+
+```swift
+import SwiftUI
+
+struct LiquidAuthView: View {
+    @StateObject private var connectionManager = LiquidAuthConnectionManager()
+    @State private var origin = ""
+    @State private var requestId = ""
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Liquid Auth Connection")
+                .font(.title)
+            
+            Group {
+                TextField("Origin", text: $origin)
+                TextField("Request ID", text: $requestId)
+            }
+            .textFieldStyle(RoundedBorderTextFieldStyle())
+            .disabled(connectionManager.isConnected)
+            
+            Button(connectionManager.isConnected ? "Disconnect" : "Connect") {
+                if connectionManager.isConnected {
+                    connectionManager.disconnect()
+                } else {
+                    Task {
+                        await connectionManager.startConnection(
+                            origin: origin,
+                            requestId: requestId
+                        )
+                    }
+                }
+            }
+            .disabled(origin.isEmpty || requestId.isEmpty)
+            
+            statusView
+        }
+        .padding()
+    }
+    
+    @ViewBuilder
+    private var statusView: some View {
+        switch connectionManager.connectionState {
+        case .disconnected:
+            Text("Disconnected")
+                .foregroundColor(.secondary)
+            
+        case .connecting:
+            HStack {
+                ProgressView()
+                    .scaleEffect(0.8)
+                Text("Connecting...")
+            }
+            .foregroundColor(.blue)
+            
+        case .connected:
+            Text("✅ Connected")
+                .foregroundColor(.green)
+            
+        case .failed(let error):
+            Text("❌ Error: \(error.localizedDescription)")
+                .foregroundColor(.red)
+        }
+    }
+}
+```
+
+## Next Steps
+
+- **[Autofill Extension](./autofill-extension)**: Learn about integrating with iOS native passkey management
+- **[Complete Example](./example)**: See a full implementation example

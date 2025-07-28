@@ -66,19 +66,19 @@ export default defineConfig({
         label: "Introduction",
         link: "/server/introduction",
       },
-        {
+      {
         label: "Running locally",
         link: "/server/running-locally"
       },
-        {
+      {
         "label": "Configuration",
         "link": "/server/environment-variables"
       },
-        {
+      {
         label: "Integrations",
         link: "/server/integrations",
       },
-        ...openAPISidebarGroups,
+      ...openAPISidebarGroups,
       ]
     }, {
       label: "Clients",
@@ -132,7 +132,7 @@ export default defineConfig({
                 },
               }
             ],
-              badge: {
+            badge: {
               text: "^14",
               variant: "danger"
             },
@@ -144,47 +144,84 @@ export default defineConfig({
               text: "TODO",
               variant: "danger"
             },
-            items:[]
+            items: []
           },
         ]
       },
-        {
+      {
         label: "Browser",
         collapsed: true,
         items: [{
           label: "Introduction",
           link: "/clients/browser/introduction",
         },
-          {
+        {
           label: "Registration",
           link: "/clients/browser/registration",
         },
-          {
+        {
           label: "Authentication",
           link: "/clients/browser/authentication",
         },
-          {
+        {
           label: "Peer Offer",
           link: "/clients/browser/offer",
         },
-          {
+        {
           label: "Peer Answer",
           link: "/clients/browser/answer",
         },
+        {
+          label: "Full Example",
+          link: "/clients/browser/example",
+        },
+        {
+          label: "Reference",
+          // link: "/clients/browser/api",
+          badge: {
+            text: "TODO",
+            variant: "danger"
+          },
+          items: []
+        },
+          // typeDocSidebarGroup
+        ]
+      }, {
+        label: "iOS",
+        collapsed: true,
+        items: [
           {
-            label: "Full Example",
-            link: "/clients/browser/example",
+            label: "Introduction",
+            link: "/clients/ios/introduction",
+          },
+          {
+            label: "Registration",
+            link: "/clients/ios/registration",
+          },
+          {
+            label: "Authentication",
+            link: "/clients/ios/authentication",
+          },
+          {
+            label: "Peer Communication",
+            link: "/clients/ios/peer-communication",
+          },
+          {
+            label: "Autofill Extension",
+            link: "/clients/ios/autofill-extension",
+          },
+          {
+            label: "Complete Example",
+            link: "/clients/ios/example",
           },
           {
             label: "Reference",
-            // link: "/clients/browser/api",
             badge: {
               text: "TODO",
               variant: "danger"
             },
-            items:[]
+            items: []
           },
-          // typeDocSidebarGroup
         ]
       }]
     }, {
