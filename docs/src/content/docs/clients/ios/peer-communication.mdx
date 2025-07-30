@@ -104,7 +104,7 @@ struct ExampleMessageHandler: LiquidAuthMessageHandler {
   // Add your wallet integration here (e.g., reference to your signing API)
 
   func handleMessage(_ message: String) async -> String? {
-    Logger.info("📨 Handling incoming message")
+    print("📨 Handling incoming message")
 
     // Try to decode and determine message type
     if isARC27Message(message) {
@@ -112,7 +112,7 @@ struct ExampleMessageHandler: LiquidAuthMessageHandler {
     }
 
     // Handle other message types here in the future
-    Logger.debug("Unknown message type, ignoring")
+    print("Unknown message type, ignoring")
     return nil
   }
 
@@ -133,7 +133,7 @@ struct ExampleMessageHandler: LiquidAuthMessageHandler {
           let cbor = try? CBOR.decode([UInt8](cborData)),
           let dict = cbor.asSwiftObject() as? [String: Any]
     else {
-      Logger.error("Failed to decode CBOR message")
+      print("Failed to decode CBOR message")
       return nil
     }
 
@@ -144,14 +144,14 @@ struct ExampleMessageHandler: LiquidAuthMessageHandler {
           let txns = params["txns"] as? [[String: Any]],
           let requestId = dict["id"] as? String
     else {
-      Logger.error("Invalid ARC27 request format")
+      print("Invalid ARC27 request format")
       return nil
     }
 
     // 3. Request user approval for transaction signing
     let userApproved = await requestUserApprovalForSigning()
     guard userApproved else {
-      Logger.error("User denied transaction signing")
+      print("User denied transaction signing")
       return nil
     }
 
@@ -161,7 +161,7 @@ struct ExampleMessageHandler: LiquidAuthMessageHandler {
       guard let txnBase64Url = txnObj["txn"] as? String,
             let txnBytes = Utility.decodeBase64Url(txnBase64Url)
       else {
-        Logger.error("Failed to decode transaction")
+        print("Failed to decode transaction")
         continue
       }
 
@@ -184,7 +184,7 @@ struct ExampleMessageHandler: LiquidAuthMessageHandler {
 
     // 6. Encode and return
     guard let cborResponse = try? CBOR.encodeMap(response) else {
-      Logger.error("Failed to encode ARC27 response")
+      print("Failed to encode ARC27 response")
       return nil
     }
 
