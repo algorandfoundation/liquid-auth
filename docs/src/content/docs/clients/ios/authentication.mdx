@@ -10,13 +10,17 @@ Authenticate an existing [Passkey](../../guides/concepts#passkeys) with the [Ser
 
 ## Overview
 
-The authentication process verifies ownership of a registered passkey by:
+The authentication (assertion) process verifies ownership of a registered passkey by:
 
 1. **Requesting assertion options** from the Liquid Auth service
 2. **Retrieving the associated P256 key pair** from secure storage
 3. **Signing the challenge** with your Algorand Ed25519 key
 4. **Creating a WebAuthn assertion response** with P256 signature
 5. **Submitting the credential** to complete authentication
+
+This is specifically for Liquid URIs/QR Codes - provided by the Liquid Auth backend.
+
+To handle `FIDO:/` URIs/QR Codes, refer to the Autofill Credential Extension.
 
 ## Implementation
 
@@ -103,7 +107,7 @@ func authentication(
     )
     
     // Step 8: Handle response
-    return try parseAuthenticationResponse(responseData)
+    return try parseAuthenticationResponse(responseData) // Check for errors, return success if none.
 }
 ```
 
@@ -172,48 +176,13 @@ private func buildAssertionResponse(
 
 ## Key Retrieval
 
-Before authentication, you need to retrieve the P256 key pair associated with the credential:
+Before authentication, you need to retrieve the P256 key pair associated with the `credentialId`.
 
-### From Keychain Storage
-
-```swift
-func retrieveKeyPair(for credentialId: String) throws -> P256.Signing.PrivateKey {
-    let query: [String: Any] = [
-        kSecClass as String: kSecClassGenericPassword,
-        kSecAttrAccount as String: credentialId,
-        kSecReturnData as String: true,
-        kSecMatchLimit as String: kSecMatchLimitOne
-    ]
-    
-    var result: AnyObject?
-    let status = SecItemCopyMatching(query as CFDictionary, &result)
-    
-    guard status == errSecSuccess,
-          let keyData = result as? Data else {
-        throw LiquidAuthError.keyNotFound
-    }
-    
-    return try P256.Signing.PrivateKey(rawRepresentation: keyData)
-}
-```
-
-### Deterministic Regeneration
-
-<Aside type="tip">
-If using deterministic key generation, you can regenerate the key pair from the same seed instead of storing it.
-</Aside>
-
-```swift
-func regenerateKeyPair(for algorandAddress: String, using seed: Data) throws -> P256.Signing.PrivateKey {
-    // Use your deterministic key derivation logic
-    let derivedSeed = deriveP256Seed(from: seed, address: algorandAddress)
-    return try P256.Signing.PrivateKey(rawRepresentation: derivedSeed)
-}
-```
+Alternatively, you can deterministically regenerate the P256 keypair (passkey) on the fly. We refer you to the [deterministic-P256-swift](https://github.com/algorandfoundation/deterministic-P256-swift) library.
 
 ## User Verification
 
-Implement proper user verification before completing authentication:
+Implement proper user verification before completing authentication, prompting the user to confirm.
 
 ```swift
 import LocalAuthentication
@@ -244,69 +213,38 @@ func authenticateUser() async throws -> Bool {
 
 ## Error Handling
 
-```swift
-enum LiquidAuthError: Error {
-    case invalidServerResponse
-    case missingRpId
-    case clientDataCreationFailed
-    case assertionSerializationFailed
-    case keyNotFound
-    case authenticationNotAvailable
-    case authenticationFailed(String)
-    case userVerificationFailed
-}
+The SDK provides a comprehensive `LiquidAuthError` enum for handling various error conditions:
 
+```swift
 private func parseAuthenticationResponse(_ data: Data) throws -> LiquidAuthResult {
     if let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
        let errorReason = json["error"] as? String {
-        throw LiquidAuthError.authenticationFailed(errorReason)
+        throw LiquidAuthError.serverError(errorReason)
     }
     
     print("Authentication completed successfully.")
     return LiquidAuthResult(success: true)
 }
-```
 
-## Complete Integration Example
-
-```swift
-class LiquidAuthManager {
-    private let keychainManager = KeychainManager()
-    
-    func authenticateUser(
-        origin: String,
-        requestId: String,
-        algorandAddress: String
-    ) async throws -> LiquidAuthResult {
-        
-        // 1. Verify user with biometrics/passcode
-        guard try await authenticateUser() else {
-            throw LiquidAuthError.userVerificationFailed
+// Example error handling in your authentication flow
+func handleAuthenticationError(_ error: Error) {
+    if let liquidError = error as? LiquidAuthError {
+        switch liquidError {
+        case .networkError(let underlyingError):
+            print("Network issue: \(underlyingError.localizedDescription)")
+        case .authenticationFailed(let reason):
+            print("Auth failed: \(reason)")
+        case .serverError(let message):
+            print("Server error: \(message)")
+        case .userCanceled:
+            print("User canceled the operation")
+        case .invalidChallenge:
+            print("Invalid challenge received from server")
+        case .missingRequiredField(let field):
+            print("Missing required field: \(field)")
+        default:
+            print("Authentication error: \(liquidError.localizedDescription)")
         }
-        
-        // 2. Retrieve or regenerate P256 key pair
-        let credentialId = generateCredentialId(for: algorandAddress)
-        let p256KeyPair = try retrieveOrRegenerateKeyPair(for: credentialId, address: algorandAddress)
-        
-        // 3. Perform authentication
-        return try await authentication(
-            origin: origin,
-            requestId: requestId,
-            algorandAddress: algorandAddress,
-            p256KeyPair: p256KeyPair,
-            userAgent: buildUserAgent(),
-            device: UIDevice.current.name
-        )
-    }
-    
-    private func buildUserAgent() -> String {
-        let bundle = Bundle.main
-        let appName = bundle.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Unknown"
-        let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
-        let systemVersion = UIDevice.current.systemVersion
-        let model = UIDevice.current.model
-        
-        return "\(appName)/\(version) (iOS \(systemVersion); \(model))"
     }
 }
 ```
@@ -315,7 +253,7 @@ class LiquidAuthManager {
 
 1. **Always verify user presence** before authentication
 2. **Validate request origins** against your allowlist
-3. **Securely store or regenerate** P256 key pairs
+3. **Securely store or regenerate** P256 key pairs (or any mnemonics)
 4. **Implement proper timeouts** for user verification
 5. **Log authentication attempts** for security monitoring
 

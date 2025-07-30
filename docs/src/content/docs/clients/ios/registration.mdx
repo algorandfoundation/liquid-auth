@@ -6,20 +6,23 @@ sidebar:
 
 import { Aside, Tabs, TabItem } from "@astrojs/starlight/components";
 
-Register a [Passkey](../../guides/concepts#passkeys) with the [Service](../../server/introduction) and attest the knowledge of a KeyPair. This creates a new credential that can be used for future authentication with the Liquid Auth service.
+Register a [Passkey](../../guides/concepts#passkeys) with the [Service](../../server/introduction) and attest the knowledge of a an Algorand keypair. This creates a new credential that can be used for future authentication with the Liquid Auth service.
 
 ### Who is this for?
 
-- **iOS Wallet developers** who want to enable their users to authenticate with dApps using Liquid Auth
-- **Apps integrating Autofill Credential Extensions** for passkey management
+**iOS Wallet developers** who want to enable their users to authenticate with dApps using Liquid Auth, and to setup the WebRTC connection.
+
+This is specifically for Liquid URIs/QR Codes - provided by the Liquid Auth backend.
+
+To handle `FIDO:/` URIs/QR Codes, refer to the Autofill Credential Extension.
 
 ## Overview
 
-The registration process involves:
+The registration (attestation) process involves:
 
 1. **Requesting attestation options** from the Liquid Auth service
 2. **Creating a P256 key pair** (deterministically or randomly)
-3. **Signing the challenge** with your Algorand Ed25519 key  
+3. **Signing the challenge** with your Algorand Ed25519 key, to prove ownership
 4. **Building the WebAuthn attestation response**
 5. **Submitting the credential** to complete registration
 
@@ -33,6 +36,7 @@ import CryptoKit
 import Foundation
 import SwiftCBOR
 import LiquidAuthSDK
+import deterministicP256_swift
 
 func registration(
     origin: String,
@@ -65,7 +69,7 @@ func registration(
           let rp = json["rp"] as? [String: Any],
           let rpId = rp["id"] as? String
     else {
-        throw LiquidAuthError.invalidServerResponse
+        throw LiquidAuthError.invalidJSON("Missing required fields in attestation options response")
     }
 
     // Validate origin matches rpId
@@ -77,7 +81,7 @@ func registration(
     let challengeBytes = Data([UInt8](Utility.decodeBase64Url(challengeBase64Url)!))
     
     // INTEGRATION POINT: Sign with your Algorand Ed25519 private key
-    let signature = try signChallenge(challengeBytes, with: yourAlgorandPrivateKey)
+    let signature = try signChallenge(challengeBytes, with: yourAlgorandPrivateKey) // <-- Implement your own.
 
     // Step 5: Create Liquid extension
     let liquidExt = [
@@ -105,9 +109,13 @@ func registration(
     )
 
     // Step 8: Handle response
-    return try parseRegistrationResponse(responseData)
+    return try parseRegistrationResponse(responseData) // Check for errors, return success if none.
 }
 ```
+
+If everything went well, you have now registered a passkey, proved ownership of the Algorand address, and authenticated the requestId (UUID).
+
+If you wish, you can now proceed with the requestId and use it to setup a WebRTC-based P2P communication channel.
 
 ### Building the Attestation Credential
 
@@ -130,7 +138,7 @@ private func buildAttestationCredential(
     
     guard let clientDataJSONData = try? JSONSerialization.data(withJSONObject: clientData, options: [])
     else {
-        throw LiquidAuthError.clientDataCreationFailed
+        throw LiquidAuthError.invalidJSON("Failed to serialize client data")
     }
     
     let clientDataJSONBase64Url = clientDataJSONData.base64URLEncodedString()
@@ -185,15 +193,15 @@ You must implement the challenge signing with your Algorand wallet's Ed25519 pri
 
 ```swift
 func signChallenge(_ challenge: Data, with privateKey: Ed25519PrivateKey) throws -> Data {
-    // IMPLEMENT: Use your wallet's signing mechanism
-    // This is typically done through your existing Algorand SDK integration
-    return try privateKey.signature(for: challenge)
+    // IMPLEMENT: Use your wallet's signing mechanism, to sign arbitrary data.
+    // In this case, 32 random bytes.
+    return signature
 }
 ```
 
 ### 2. User Verification
 
-Ensure proper user verification before completing registration:
+You should ensure the user is prompted to proceed with the registration, using biometrics or pin-code to authenticate. This is known as user verification and it is a flag that in the example above was set to true.
 
 ```swift
 // Example using LocalAuthentication
@@ -204,7 +212,7 @@ func requireUserVerification() async throws -> Bool {
     var error: NSError?
     
     guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
-        throw LiquidAuthError.biometricsNotAvailable
+        throw LiquidAuthError.authenticationFailed("Biometrics not available")
     }
     
     return try await context.evaluatePolicy(
@@ -217,52 +225,71 @@ func requireUserVerification() async throws -> Bool {
 ### 3. Key Management
 
 <Aside type="caution">
-Store P256 private keys securely in the Keychain or Secure Enclave. For deterministic generation, see the [deterministic-P256-swift](https://github.com/algorandfoundation/deterministic-P256-swift) library.
+Make sure to store the P256 private keys or their mnemonics securely. For deterministic generation, see the [deterministic-P256-swift](https://github.com/algorandfoundation/deterministic-P256-swift) library.
 </Aside>
 
 ```swift
 // Example: Generate deterministic P256 key pair
-func generateDeterministicKeyPair(from seed: Data) throws -> P256.Signing.PrivateKey {
+func generateDeterministicKeyPair(phrase: String, origin: String, userHandle: String) throws -> P256.Signing.PrivateKey {
     // Use deterministic-P256-swift library
-    return try P256.Signing.PrivateKey(rawRepresentation: derivedSeed)
+    let dp256 = DeterministicP256()
+    
+    // Generate the derived main key from BIP39 mnemonic
+    let derivedMainKey = try dp256.genDerivedMainKeyWithBIP39(phrase: phrase)
+    
+    // Generate domain-specific key pair
+    let keyPair = dp256.genDomainSpecificKeyPair(derivedMainKey: derivedMainKey, origin: origin, userHandle: userHandle)
+    
+    return keyPair // This is actually a P256.Signing.PrivateKey
 }
 
-// Example: Store in Keychain
-func storeKeyPair(_ keyPair: P256.Signing.PrivateKey, for credentialId: String) throws {
-    let keyData = keyPair.rawRepresentation
-    let query: [String: Any] = [
-        kSecClass as String: kSecClassGenericPassword,
-        kSecAttrAccount as String: credentialId,
-        kSecValueData as String: keyData,
-        kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
-    ]
+// Example: Complete wallet setup with deterministic keys
+func setupWalletForOrigin(_ origin: String, algorandAddress: String) throws -> P256.Signing.PrivateKey {
+    // Your app's BIP39 mnemonic (securely stored)
+    let phrase = "salon zoo engage submit smile frost later decide wing sight chaos renew lizard rely canal coral scene hobby scare step bus leaf tobacco slice"
     
-    let status = SecItemAdd(query as CFDictionary, nil)
-    guard status == errSecSuccess else {
-        throw LiquidAuthError.keychainStorageFailed
-    }
+    // Use Algorand address as userHandle for deterministic generation.
+    // Assuming that there is no more approrpriate userHandle to pick.
+    let userHandle = algorandAddress
+    
+    return try generateDeterministicKeyPair(phrase: phrase, origin: origin, userHandle: userHandle)
 }
 ```
 
 ## Error Handling
 
-```swift
-enum LiquidAuthError: Error {
-    case invalidServerResponse
-    case clientDataCreationFailed  
-    case biometricsNotAvailable
-    case keychainStorageFailed
-    case signatureFailed
-    case registrationFailed(String)
-}
+The SDK provides a comprehensive `LiquidAuthError` enum for handling various error conditions:
 
+```swift
 private func parseRegistrationResponse(_ data: Data) throws -> LiquidAuthResult {
     if let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
        let errorReason = json["error"] as? String {
-        throw LiquidAuthError.registrationFailed(errorReason)
+        throw LiquidAuthError.serverError(errorReason)
     }
     
     return LiquidAuthResult(success: true)
+}
+
+// Example error handling in your registration flow
+func handleRegistrationError(_ error: Error) {
+    if let liquidError = error as? LiquidAuthError {
+        switch liquidError {
+        case .networkError(let underlyingError):
+            print("Network issue: \(underlyingError.localizedDescription)")
+        case .authenticationFailed(let reason):
+            print("Auth failed: \(reason)")
+        case .serverError(let message):
+            print("Server error: \(message)")
+        case .userCanceled:
+            print("User canceled the operation")
+        case .invalidChallenge:
+            print("Invalid challenge received from server")
+        case .missingRequiredField(let field):
+            print("Missing required field: \(field)")
+        default:
+            print("Registration error: \(liquidError.localizedDescription)")
+        }
+    }
 }
 ```
 
@@ -271,11 +298,11 @@ private func parseRegistrationResponse(_ data: Data) throws -> LiquidAuthResult 
 1. **Always verify user presence** and user verification flags
 2. **Validate origin domains** against your allowlist  
 3. **Use unique AAGUIDs** for your application
-4. **Store keys securely** in Keychain/Secure Enclave
+4. **Store keys securely**
 5. **Implement proper error handling** and user feedback
 
 ## Next Steps
 
 After successful registration:
-- **[Authentication](./authentication)**: Learn how to authenticate with registered passkeys
+- **[Authentication](./authentication)**: Learn how to authenticate with already registered passkeys
 - **[Peer Communication](./peer-communication)**: Set up WebRTC for dApp communication

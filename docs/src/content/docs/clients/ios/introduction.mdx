@@ -12,12 +12,12 @@ The iOS SDK provides a comprehensive solution for integrating Liquid Auth into i
 
 ## Features
 
-- **Self-Sovereign Passkeys**: Uses [deterministically generated P256 passkeys](https://github.com/algorandfoundation/deterministic-P256-swift) instead of relying on centralized password managers
-- **WebRTC P2P Communication**: Direct, authenticated communication between dApps and wallets
-- **Sign-In with Algorand**: Extends FIDO2/WebAuthn with Ed25519 Algorand address signatures
+- **Self-Sovereign Passkeys**: Allows wallet developers to manage passkeys themselves (e.g. using [deterministically generated P256 passkeys](https://github.com/algorandfoundation/deterministic-P256-swift)) instead of relying on centralized password managers.
+- **WebRTC P2P Communication**: Direct, authenticated communication between dApps and wallets, over WebRTC data channels.
+- **Sign-In with Algorand**: Extends FIDO2/WebAuthn with Ed25519 Algorand address signatures, to prove ownership of address.
 - **Dual Mode Operation**: 
-  - `liquid://` URIs for authenticated peer-to-peer communications
-  - `FIDO://` URIs for standard Web2 site authentication via Autofill Credential Extensions
+  - `liquid://` URIs/QR Codes for authenticated peer-to-peer communications
+  - `FIDO:/` URIs/QR Codes for standard Web2 site authentication via Autofill Credential Extensions
 
 ## Prerequisites
 
@@ -34,7 +34,7 @@ Add this to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/algorandfoundation/liquid-auth-ios.git", from: "1.0.0")
+    .package(url: "https://github.com/algorandfoundation/liquid-auth-ios.git", from: "0.0.1")
 ]
 ```
 
@@ -47,7 +47,7 @@ dependencies: [
 ## Modes of Operation
 
 <Aside>
-  The iOS SDK is designed as a "client"/"answerer" implementation, intended for mobile wallets connecting to dApp "offerers". It cannot initiate connections or generate request IDs.
+  The iOS SDK, as it is, is designed as a "client"/"answerer" implementation, intended for mobile wallets connecting to dApp "offerers". It cannot run the other way around in "offerer"-mode. It cannot initiate connections or generate request IDs.
 </Aside>
 
 ### 1. Liquid Auth Mode (`liquid://`)
@@ -68,7 +68,7 @@ Paired with the Liquid Auth Backend for authenticated peer-to-peer communication
 - [use-wallet](https://txnlab.gitbook.io/use-wallet) integrations
 - dApp-to-wallet transaction signing
 
-### 2. Autofill Credential Extension (`FIDO://`)
+### 2. Autofill Credential Extension (`FIDO:/`)
 
 Integration with iOS native passkey management for standard Web2 authentication:
 
@@ -79,46 +79,13 @@ Integration with iOS native passkey management for standard Web2 authentication:
 
 ## Quick Start
 
-### Basic Implementation
-
-```swift
-import LiquidAuthSDK
-import CryptoKit
-
-// 1. Registration Flow
-let result = try await registration(
-    origin: "example.com",
-    requestId: "550e8400-e29b-41d4-a716-446655440000",
-    algorandAddress: "ALICE...",
-    p256KeyPair: yourP256KeyPair,
-    userAgent: "YourApp/1.0.0",
-    device: "iPhone"
-)
-
-// 2. Authentication Flow  
-let authResult = try await authentication(
-    origin: "example.com",
-    requestId: "550e8400-e29b-41d4-a716-446655440000",
-    algorandAddress: "ALICE...",
-    p256KeyPair: yourP256KeyPair,
-    userAgent: "YourApp/1.0.0", 
-    device: "iPhone"
-)
-
-// 3. Start WebRTC Communication
-try await startSignaling(
-    origin: "wss://example.com",
-    requestId: "550e8400-e29b-41d4-a716-446655440000"
-)
-```
-
 ### Integration Points
 
 The SDK provides WebAuthn infrastructure, but you'll need to integrate with your wallet for:
 
 1. **Challenge Signing**: Sign WebAuthn challenges with your Algorand Ed25519 private key
-2. **Message Handling**: Process incoming WebRTC messages (transaction requests)
-3. **Key Management**: Manage P256 and Algorand key pairs securely
+2. **Message Handling**: Process incoming WebRTC messages (e.g. transaction signing requests)
+3. **Key Management**: Manage P256 and Algorand key pairs, or their mnemonics, securely
 
 ## Next Steps
 
