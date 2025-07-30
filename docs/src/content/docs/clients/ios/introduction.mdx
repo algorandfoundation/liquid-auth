@@ -5,10 +5,14 @@ prev: false
 import { Aside, Tabs, TabItem } from "@astrojs/starlight/components";
 
 <Aside type="caution">
-  iOS 17+ is required. WebRTC functionality requires testing on physical devices, not simulators.
+  iOS 17+ is required for FIDO2 Autofill Credential functionality.
 </Aside>
 
-The iOS SDK provides a comprehensive solution for integrating Liquid Auth into iOS applications and Autofill Credential Extensions. It enables self-sovereign FIDO2/WebAuthn authentication with deterministically generated P256 passkeys and facilitates decentralized peer-to-peer communication between dApps and wallets.
+<Aside type="caution">
+  WebRTC functionality requires testing on physical devices, not simulators.
+</Aside>
+
+The [iOS SDK](https://github.com/algorandfoundation/liquid-auth-ios) provides a comprehensive solution for integrating Liquid Auth into iOS applications and Autofill Credential Extensions. It enables self-sovereign FIDO2/WebAuthn authentication with deterministically generated P256 passkeys and facilitates decentralized peer-to-peer communication between dApps and wallets.
 
 ## Features
 
@@ -81,7 +85,12 @@ Integration with iOS native passkey management for standard Web2 authentication:
 
 ### Integration Points
 
+
 The SDK provides WebAuthn infrastructure, but you'll need to integrate with your wallet for:
+
+<Aside type="caution">
+You are responsible for secure key storage and user verification in your app.
+</Aside>
 
 1. **Challenge Signing**: Sign WebAuthn challenges with your Algorand Ed25519 private key
 2. **Message Handling**: Process incoming WebRTC messages (e.g. transaction signing requests)

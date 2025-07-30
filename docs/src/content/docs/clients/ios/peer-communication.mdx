@@ -99,318 +99,116 @@ Integrate message handling with your existing wallet transaction flow and UI.
 </Aside>
 
 ```swift
-class LiquidAuthMessageHandler {
-    private let walletService: WalletService
-    private let signalService = SignalService.shared
-    
-    init(walletService: WalletService) {
-        self.walletService = walletService
+/// Example implementation of message handler for ARC27 transaction requests
+struct ExampleMessageHandler: LiquidAuthMessageHandler {
+  // Add your wallet integration here (e.g., reference to your signing API)
+
+  func handleMessage(_ message: String) async -> String? {
+    Logger.info("📨 Handling incoming message")
+
+    // Try to decode and determine message type
+    if isARC27Message(message) {
+      return await handleARC27Transaction(message)
     }
-    
-    func handleIncomingMessage(_ message: String) async {
-        do {
-            // Parse incoming message
-            guard let messageData = message.data(using: .utf8),
-                  let json = try JSONSerialization.jsonObject(with: messageData) as? [String: Any]
-            else {
-                print("❌ Failed to parse message: \(message)")
-                return
-            }
-            
-            // Route message based on type
-            if let messageType = json["type"] as? String {
-                switch messageType {
-                case "ping":
-                    handlePing()
-                    
-                case "transaction_request":
-                    await handleTransactionRequest(json)
-                    
-                case "sign_request": 
-                    await handleSignRequest(json)
-                    
-                case "account_info_request":
-                    await handleAccountInfoRequest(json)
-                    
-                default:
-                    print("⚠️ Unknown message type: \(messageType)")
-                    sendErrorResponse("Unknown message type: \(messageType)")
-                }
-            }
-        } catch {
-            print("❌ Error handling message: \(error)")
-            sendErrorResponse("Message processing error: \(error.localizedDescription)")
-        }
+
+    // Handle other message types here in the future
+    Logger.debug("Unknown message type, ignoring")
+    return nil
+  }
+
+  private func isARC27Message(_ message: String) -> Bool {
+    guard let cborData = Utility.decodeBase64Url(message),
+          let cbor = try? CBOR.decode([UInt8](cborData)),
+          let dict = cbor.asSwiftObject() as? [String: Any],
+          let reference = dict["reference"] as? String
+    else {
+      return false
     }
-    
-    private func handlePing() {
-        print("🏓 Received ping, sending pong")
-        signalService.sendMessage("pong")
+    return reference == "arc0027:sign_transactions:request"
+  }
+
+  private func handleARC27Transaction(_ message: String) async -> String? {
+    // 1. Decode base64url CBOR
+    guard let cborData = Utility.decodeBase64Url(message),
+          let cbor = try? CBOR.decode([UInt8](cborData)),
+          let dict = cbor.asSwiftObject() as? [String: Any]
+    else {
+      Logger.error("Failed to decode CBOR message")
+      return nil
     }
-    
-    private func handleTransactionRequest(_ json: [String: Any]) async {
-        guard let txnData = json["transaction"] as? [String: Any],
-              let requestId = json["requestId"] as? String
-        else {
-            sendErrorResponse("Invalid transaction request format")
-            return
-        }
-        
-        do {
-            // Convert to Algorand transaction
-            let transaction = try parseAlgorandTransaction(txnData)
-            
-            // Show user confirmation UI
-            let userApproved = await requestUserApproval(for: transaction)
-            
-            if userApproved {
-                // Sign transaction with wallet
-                let signedTxn = try await walletService.signTransaction(transaction)
-                
-                // Send response back to dApp
-                let response = [
-                    "type": "transaction_response",
-                    "requestId": requestId,
-                    "status": "success",
-                    "signedTransaction": signedTxn.base64EncodedString()
-                ]
-                
-                sendResponse(response)
-            } else {
-                // User rejected transaction
-                let response = [
-                    "type": "transaction_response", 
-                    "requestId": requestId,
-                    "status": "rejected",
-                    "error": "User rejected transaction"
-                ]
-                
-                sendResponse(response)
-            }
-        } catch {
-            let response = [
-                "type": "transaction_response",
-                "requestId": requestId, 
-                "status": "error",
-                "error": error.localizedDescription
-            ]
-            
-            sendResponse(response)
-        }
+
+    // 2. Extract ARC27 fields
+    guard let reference = dict["reference"] as? String,
+          reference == "arc0027:sign_transactions:request",
+          let params = dict["params"] as? [String: Any],
+          let txns = params["txns"] as? [[String: Any]],
+          let requestId = dict["id"] as? String
+    else {
+      Logger.error("Invalid ARC27 request format")
+      return nil
     }
-    
-    private func handleSignRequest(_ json: [String: Any]) async {
-        // Handle arbitrary message signing requests
-        guard let message = json["message"] as? String,
-              let requestId = json["requestId"] as? String
-        else {
-            sendErrorResponse("Invalid sign request format")
-            return
-        }
-        
-        // Implementation depends on your signing requirements
-        // This could be for signing arbitrary data, not just transactions
+
+    // 3. Request user approval for transaction signing
+    let userApproved = await requestUserApprovalForSigning()
+    guard userApproved else {
+      Logger.error("User denied transaction signing")
+      return nil
     }
-    
-    private func handleAccountInfoRequest(_ json: [String: Any]) async {
-        guard let requestId = json["requestId"] as? String else {
-            sendErrorResponse("Invalid account info request format")
-            return
-        }
-        
-        // Get current account information
-        let accountInfo = await walletService.getCurrentAccountInfo()
-        
-        let response = [
-            "type": "account_info_response",
-            "requestId": requestId,
-            "status": "success", 
-            "account": [
-                "address": accountInfo.address,
-                "balance": accountInfo.balance,
-                // Add other relevant account details
-            ]
-        ] as [String : Any]
-        
-        sendResponse(response)
+
+    // 4. Sign each transaction with wallet's logic
+    var signedTxns: [String] = []
+    for txnObj in txns {
+      guard let txnBase64Url = txnObj["txn"] as? String,
+            let txnBytes = Utility.decodeBase64Url(txnBase64Url)
+      else {
+        Logger.error("Failed to decode transaction")
+        continue
+      }
+
+      // Wallet-specific transaction signing
+      if let signature = await signTransaction(txnBytes) {
+        signedTxns.append(signature)
+      }
     }
-    
-    private func sendResponse(_ response: [String: Any]) {
-        do {
-            let jsonData = try JSONSerialization.data(withJSONObject: response)
-            let jsonString = String(data: jsonData, encoding: .utf8) ?? ""
-            signalService.sendMessage(jsonString)
-        } catch {
-            print("❌ Failed to send response: \(error)")
-        }
+
+    // 5. Build ARC27 response
+    let response: [String: Any] = [
+      "id": UUID().uuidString,
+      "reference": "arc0027:sign_transactions:response",
+      "requestId": requestId,
+      "result": [
+        "providerId": params["providerId"] ?? "liquid-auth-ios-example",
+        "stxns": signedTxns,
+      ],
+    ]
+
+    // 6. Encode and return
+    guard let cborResponse = try? CBOR.encodeMap(response) else {
+      Logger.error("Failed to encode ARC27 response")
+      return nil
     }
-    
-    private func sendErrorResponse(_ error: String) {
-        let response = [
-            "type": "error",
-            "error": error
-        ]
-        sendResponse(response)
-    }
+
+    return Data(cborResponse).base64URLEncodedString()
+  }
+
+  private func requestUserApprovalForSigning() async -> Bool {
+    // Request user verification for transaction signing
+    return await requireUserVerification(reason: "Approve transaction signing")
+  }
+
+  private func signTransaction(_ txnBytes: Data) async -> String? {
+    // TODO: Implement Algorand transaction signing logic for your wallet
+    return nil
+  }
 }
 ```
 
-### User Interaction
 
-Implement user confirmation dialogs for transaction requests:
+<Aside type="tip">
+ARC-27 is the recommended standard for transaction signing requests, but your wallet can support additional message types as needed.
+</Aside>
 
-```swift
-import UIKit
-
-extension LiquidAuthMessageHandler {
-    
-    @MainActor
-    private func requestUserApproval(for transaction: AlgorandTransaction) async -> Bool {
-        return await withCheckedContinuation { continuation in
-            let alert = UIAlertController(
-                title: "Transaction Request",
-                message: buildTransactionSummary(transaction),
-                preferredStyle: .alert
-            )
-            
-            alert.addAction(UIAlertAction(title: "Approve", style: .default) { _ in
-                continuation.resume(returning: true)
-            })
-            
-            alert.addAction(UIAlertAction(title: "Reject", style: .cancel) { _ in
-                continuation.resume(returning: false)
-            })
-            
-            // Present alert on the top view controller
-            if let topController = UIApplication.shared.topViewController {
-                topController.present(alert, animated: true)
-            } else {
-                continuation.resume(returning: false)
-            }
-        }
-    }
-    
-    private func buildTransactionSummary(_ transaction: AlgorandTransaction) -> String {
-        var summary = "Transaction Details:\n\n"
-        summary += "To: \(transaction.receiver)\n"
-        summary += "Amount: \(transaction.amount) ALGO\n"
-        
-        if let note = transaction.note {
-            summary += "Note: \(note)\n"
-        }
-        
-        summary += "Fee: \(transaction.fee) microALGO\n"
-        
-        return summary
-    }
-}
-
-// Helper extension to find top view controller
-extension UIApplication {
-    var topViewController: UIViewController? {
-        guard let windowScene = connectedScenes.first as? UIWindowScene,
-              let window = windowScene.windows.first(where: { $0.isKeyWindow }),
-              let rootViewController = window.rootViewController
-        else { return nil }
-        
-        return findTopViewController(rootViewController)
-    }
-    
-    private func findTopViewController(_ controller: UIViewController) -> UIViewController {
-        if let presentedController = controller.presentedViewController {
-            return findTopViewController(presentedController)
-        }
-        
-        if let navigationController = controller as? UINavigationController {
-            return findTopViewController(navigationController.topViewController ?? controller)
-        }
-        
-        if let tabController = controller as? UITabBarController {
-            return findTopViewController(tabController.selectedViewController ?? controller)
-        }
-        
-        return controller
-    }
-}
-```
-
-## Connection Management
-
-### Managing Connection State
-
-```swift
-class LiquidAuthConnectionManager: ObservableObject {
-    @Published var connectionState: ConnectionState = .disconnected
-    @Published var isConnected: Bool = false
-    
-    enum ConnectionState {
-        case disconnected
-        case connecting
-        case connected
-        case failed(Error)
-    }
-    
-    func startConnection(origin: String, requestId: String) async {
-        await MainActor.run {
-            connectionState = .connecting
-        }
-        
-        do {
-            try await startSignaling(origin: origin, requestId: requestId)
-            
-            await MainActor.run {
-                connectionState = .connected
-                isConnected = true
-            }
-        } catch {
-            await MainActor.run {
-                connectionState = .failed(error)
-                isConnected = false
-            }
-        }
-    }
-    
-    func disconnect() {
-        SignalService.shared.disconnect()
-        
-        Task { @MainActor in
-            connectionState = .disconnected
-            isConnected = false
-        }
-    }
-}
-```
-
-## Error Handling
-
-```swift
-enum PeerCommunicationError: Error {
-    case connectionFailed
-    case messageParsingFailed
-    case invalidMessageFormat
-    case userRejectedTransaction
-    case signingFailed(String)
-    case networkError(Error)
-}
-
-func handleSignalingError(_ error: Error) {
-    print("❌ Signaling error: \(error)")
-    
-    switch error {
-    case PeerCommunicationError.connectionFailed:
-        // Retry connection or show user error
-        break
-        
-    case PeerCommunicationError.networkError(let networkError):
-        // Handle network-specific errors
-        print("Network error: \(networkError)")
-        
-    default:
-        // Handle other errors
-        break
-    }
-}
-```
+ARC-27 specifies an Algorand standard for message schemas used in communication between clients and providers. For full details, see the [ARC-27 standard documentation](https://arc.algorand.foundation/ARCs/arc-0027).
 
 ## Security Considerations
 
@@ -419,74 +217,6 @@ func handleSignalingError(_ error: Error) {
 3. **Timeout handling** - Implement timeouts for user interactions
 4. **Connection security** - WebRTC provides encryption, but validate message integrity
 5. **Resource management** - Properly clean up WebRTC resources
-
-## Integration with SwiftUI
-
-```swift
-import SwiftUI
-
-struct LiquidAuthView: View {
-    @StateObject private var connectionManager = LiquidAuthConnectionManager()
-    @State private var origin = ""
-    @State private var requestId = ""
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Text("Liquid Auth Connection")
-                .font(.title)
-            
-            Group {
-                TextField("Origin", text: $origin)
-                TextField("Request ID", text: $requestId)
-            }
-            .textFieldStyle(RoundedBorderTextFieldStyle())
-            .disabled(connectionManager.isConnected)
-            
-            Button(connectionManager.isConnected ? "Disconnect" : "Connect") {
-                if connectionManager.isConnected {
-                    connectionManager.disconnect()
-                } else {
-                    Task {
-                        await connectionManager.startConnection(
-                            origin: origin,
-                            requestId: requestId
-                        )
-                    }
-                }
-            }
-            .disabled(origin.isEmpty || requestId.isEmpty)
-            
-            statusView
-        }
-        .padding()
-    }
-    
-    @ViewBuilder
-    private var statusView: some View {
-        switch connectionManager.connectionState {
-        case .disconnected:
-            Text("Disconnected")
-                .foregroundColor(.secondary)
-            
-        case .connecting:
-            HStack {
-                ProgressView()
-                    .scaleEffect(0.8)
-                Text("Connecting...")
-            }
-            .foregroundColor(.blue)
-            
-        case .connected:
-            Text("✅ Connected")
-                .foregroundColor(.green)
-            
-        case .failed(let error):
-            Text("❌ Error: \(error.localizedDescription)")
-                .foregroundColor(.red)
-        }
-    }
-}
-```
 
 ## Next Steps
 

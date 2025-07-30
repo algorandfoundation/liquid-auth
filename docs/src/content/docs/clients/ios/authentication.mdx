@@ -211,44 +211,6 @@ func authenticateUser() async throws -> Bool {
 }
 ```
 
-## Error Handling
-
-The SDK provides a comprehensive `LiquidAuthError` enum for handling various error conditions:
-
-```swift
-private func parseAuthenticationResponse(_ data: Data) throws -> LiquidAuthResult {
-    if let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-       let errorReason = json["error"] as? String {
-        throw LiquidAuthError.serverError(errorReason)
-    }
-    
-    print("Authentication completed successfully.")
-    return LiquidAuthResult(success: true)
-}
-
-// Example error handling in your authentication flow
-func handleAuthenticationError(_ error: Error) {
-    if let liquidError = error as? LiquidAuthError {
-        switch liquidError {
-        case .networkError(let underlyingError):
-            print("Network issue: \(underlyingError.localizedDescription)")
-        case .authenticationFailed(let reason):
-            print("Auth failed: \(reason)")
-        case .serverError(let message):
-            print("Server error: \(message)")
-        case .userCanceled:
-            print("User canceled the operation")
-        case .invalidChallenge:
-            print("Invalid challenge received from server")
-        case .missingRequiredField(let field):
-            print("Missing required field: \(field)")
-        default:
-            print("Authentication error: \(liquidError.localizedDescription)")
-        }
-    }
-}
-```
-
 ## Security Considerations
 
 1. **Always verify user presence** before authentication
