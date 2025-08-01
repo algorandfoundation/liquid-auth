@@ -1,0 +1,224 @@
+---
+title: "iOS: Peer Communication"
+sidebar:
+  order: 3
+---
+
+import { Aside, Tabs, TabItem } from "@astrojs/starlight/components";
+
+Set up WebRTC peer-to-peer communication between your iOS wallet and dApps after successful [registration](./registration) or [authentication](./authentication).
+
+<Aside type="caution">
+WebRTC requires testing on physical iOS devices. Simulators do not support WebRTC functionality.
+</Aside>
+
+## Overview
+
+Once authentication is complete, the `startSignaling` function establishes a WebRTC data channel for direct communication between the dApp (offerer) and your wallet (answerer). This enables:
+
+- **Transaction signing requests** from dApps
+- **Real-time communication** without centralized intermediaries  
+- **Authenticated messaging** using the established Liquid Auth session
+
+## Implementation
+
+### Complete Signaling Setup
+
+```swift
+import WebRTC
+import LiquidAuthSDK
+
+func startSignaling(
+    origin: String,
+    requestId: String
+) async throws {
+    let signalService = SignalService.shared
+    
+    // Initialize the signal service with the origin
+    signalService.start(url: origin, httpClient: URLSession.shared)
+    
+    // Configure ICE servers for NAT traversal
+    let iceServers = [
+        // Google STUN servers
+        RTCIceServer(
+            urlStrings: [
+                "stun:stun.l.google.com:19302",
+                "stun:stun1.l.google.com:19302", 
+                "stun:stun2.l.google.com:19302",
+                "stun:stun3.l.google.com:19302",
+                "stun:stun4.l.google.com:19302",
+            ]
+        ),
+        // Nodely TURN servers for more reliable connections
+        RTCIceServer(
+            urlStrings: [
+                "turn:global.turn.nodely.network:80?transport=tcp",
+                "turns:global.turn.nodely.network:443?transport=tcp",
+                "turn:eu.turn.nodely.io:80?transport=tcp", 
+                "turns:eu.turn.nodely.io:443?transport=tcp",
+                "turn:us.turn.nodely.io:80?transport=tcp",
+                "turns:us.turn.nodely.io:443?transport=tcp",
+            ],
+            username: "liquid-auth",
+            credential: "sqmcP4MiTKMT4TGEDSk9jgHY"
+        ),
+    ]
+    
+    // Connect as answerer (wallets are always answerers)
+    signalService.connectToPeer(
+        requestId: requestId,
+        type: "answer",
+        origin: origin,
+        iceServers: iceServers,
+        onMessage: { [weak self] message in
+            print("💬 Received message: \(message)")
+            
+            Task {
+                await self?.handleIncomingMessage(message)
+            }
+        },
+        onStateChange: { state in
+            print("🔄 Connection state changed: \(state)")
+            
+            if state == "open" {
+                print("✅ Data channel is OPEN")
+                // Send initial ping to confirm connection
+                signalService.sendMessage("ping")
+            }
+        }
+    )
+}
+```
+
+## Message Handling
+
+### Processing Incoming Messages
+
+<Aside type="tip">
+Integrate message handling with your existing wallet transaction flow and UI.
+</Aside>
+
+```swift
+/// Example implementation of message handler for ARC27 transaction requests
+struct ExampleMessageHandler: LiquidAuthMessageHandler {
+  // Add your wallet integration here (e.g., reference to your signing API)
+
+  func handleMessage(_ message: String) async -> String? {
+    print("📨 Handling incoming message")
+
+    // Try to decode and determine message type
+    if isARC27Message(message) {
+      return await handleARC27Transaction(message)
+    }
+
+    // Handle other message types here in the future
+    print("Unknown message type, ignoring")
+    return nil
+  }
+
+  private func isARC27Message(_ message: String) -> Bool {
+    guard let cborData = Utility.decodeBase64Url(message),
+          let cbor = try? CBOR.decode([UInt8](cborData)),
+          let dict = cbor.asSwiftObject() as? [String: Any],
+          let reference = dict["reference"] as? String
+    else {
+      return false
+    }
+    return reference == "arc0027:sign_transactions:request"
+  }
+
+  private func handleARC27Transaction(_ message: String) async -> String? {
+    // 1. Decode base64url CBOR
+    guard let cborData = Utility.decodeBase64Url(message),
+          let cbor = try? CBOR.decode([UInt8](cborData)),
+          let dict = cbor.asSwiftObject() as? [String: Any]
+    else {
+      print("Failed to decode CBOR message")
+      return nil
+    }
+
+    // 2. Extract ARC27 fields
+    guard let reference = dict["reference"] as? String,
+          reference == "arc0027:sign_transactions:request",
+          let params = dict["params"] as? [String: Any],
+          let txns = params["txns"] as? [[String: Any]],
+          let requestId = dict["id"] as? String
+    else {
+      print("Invalid ARC27 request format")
+      return nil
+    }
+
+    // 3. Request user approval for transaction signing
+    let userApproved = await requestUserApprovalForSigning()
+    guard userApproved else {
+      print("User denied transaction signing")
+      return nil
+    }
+
+    // 4. Sign each transaction with wallet's logic
+    var signedTxns: [String] = []
+    for txnObj in txns {
+      guard let txnBase64Url = txnObj["txn"] as? String,
+            let txnBytes = Utility.decodeBase64Url(txnBase64Url)
+      else {
+        print("Failed to decode transaction")
+        continue
+      }
+
+      // Wallet-specific transaction signing
+      if let signature = await signTransaction(txnBytes) {
+        signedTxns.append(signature)
+      }
+    }
+
+    // 5. Build ARC27 response
+    let response: [String: Any] = [
+      "id": UUID().uuidString,
+      "reference": "arc0027:sign_transactions:response",
+      "requestId": requestId,
+      "result": [
+        "providerId": params["providerId"] ?? "liquid-auth-ios-example",
+        "stxns": signedTxns,
+      ],
+    ]
+
+    // 6. Encode and return
+    guard let cborResponse = try? CBOR.encodeMap(response) else {
+      print("Failed to encode ARC27 response")
+      return nil
+    }
+
+    return Data(cborResponse).base64URLEncodedString()
+  }
+
+  private func requestUserApprovalForSigning() async -> Bool {
+    // Request user verification for transaction signing
+    return await requireUserVerification(reason: "Approve transaction signing")
+  }
+
+  private func signTransaction(_ txnBytes: Data) async -> String? {
+    // TODO: Implement Algorand transaction signing logic for your wallet
+    return nil
+  }
+}
+```
+
+
+<Aside type="tip">
+ARC-27 is the recommended standard for transaction signing requests, but your wallet can support additional message types as needed.
+</Aside>
+
+ARC-27 specifies an Algorand standard for message schemas used in communication between clients and providers. For full details, see the [ARC-27 standard documentation](https://arc.algorand.foundation/ARCs/arc-0027).
+
+## Security Considerations
+
+1. **Validate message origins** - Ensure messages come from authenticated dApps
+2. **User confirmation required** - Never auto-sign transactions without user approval  
+3. **Timeout handling** - Implement timeouts for user interactions
+4. **Connection security** - WebRTC provides encryption, but validate message integrity
+5. **Resource management** - Properly clean up WebRTC resources
+
+## Next Steps
+
+- **[Autofill Extension](./autofill-extension)**: Learn about integrating with iOS native passkey management
+- **[Complete Example](./example)**: See a full implementation example

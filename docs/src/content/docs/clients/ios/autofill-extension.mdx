@@ -1,0 +1,127 @@
+---
+title: "iOS: Autofill Credential Extension"
+sidebar:
+  order: 4
+---
+
+import { Aside, Tabs, TabItem } from "@astrojs/starlight/components";
+
+Implement Liquid Auth as part of an iOS Autofill Credential Extension to provide passkey management for standard Web2 sites using `FIDO:/` URIs.
+
+<Aside type="tip">
+This integration allows your app to appear under **Settings → General → AutoFill & Passwords** as a passkey provider, enabling users to authenticate with standard Web2 sites.
+</Aside>
+
+## Overview
+
+The Autofill Credential Extension enables:
+
+- **Native iOS passkey integration** with sites like GitHub, webauthn.io, passkeys.com
+- **FIDO QR code scanning** support through the Camera app
+- **System-level passkey management** alongside other credential providers
+- **Seamless user experience** for Web2 authentication
+
+When users scan a `FIDO:/` QR code with the Camera app, iOS presents "Save a passkey" option, allowing them to use your app for authentication.
+
+For scanning `liquid://`, use a main app that has implemented the authentication and registration flows, as well as the peer communication flow for WebRTC-based data communication.
+
+
+## Setup Requirements
+
+### 1. Main App Entitlements
+
+Your main app's entitlements file should include the App Group if you want to share data with the extension:
+
+```xml
+<!-- App.entitlements -->
+<dict>
+    <key>com.apple.security.application-groups</key>
+    <array>
+        <string>group.com.yourcompany.app</string>
+    </array>
+</dict>
+```
+
+### 2. Extension Target & Entitlements
+
+Create a new Autofill Credential Extension target in Xcode:
+
+1. **File → New → Target**
+2. Choose **AutoFill Credential Provider Extension**
+3. Configure your extension identifier and settings
+
+Your extension's entitlements file must include the credential provider, and the App Group if you want to share data with the main app:
+
+```xml
+<!-- Extension.entitlements -->
+<dict>
+    <key>com.apple.developer.authentication-services.autofill-credential-provider</key>
+    <true/>
+    <key>com.apple.security.application-groups</key>
+    <array>
+        <string>group.com.yourcompany.app</string>
+    </array>
+</dict>
+```
+
+
+## Implementation
+
+To implement an Autofill Credential Extension, you must subclass `ASCredentialProviderViewController` and override the following methods:
+
+- `prepareInterface(forPasskeyRegistration:)` — Called when the system requests your extension to register a new passkey.
+- `prepareCredentialList(for serviceIdentifiers:)` — Called when the system requests a list of credentials for a given relying party (domain).
+
+You are responsible for:
+- Managing passkey storage and retrieval (e.g., using Keychain or App Groups)
+- Handling user account selection and verification (e.g., biometrics, PIN)
+- Building and returning the correct credential objects to the system
+
+<Aside type="caution">
+The details of key management, account selection UI, and Algorand integration are app-specific and not covered in this guide. See the [Complete Example](./example) for a full reference implementation.
+</Aside>
+
+Example skeleton:
+
+```swift
+import AuthenticationServices
+
+class CredentialProviderViewController: ASCredentialProviderViewController {
+    override func prepareInterface(forPasskeyRegistration request: ASCredentialRequest) {
+        // TODO: Handle passkey registration
+    }
+
+    override func prepareCredentialList(for serviceIdentifiers: [ASCredentialServiceIdentifier]) {
+        // TODO: Provide credentials for the requested relying party
+    }
+}
+```
+
+Please refer to the official iOS documentation for [ASCredentialProviderViewController](https://developer.apple.com/documentation/authenticationservices/ascredentialproviderviewcontroller).
+
+There you will find more in depth documentation regarding which methods is you need and can override.
+
+As an example, you can optionally choose to override the method `prepareInterfaceForExtensionConfiguration()` ([more here](https://developer.apple.com/documentation/authenticationservices/ascredentialproviderviewcontroller/prepareinterfaceforextensionconfiguration())). This would allow you to insert a custom UI that will pop up when the user navigates through the settings and sets your app as a passkey manager. If your app relies on deterministically generated passkeys, you could use it to set the mnemonic for that.
+
+## Testing
+
+### Manual Testing Steps
+
+1. **Install your app** with the Autofill Credential Extension
+2. **Enable the extension** in Settings → General → AutoFill & Passwords
+3. **Visit a passkey-enabled site** (e.g., webauthn.io) and scan QR code with Camera app
+4. **Save a passkey** - your extension should appear as an option
+5. **Test authentication** by signing in with the created passkey
+
+## Security Considerations
+
+1. **Secure key/mnemonic storage** - Use the appropriate method of storage
+2. **User verification** - Always verify user presence and verification
+3. **App Group security** - Protect shared data between app and extension
+4. **Unique AAGUIDs** - Use a unique AAGUID for your application
+5. **Validate origins** - Only create credentials for trusted relying parties
+
+## Next Steps
+
+- Test with popular passkey-enabled websites
+- Implement advanced features like credential management UI

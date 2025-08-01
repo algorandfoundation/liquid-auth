@@ -1,0 +1,108 @@
+---
+title: "iOS: Introduction"
+prev: false
+---
+import { Aside, Tabs, TabItem } from "@astrojs/starlight/components";
+
+<Aside type="caution">
+  iOS 17+ is required for FIDO2 Autofill Credential functionality.
+</Aside>
+
+<Aside type="caution">
+  WebRTC functionality requires testing on physical devices, not simulators.
+</Aside>
+
+The [iOS SDK](https://github.com/algorandfoundation/liquid-auth-ios) provides a comprehensive solution for integrating Liquid Auth into iOS applications and Autofill Credential Extensions. It enables self-sovereign FIDO2/WebAuthn authentication with deterministically generated P256 passkeys and facilitates decentralized peer-to-peer communication between dApps and wallets.
+
+## Features
+
+- **Self-Sovereign Passkeys**: Allows wallet developers to manage passkeys themselves (e.g. using [deterministically generated P256 passkeys](https://github.com/algorandfoundation/deterministic-P256-swift)) instead of relying on centralized password managers.
+- **WebRTC P2P Communication**: Direct, authenticated communication between dApps and wallets, over WebRTC data channels.
+- **Sign-In with Algorand**: Extends FIDO2/WebAuthn with Ed25519 Algorand address signatures, to prove ownership of address.
+- **Dual Mode Operation**: 
+  - `liquid://` URIs/QR Codes for authenticated peer-to-peer communications
+  - `FIDO:/` URIs/QR Codes for standard Web2 site authentication via Autofill Credential Extensions
+
+## Prerequisites
+
+- **iOS 17+** is required
+- Physical device for WebRTC testing (simulators don't support WebRTC)
+- Xcode 15+
+- Swift Package Manager or Xcode package integration
+
+## Installation
+
+### Swift Package Manager
+
+Add this to your `Package.swift`:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/algorandfoundation/liquid-auth-ios.git", from: "0.0.1")
+]
+```
+
+### Xcode Integration
+
+1. File → Add Package Dependencies...
+2. Enter: `https://github.com/algorandfoundation/liquid-auth-ios.git`
+3. Select version and add to your target
+
+## Modes of Operation
+
+<Aside>
+  The iOS SDK, as it is, is designed as a "client"/"answerer" implementation, intended for mobile wallets connecting to dApp "offerers". It cannot run the other way around in "offerer"-mode. It cannot initiate connections or generate request IDs.
+</Aside>
+
+### 1. Liquid Auth Mode (`liquid://`)
+
+Paired with the Liquid Auth Backend for authenticated peer-to-peer communications:
+
+```
+┌─────────────┐     WebRTC     ┌─────────────┐
+│   dApp      │◄──────────────►│   Wallet    │
+│ (Offerer)   │                │ (Answerer)  │
+└─────────────┘                └─────────────┘
+      │                               │
+      └─────── Liquid Auth Backend ───┘
+```
+
+**Use Cases:**
+- [LiquidAuth.com](http://liquidauth.com) demo
+- [use-wallet](https://txnlab.gitbook.io/use-wallet) integrations
+- dApp-to-wallet transaction signing
+
+### 2. Autofill Credential Extension (`FIDO:/`)
+
+Integration with iOS native passkey management for standard Web2 authentication:
+
+**Use Cases:**
+- [webauthn.io](https://webauthn.io), [webauthn.me](https://webauthn.me)
+- [passkeys.com](https://passkeys.com)
+- GitHub and other passkey-enabled sites
+
+## Quick Start
+
+### Integration Points
+
+
+The SDK provides WebAuthn infrastructure, but you'll need to integrate with your wallet for:
+
+<Aside type="caution">
+You are responsible for secure key storage and user verification in your app.
+</Aside>
+
+1. **Challenge Signing**: Sign WebAuthn challenges with your Algorand Ed25519 private key
+2. **Message Handling**: Process incoming WebRTC messages (e.g. transaction signing requests)
+3. **Key Management**: Manage P256 and Algorand key pairs, or their mnemonics, securely
+
+## Next Steps
+
+- **[Registration](./registration)**: Learn how to register passkeys with the service
+- **[Authentication](./authentication)**: Understand the authentication flow
+- **[Peer Communication](./peer-communication)**: Set up WebRTC signaling
+- **[Autofill Extension](./autofill-extension)**: Integrate with iOS native passkey management
+
+## Example Implementation
+
+For a complete reference implementation, see the [liquid-auth-ios-example](https://github.com/algorandfoundation/liquid-auth-ios-example) repository, which demonstrates both main app integration and Autofill Credential Extension usage.
