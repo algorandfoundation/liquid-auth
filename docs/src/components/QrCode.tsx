@@ -1,4 +1,5 @@
-import { SignalClient, toBase64URL } from "@algorandfoundation/liquid-client";
+import { SignalClient } from "@algorandfoundation/liquid-client/signal";
+import { toBase64URL } from "@algorandfoundation/liquid-client/encoding";
 import React, { useEffect, useMemo, useState } from "react";
 import { useAccountInfo } from "../hooks/useAccountInfo.ts";
 import { useAlgod } from "../hooks/useAlgod.ts";
@@ -124,16 +125,16 @@ export function QrCode({ label = true }: { label?: boolean }) {
     setIsInflight(false)
     setStatus(LINK_REQUEST);
 
-    client.on("link-message", (msg) => {
+    client.on("link-message", (msg: any) => {
       setStatus(LINKED);
       _wallet = msg.wallet;
       setWallet(msg.wallet)
     });
 
-    client.peer(requestId, "offer").then((dc) => {
+    client.peer(requestId, "offer").then((dc: any) => {
       setDataChannel(dc)
       setIsConnected(true)
-      dc.onmessage = (event)=>{
+      dc.onmessage = (event: any)=>{
         if(!_txn || !_wallet) return
         try{
           // Try to parse JSON messages, useful for testing
@@ -158,7 +159,7 @@ export function QrCode({ label = true }: { label?: boolean }) {
       setStatus(PEER_CONNECTED);
     }).catch(handleError);
 
-    client.qrCode().then((url) => {
+    client.qrCode().then((url: string) => {
       setQrCodeUrl(url);
       setStatus(WAITING);
     }).catch(handleError);

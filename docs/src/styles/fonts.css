@@ -1,0 +1,62 @@
+@font-face {
+  font-family: 'Aeonik';
+  src:
+    url('/src/assets/fonts/Aeonik-Regular.woff2') format('woff2'),
+    url('/src/assets/fonts/Aeonik-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Aeonik';
+  src:
+    url('/src/assets/fonts/Aeonik-Bold.woff2') format('woff2'),
+    url('/src/assets/fonts/Aeonik-Bold.woff') format('woff');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src:
+    url('/src/assets/fonts/Inter-Regular.woff2') format('woff2'),
+    url('/src/assets/fonts/Inter-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src:
+    url('/src/assets/fonts/Inter-Bold.woff2') format('woff2'),
+    url('/src/assets/fonts/Inter-Bold.woff') format('woff');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Source Code Pro';
+  src:
+    url('/src/assets/fonts/SourceCodePro-Regular.woff2') format('woff2'),
+    url('/src/assets/fonts/SourceCodePro-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Source Code Pro';
+  src:
+    url('/src/assets/fonts/SourceCodePro-Bold.woff2') format('woff2'),
+    url('/src/assets/fonts/SourceCodePro-Bold.woff') format('woff');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Source Code Pro';
+  src:
+    url('/src/assets/fonts/SourceCodePro-Italic.woff2') format('woff2'),
+    url('/src/assets/fonts/SourceCodePro-Italic.woff') format('woff');
+  font-weight: normal;
+  font-style: italic;
+}

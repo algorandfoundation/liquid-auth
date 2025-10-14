@@ -4,6 +4,13 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@algorandfoundation/liquid-client": ["./node_modules/@algorandfoundation/liquid-client/src/index.ts"],
+      "@algorandfoundation/liquid-client/*": ["./node_modules/@algorandfoundation/liquid-client/src/*.ts"],
+      "@algorandfoundation/provider": ["./node_modules/@algorandfoundation/provider/src/index.ts"],
+      "@algorandfoundation/provider/*": ["./node_modules/@algorandfoundation/provider/src/*.ts"]
+    }
   }
 }
