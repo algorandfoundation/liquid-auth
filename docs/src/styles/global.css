@@ -109,3 +109,17 @@ h5,
 h6 {
   font-family: 'Aeonik', sans-serif;
 }
+
+/* Hide panel borders */
+.sidebar-pane {
+  border: none;
+}
+.right-sidebar {
+  border: none;
+}
+.content-panel + .content-panel {
+  border: none;
+}
+header.header {
+  border: none;
+}

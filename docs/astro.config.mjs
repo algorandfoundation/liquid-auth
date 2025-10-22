@@ -32,6 +32,10 @@ export default defineConfig({
         baseUrl:
           'https://github.com/algorandfoundation/liquid-auth/edit/develop/docs/',
       },
+      components: {
+        ThemeProvider: './src/components/CustomThemeProvider.astro',
+        ThemeSelect: './src/components/ThemeSelect.astro',
+      },
       plugins: [
         // starlightTypeDoc({
         //   entryPoints: ["../docs/clients/liquid-auth-js/src/index.ts"],
