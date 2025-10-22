@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+:root {
+  --sl-color-accent-low: #131e4f;
+  --sl-color-accent: #a2eae8;
+  --sl-color-accent-high: #17cac6;
+  --sl-color-white: #dfe1e5;
+  --sl-color-gray-1: #e5e7e9;
+  --sl-color-gray-2: #ccd0d3;
+  --sl-color-gray-3: #66717c;
+  --sl-color-gray-4: #334250;
+  --sl-color-gray-5: #192a39;
+  --sl-color-gray-6: #001324;
+  --sl-color-black: #001324;
+  --sl-color-banner-bg: #17cac6 !important;
+  --sl-color-text-accent: #17cac6;
+  --sl-color-accent-medium: #5cdad7;
+}
+/* Light mode colors. */
+:root[data-theme='light'] {
+  --sl-color-accent-low: #c7d6ff;
+  --sl-color-accent: #2d2df1;
+  --sl-color-accent-high: #8080f3;
+  --sl-color-white: #282930;
+  --sl-color-gray-1: #24272f;
+  --sl-color-gray-2: #353841;
+  --sl-color-gray-3: #60646e;
+  --sl-color-gray-4: #888b96;
+  --sl-color-gray-5: #c0c2c7;
+  --sl-color-gray-6: #ccd0d3;
+  --sl-color-gray-7: #f6f6f6;
+  --sl-color-black: #f6f6f6;
+  --sl-color-banner-bg: #2d2df1 !important;
+  --sl-color-text-accent: #2d2df1;
+  --sl-color-accent-medium: #c7d6ff;
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
+
+pre,
+code {
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.2rem;
+}
+
+:root[data-theme='dark'] {
+  [data-icon] {
+    color: var(--color-icon-dark);
+  }
+  article.card {
+    background-color: var(--color-gray-800);
+  }
+}
+:root[data-theme='light'] {
+  [data-icon] {
+    color: var(--color-icon-light);
+  }
+  article.card {
+    background-color: #edf2ff;
+  }
+}
+
+/* Sidebar - remove vertical lines */
+ul.top-level li {
+  border-inline-start: none;
+}
+
+/* Font Overrides */
+:root {
+  --sl-text-2xs: 0.75rem;
+  --sl-text-xs: 0.825rem;
+  --sl-text-sm: 0.85rem;
+  --sl-text-base: 0.875rem;
+  --sl-text-lg: 1.125rem;
+  --sl-text-xl: 1.25rem;
+  --sl-text-2xl: 1.5rem;
+  --sl-text-3xl: 1.8125rem;
+  --sl-text-4xl: 2.1875rem;
+  --sl-text-5xl: 2.625rem;
+  --sl-text-6xl: 4rem;
+  --sl-text-body: var(--sl-text-base);
+  --sl-text-body-sm: var(--sl-text-xs);
+  --sl-text-code: var(--sl-text-sm);
+  --sl-text-code-sm: var(--sl-text-xs);
+  --__sl-font: 'Inter', sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Aeonik', sans-serif;
+}
