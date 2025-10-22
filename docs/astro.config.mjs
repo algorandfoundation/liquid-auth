@@ -50,9 +50,13 @@ export default defineConfig({
           },
         ]),
       ],
-      social: {
-        github: 'https://github.com/algorandfoundation/liquid-auth',
-      },
+      social: [
+        {
+          href: 'https://github.com/algorandfoundation/liquid-auth',
+          icon: 'github',
+          label: 'GitHub',
+        },
+      ],
       sidebar: [
         {
           label: 'Overview',
