@@ -1,7 +1,7 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import rehypeMermaid from 'rehype-mermaid';
-import tailwind from '@astrojs/tailwind';
+import tailwindcss from '@tailwindcss/vite';
 import starlightOpenAPI, { openAPISidebarGroups } from 'starlight-openapi';
 // import starlightTypeDoc, { typeDocSidebarGroup } from "starlight-typedoc";
 import react from '@astrojs/react';
@@ -11,7 +11,7 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 // https://astro.build/config
 export default defineConfig({
   vite: {
-    plugins: [basicSsl()],
+    plugins: [basicSsl(), tailwindcss()],
     server: {
       https: true,
     },
@@ -24,7 +24,7 @@ export default defineConfig({
     starlight({
       title: 'Liquid Auth',
       favicon: './public/logo.svg',
-      customCss: ['./src/styles/mermaid.css'],
+      customCss: ['./src/styles/mermaid.css', './src/styles/global.css'],
       logo: {
         src: './public/logo.svg',
       },
@@ -48,6 +48,10 @@ export default defineConfig({
         baseUrl:
           'https://github.com/algorandfoundation/liquid-auth/edit/develop/docs/',
       },
+      components: {
+        ThemeProvider: './src/components/CustomThemeProvider.astro',
+        ThemeSelect: './src/components/ThemeSelect.astro',
+      },
       plugins: [
         // starlightTypeDoc({
         //   entryPoints: ["../docs/clients/liquid-auth-js/src/index.ts"],
@@ -69,9 +73,13 @@ export default defineConfig({
       components: {
         PageFrame: './src/components/PageFrame.astro',
       },
-      social: {
-        github: 'https://github.com/algorandfoundation/liquid-auth',
-      },
+      social: [
+        {
+          href: 'https://github.com/algorandfoundation/liquid-auth',
+          icon: 'github',
+          label: 'GitHub',
+        },
+      ],
       sidebar: [
         {
           label: 'Overview',
@@ -261,7 +269,6 @@ export default defineConfig({
         },
       ],
     }),
-    tailwind(),
     react(),
     mdx(),
   ],
