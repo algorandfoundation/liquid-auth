@@ -1,0 +1,10 @@
+---
+import type { Props } from '@astrojs/starlight/props';
+import Default from '@astrojs/starlight/components/PageFrame.astro';
+import GTMBody from './GTMBody.astro';
+---
+
+<Default {...Astro.props}>
+  <GTMBody />
+  <slot />
+</Default>
