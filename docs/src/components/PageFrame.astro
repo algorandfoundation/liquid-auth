@@ -4,7 +4,9 @@ import Default from '@astrojs/starlight/components/PageFrame.astro';
 import GTMBody from './GTMBody.astro';
 ---
 
+<GTMBody />
 <Default {...Astro.props}>
-  <GTMBody />
+  <slot name="header" slot="header" />
+  <slot name="sidebar" slot="sidebar" />
   <slot />
 </Default>
