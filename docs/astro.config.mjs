@@ -17,6 +17,7 @@ export default defineConfig({
     },
   },
   site: 'https://liquidauth.com',
+  trailingSlash: 'never',
   markdown: {
     rehypePlugins: [rehypeMermaid],
   },

@@ -19,7 +19,7 @@ echo $CR_PAT | docker login ghcr.io -u <USERNAME> --password-stdin
 ## Docker Image
 
 The service is designed to be run in a Docker container, it requires a [MongoDB]() and [Redis]() instance to be running.
-See the [Environment Variables](../environment-variables) section for more information about crafting a `.env.docker` file.
+See the [Environment Variables](./environment-variables) section for more information about crafting a `.env.docker` file.
 
 ```bash 
 docker run -d --env-file .env.docker -p 3000:3000 ghcr.io/algorandfoundation/liquid-auth:develop
@@ -85,4 +85,4 @@ ngrok http --domain=<NGROK_STATIC_DOMAIN> 3000
 ```
 
 
-Ensure the service's `ORIGIN` and `HOSTNAME` [environment variables](../environment-variables) are configured correctly with the ngrok domain.
+Ensure the service's `ORIGIN` and `HOSTNAME` [environment variables](./environment-variables) are configured correctly with the ngrok domain.
