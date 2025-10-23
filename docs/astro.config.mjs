@@ -1,7 +1,7 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import rehypeMermaid from 'rehype-mermaid';
-import tailwindcss from '@tailwindcss/vite';
+import tailwind from '@astrojs/tailwind';
 import starlightOpenAPI, { openAPISidebarGroups } from 'starlight-openapi';
 // import starlightTypeDoc, { typeDocSidebarGroup } from "starlight-typedoc";
 import react from '@astrojs/react';
@@ -11,7 +11,7 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 // https://astro.build/config
 export default defineConfig({
   vite: {
-    plugins: [basicSsl(), tailwindcss()],
+    plugins: [basicSsl()],
     server: {
       https: true,
     },
@@ -24,33 +24,13 @@ export default defineConfig({
     starlight({
       title: 'Liquid Auth',
       favicon: './public/logo.svg',
-      customCss: ['./src/styles/mermaid.css', './src/styles/global.css'],
+      customCss: ['./src/styles/mermaid.css'],
       logo: {
         src: './public/logo.svg',
       },
-      head: [
-        // GTM Script
-        {
-          tag: 'script',
-          attrs: {
-            'is:inline': true,
-          },
-          content: `
-            (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-            })(window,document,'script','dataLayer','GTM-MK3HM7BF');
-          `,
-        },
-      ],
       editLink: {
         baseUrl:
           'https://github.com/algorandfoundation/liquid-auth/edit/develop/docs/',
-      },
-      components: {
-        ThemeProvider: './src/components/CustomThemeProvider.astro',
-        ThemeSelect: './src/components/ThemeSelect.astro',
       },
       plugins: [
         // starlightTypeDoc({
@@ -70,16 +50,9 @@ export default defineConfig({
           },
         ]),
       ],
-      components: {
-        PageFrame: './src/components/PageFrame.astro',
+      social: {
+        github: 'https://github.com/algorandfoundation/liquid-auth',
       },
-      social: [
-        {
-          href: 'https://github.com/algorandfoundation/liquid-auth',
-          icon: 'github',
-          label: 'GitHub',
-        },
-      ],
       sidebar: [
         {
           label: 'Overview',
@@ -269,6 +242,7 @@ export default defineConfig({
         },
       ],
     }),
+    tailwind(),
     react(),
     mdx(),
   ],
