@@ -6,7 +6,7 @@ sidebar:
     variant: danger
 ---
 
-Authenticate an existing [Passkey](/guides/concepts/#passkeys) with the [Service](/guides/server/introduction).
+Authenticate an existing [Passkey](../../guides/concepts#passkeys) with the [Service](../../server/introduction).
 
 ### Who is this for?
 

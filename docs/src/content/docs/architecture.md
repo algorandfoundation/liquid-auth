@@ -7,7 +7,7 @@ next: false
 ---
 
 This is a high level overview of the sequence of events that happens while using Liquid Auth.
-See the [Getting Started](./guides/getting-started) section for more detailed information on each step.
+See the [Getting Started](../guides/getting-started) section for more detailed information on each step.
 Diagrams are generated using [Mermaid](https://mermaid-js.github.io/mermaid/#/).
 
 ## Authentication
