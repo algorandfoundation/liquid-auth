@@ -8,7 +8,8 @@ interface Props {
 const { classList } = Astro.props;
 
 const id = `moon-mask-${crypto.randomBytes(4).toString('hex')}`;
-const isHomepage = Astro.locals.starlightRoute?.id === 'index.mdx';
+// Check if this is the homepage based on the URL path
+const isHomepage = Astro.url.pathname === '/' || Astro.url.pathname === '/liquid-auth/';
 ---
 
 <starlight-rapide-theme-select>
