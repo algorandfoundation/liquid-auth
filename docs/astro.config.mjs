@@ -27,8 +27,8 @@ export default defineConfig({
       favicon: './public/logo.svg',
       customCss: ['./src/styles/mermaid.css', './src/styles/global.css'],
       logo: {
-        light: './public/logo_light.svg',
-        dark: './public/logo_dark.svg',
+        light: '/src/assets/images/logo_light.svg',
+        dark: '/src/assets/images/logo_dark.svg',
         replacesTitle: true,
       },
       head: [
