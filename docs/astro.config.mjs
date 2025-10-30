@@ -25,9 +25,11 @@ export default defineConfig({
     starlight({
       title: 'Liquid Auth',
       favicon: './public/logo.svg',
-      customCss: ['./src/styles/mermaid.css'],
+      customCss: ['./src/styles/mermaid.css', './src/styles/global.css'],
       logo: {
-        src: './public/logo.svg',
+        light: './public/logo_light.svg',
+        dark: './public/logo_dark.svg',
+        replacesTitle: true,
       },
       head: [
         // GTM Script
@@ -69,6 +71,8 @@ export default defineConfig({
       ],
       components: {
         PageFrame: './src/components/PageFrame.astro',
+        ThemeProvider: './src/components/CustomThemeProvider.astro',
+        ThemeSelect: './src/components/ThemeSelect.astro',
       },
       social: {
         github: 'https://github.com/algorandfoundation/liquid-auth',
