@@ -1,8 +1,9 @@
 ---
+import logoDark from '../assets/images/logo_dark.svg';
+
 const name = 'Liquid Auth';
 const baseURL = import.meta.env.BASE_URL;
 const base = baseURL === '/' ? '.' : baseURL;
-const logo = `${base}/logo.svg`;
 
 const links = [
   {
@@ -23,11 +24,7 @@ const links = [
 <header class="absolute inset-x-0 top-0 z-50">
   <nav class="flex items-center justify-center lg:justify-between p-6 lg:px-16" aria-label="Global">
     <div class="h-16 flex flex-col lg:flex-row lg:flex-1 items-center gap-2">
-      <img class="h-12 w-auto" src={logo} alt="">
-      <div class="h-16 flex flex-col items-stretch justify-between">
-        <h1 class="text-2xl text-white font-extrabold uppercase">Liquid</h1>
-        <h1 class="text-2xl [font-stretch:expanded] text-white font-extrabold uppercase">Auth</h1>
-      </div>
+      <img class="h-12 w-auto" src={logoDark.src} alt="">
     </div>
     <div class="hidden lg:flex lg:flex-1 lg:gap-x-12 items-center lg:justify-end">
       {links.map(({ title,  href }) =>
