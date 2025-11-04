@@ -24,7 +24,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'Liquid Auth',
-      favicon: './public/logo.svg',
+      favicon: '/favicon.svg',
       customCss: ['./src/styles/mermaid.css', './src/styles/global.css'],
       logo: {
         light: '/src/assets/images/logo_light.svg',

@@ -8,7 +8,7 @@ assetlinks.json
 src/views
 src/public
 views
-public
+
 
 # Project Files
 .env.production
