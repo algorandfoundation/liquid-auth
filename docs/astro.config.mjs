@@ -16,7 +16,7 @@ export default defineConfig({
       https: true,
     },
   },
-  site: 'https://liquidauth.com',
+  site: 'https://docs.liquidauth.com',
   trailingSlash: 'never',
   markdown: {
     rehypePlugins: [rehypeMermaid],
@@ -27,8 +27,8 @@ export default defineConfig({
       favicon: '/favicon.svg',
       customCss: ['./src/styles/mermaid.css', './src/styles/global.css'],
       logo: {
-        light: '/src/assets/images/logo_light.svg',
-        dark: '/src/assets/images/logo_dark.svg',
+        dark: '/src/assets/images/liquidauth-logo.svg',
+        light: '/src/assets/images/liquidauth-logo-light.svg',
         replacesTitle: true,
       },
       head: [
@@ -72,7 +72,6 @@ export default defineConfig({
       components: {
         PageFrame: './src/components/PageFrame.astro',
         ThemeProvider: './src/components/CustomThemeProvider.astro',
-        ThemeSelect: './src/components/ThemeSelect.astro',
       },
       social: {
         github: 'https://github.com/algorandfoundation/liquid-auth',
@@ -80,7 +79,7 @@ export default defineConfig({
       sidebar: [
         {
           label: 'Overview',
-          link: '/introduction',
+          link: '/',
         },
         {
           label: 'Guides',
