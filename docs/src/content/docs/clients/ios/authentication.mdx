@@ -1,0 +1,226 @@
+---
+title: "iOS: Authentication"
+sidebar:
+  order: 2
+---
+
+import { Aside, Tabs, TabItem } from "@astrojs/starlight/components";
+
+Authenticate an existing [Passkey](../../guides/concepts#passkeys) with the [Service](../../server/introduction) using a previously registered credential.
+
+## Overview
+
+The authentication (assertion) process verifies ownership of a registered passkey by:
+
+1. **Requesting assertion options** from the Liquid Auth service
+2. **Retrieving the associated P256 key pair** from secure storage
+3. **Signing the challenge** with your Algorand Ed25519 key
+4. **Creating a WebAuthn assertion response** with P256 signature
+5. **Submitting the credential** to complete authentication
+
+This is specifically for Liquid URIs/QR Codes - provided by the Liquid Auth backend.
+
+To handle `FIDO:/` URIs/QR Codes, refer to the Autofill Credential Extension.
+
+## Implementation
+
+### Complete Authentication Function
+
+```swift
+import AuthenticationServices
+import CryptoKit
+import Foundation
+import LiquidAuthSDK
+
+func authentication(
+    origin: String,
+    requestId: String,
+    algorandAddress: String,
+    p256KeyPair: P256.Signing.PrivateKey,
+    userAgent: String,
+    device: String
+) async throws -> LiquidAuthResult {
+    let assertionApi = AssertionApi()
+    
+    // Step 1: Calculate credential ID from P256 public key
+    let credentialId = Data([UInt8](Utility.hashSHA256(p256KeyPair.publicKey.rawRepresentation)))
+        .base64URLEncodedString()
+    
+    // Step 2: Request assertion options from service
+    let (data, sessionCookie) = try await assertionApi.postAssertionOptions(
+        origin: origin,
+        userAgent: userAgent,
+        credentialId: credentialId
+    )
+    
+    // Step 3: Parse server response
+    guard let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+          let challengeBase64Url = json["challenge"] as? String
+    else {
+        throw LiquidAuthError.invalidServerResponse
+    }
+    
+    // Extract rpId (supports both formats)
+    let rpId: String
+    if let rp = json["rp"] as? [String: Any], let id = rp["id"] as? String {
+        rpId = id
+    } else if let id = json["rpId"] as? String {
+        rpId = id
+    } else {
+        throw LiquidAuthError.missingRpId
+    }
+    
+    // Validate origin matches rpId
+    if origin != rpId {
+        print("⚠️ Origin (\(origin)) and rpId (\(rpId)) are different.")
+    }
+    
+    // Step 4: Sign challenge with Algorand key
+    let challengeBytes = Data([UInt8](Utility.decodeBase64Url(challengeBase64Url)!))
+    
+    // INTEGRATION POINT: Sign with your Algorand Ed25519 private key
+    let signature = try signChallenge(challengeBytes, with: yourAlgorandPrivateKey)
+    
+    // Step 5: Create Liquid extension
+    let liquidExt = [
+        "type": "algorand",
+        "requestId": requestId,
+        "address": algorandAddress,
+        "signature": signature.base64URLEncodedString(),
+        "device": device,
+    ]
+    
+    // Step 6: Build WebAuthn assertion
+    let assertionResponse = try buildAssertionResponse(
+        challengeBase64Url: challengeBase64Url,
+        rpId: rpId,
+        credentialId: credentialId,
+        p256KeyPair: p256KeyPair
+    )
+    
+    // Step 7: Submit assertion to service
+    let responseData = try await assertionApi.postAssertionResult(
+        origin: origin,
+        userAgent: userAgent,
+        credential: assertionResponse,
+        liquidExt: liquidExt
+    )
+    
+    // Step 8: Handle response
+    return try parseAuthenticationResponse(responseData) // Check for errors, return success if none.
+}
+```
+
+### Building the Assertion Response
+
+```swift
+private func buildAssertionResponse(
+    challengeBase64Url: String,
+    rpId: String,
+    credentialId: String,
+    p256KeyPair: P256.Signing.PrivateKey
+) throws -> String {
+    
+    // Create clientDataJSON
+    let clientData: [String: Any] = [
+        "type": "webauthn.get",
+        "challenge": challengeBase64Url,
+        "origin": "https://\(rpId)",
+    ]
+    
+    guard let clientDataJSONData = try? JSONSerialization.data(withJSONObject: clientData, options: [])
+    else {
+        throw LiquidAuthError.clientDataCreationFailed
+    }
+    
+    let clientDataJSONBase64Url = clientDataJSONData.base64URLEncodedString()
+    
+    // Create authenticator data
+    let rpIdHash = Utility.hashSHA256(rpId.data(using: .utf8)!)
+    let authenticatorData = AuthenticatorData.assertion(
+        rpIdHash: rpIdHash,
+        userPresent: true,
+        userVerified: true,  // Ensure user verification!
+        backupEligible: false,
+        backupState: false
+    ).toData()
+    
+    // Sign authenticatorData + clientDataHash with P256 key
+    let clientDataHash = Utility.hashSHA256(clientDataJSONData)
+    let dataToSign = authenticatorData + clientDataHash
+    let p256Signature = try p256KeyPair.signature(for: dataToSign)
+    
+    // Build assertion response
+    let assertionResponse: [String: Any] = [
+        "id": credentialId,
+        "type": "public-key",
+        "userHandle": "tester", // Can be customized based on your needs
+        "rawId": credentialId,
+        "response": [
+            "clientDataJSON": clientDataJSONData.base64URLEncodedString(),
+            "authenticatorData": authenticatorData.base64URLEncodedString(),
+            "signature": p256Signature.derRepresentation.base64URLEncodedString(),
+        ],
+    ]
+    
+    // Serialize to JSON string
+    guard let responseData = try? JSONSerialization.data(withJSONObject: assertionResponse, options: []),
+          let responseJSON = String(data: responseData, encoding: .utf8)
+    else {
+        throw LiquidAuthError.assertionSerializationFailed
+    }
+    
+    return responseJSON
+}
+```
+
+## Key Retrieval
+
+Before authentication, you need to retrieve the P256 key pair associated with the `credentialId`.
+
+Alternatively, you can deterministically regenerate the P256 keypair (passkey) on the fly. We refer you to the [deterministic-P256-swift](https://github.com/algorandfoundation/deterministic-P256-swift) library.
+
+## User Verification
+
+Implement proper user verification before completing authentication, prompting the user to confirm.
+
+```swift
+import LocalAuthentication
+
+func authenticateUser() async throws -> Bool {
+    let context = LAContext()
+    var error: NSError?
+    
+    // Check for biometric availability
+    guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
+        // Fall back to device passcode
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
+            throw LiquidAuthError.authenticationNotAvailable
+        }
+        
+        return try await context.evaluatePolicy(
+            .deviceOwnerAuthentication,
+            localizedReason: "Authenticate to sign in with passkey"
+        )
+    }
+    
+    return try await context.evaluatePolicy(
+        .deviceOwnerAuthenticationWithBiometrics,
+        localizedReason: "Use Touch ID or Face ID to sign in"
+    )
+}
+```
+
+## Security Considerations
+
+1. **Always verify user presence** before authentication
+2. **Validate request origins** against your allowlist
+3. **Securely store or regenerate** P256 key pairs (or any mnemonics)
+4. **Implement proper timeouts** for user verification
+5. **Log authentication attempts** for security monitoring
+
+## Next Steps
+
+After successful authentication:
+- **[Peer Communication](./peer-communication)**: Set up WebRTC signaling for dApp communication
+- **[Autofill Extension](./autofill-extension)**: Integrate with iOS native passkey management

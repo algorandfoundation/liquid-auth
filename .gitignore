@@ -4,22 +4,18 @@ swagger-codegen-cli.jar
 ngrok.yml
 .data
 
-# Kotlin
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
+assetlinks.json
+src/views
+src/public
+views
+
+
+# Project Files
+.env.production
+.data
+.vercel
+.idea
+.vscode
 
 # Logs
 logs
@@ -101,7 +97,6 @@ web_modules/
 .env.test.local
 .env.production.local
 .env.local
-!sites/dapp-ui/.env
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -152,3 +147,6 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Sentry Config File
+.sentryclirc
