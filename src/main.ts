@@ -13,7 +13,7 @@ import MongoStore from 'connect-mongo';
 
 // Sentry
 import * as Sentry from '@sentry/node';
-import { ProfilingIntegration } from '@sentry/profiling-node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import { SentryFilter } from './sentry.filter.js';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
@@ -28,11 +28,7 @@ async function bootstrap() {
   if (isSentryEnabled) {
     Sentry.init({
       dsn: process.env.SENTRY_DNS,
-      integrations: [
-        // enable HTTP calls tracing
-        new Sentry.Integrations.Http({ tracing: true }),
-        new ProfilingIntegration(),
-      ],
+      integrations: [nodeProfilingIntegration()],
       // Performance Monitoring
       tracesSampleRate: 1.0,
       // Set sampling rate for profiling - this is relative to tracesSampleRate

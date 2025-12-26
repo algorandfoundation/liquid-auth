@@ -127,7 +127,6 @@ export const encodeBytes = function (bytes: Uint8Array) {
   for (
     var i = 0, count = parseInt((length / 5) as unknown as string) * 5;
     i < count;
-
   ) {
     v1 = bytes[i++];
     v2 = bytes[i++];
