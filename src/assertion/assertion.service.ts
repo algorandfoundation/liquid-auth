@@ -71,7 +71,7 @@ export class AssertionService {
       expectedOrigin,
       expectedRPID,
       credential: {
-        publicKey: fromBase64Url(userCredential.publicKey),
+        publicKey: new Uint8Array(fromBase64Url(userCredential.publicKey)),
         counter: userCredential.prevCounter,
         id: userCredential.credId,
       },

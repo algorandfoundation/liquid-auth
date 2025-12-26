@@ -3,7 +3,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { toBase64URL } from '../encoding/index.js';
-import type { FilterQuery } from 'mongoose';
 import { Credential, User } from './auth.schema.js';
 import { Session } from './session.schema.js';
 
@@ -55,7 +54,7 @@ export class AuthService {
   async find(wallet: string): Promise<User> {
     return this.userModel.findOne({ wallet }).exec();
   }
-  async search(lookup: FilterQuery<User>) {
+  async search(lookup) {
     return this.userModel.findOne(lookup).exec();
   }
   /**
