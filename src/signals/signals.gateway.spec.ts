@@ -191,6 +191,6 @@ describe('SignalsGateway', () => {
     );
     await expect(
       reloadSession(sessionFixtures.authorized as unknown as Session),
-    ).rejects.toThrowError('failed');
+    ).rejects.toThrow('failed');
   });
 });
