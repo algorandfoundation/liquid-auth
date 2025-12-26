@@ -34,9 +34,7 @@ export class AuthenticationExtensionsClientInputs {
 }
 
 // Wrapped Implementations
-export class PublicKeyCredentialRequestOptions
-  implements PublicKeyCredentialRequestOptionsType
-{
+export class PublicKeyCredentialRequestOptions implements PublicKeyCredentialRequestOptionsType {
   @ApiProperty()
   allowCredentials: PublicKeyCredentialDescriptor[];
   @ApiProperty()
@@ -51,9 +49,7 @@ export class PublicKeyCredentialRequestOptions
   userVerification: UserVerificationRequirement;
 }
 
-export class AuthenticatorAssertionResponseJSON
-  implements AuthenticatorAssertionResponseJSONType
-{
+export class AuthenticatorAssertionResponseJSON implements AuthenticatorAssertionResponseJSONType {
   @ApiProperty()
   authenticatorData: string;
   @ApiProperty()
@@ -82,9 +78,7 @@ export type LiquidAssertionCredentialJSON = AssertionCredentialJSON & {
 /**
  * JSON representation of PublicKeyCredentialRequestOptions
  */
-export class PublicKeyCredentialRequestOptionsJSON
-  implements PublicKeyCredentialRequestOptionsJSONType
-{
+export class PublicKeyCredentialRequestOptionsJSON implements PublicKeyCredentialRequestOptionsJSONType {
   @ApiProperty()
   challenge: string;
   @ApiProperty()

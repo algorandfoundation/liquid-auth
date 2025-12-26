@@ -28,9 +28,7 @@ async function bootstrap() {
   if (isSentryEnabled) {
     Sentry.init({
       dsn: process.env.SENTRY_DNS,
-      integrations: [
-	nodeProfilingIntegration()
-      ],
+      integrations: [nodeProfilingIntegration()],
       // Performance Monitoring
       tracesSampleRate: 1.0,
       // Set sampling rate for profiling - this is relative to tracesSampleRate
