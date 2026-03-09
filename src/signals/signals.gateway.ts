@@ -125,7 +125,10 @@ export class SignalsGateway
     if (session) {
       await this.ioAdapter.subClient.subscribe('auth');
       const handleObserver = (observer: Subscriber<any>) => {
-        const handleAuthMessage = async (channel: string, eventMessage: string) => {
+        const handleAuthMessage = async (
+          channel: string,
+          eventMessage: string,
+        ) => {
           if (channel !== 'auth') {
             return;
           }
