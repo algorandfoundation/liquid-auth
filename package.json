@@ -52,6 +52,7 @@
     "connect-mongo": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "express-session": "^1.18.2",
+    "hbs": "^4.2.0",
     "ioredis": "^5.8.2",
     "mongoose": "^9.0.2",
     "redis": "^5.10.0",

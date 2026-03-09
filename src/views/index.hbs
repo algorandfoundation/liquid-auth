@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>@algorandfoundation/liquid-auth</title>
+
+    <style>
+      body {
+          background-color: #242424;
+      }
+      :root {
+          font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+          line-height: 1.5;
+          font-weight: 400;
+
+          color-scheme: light dark;
+          color: rgba(255, 255, 255, 0.87);
+          background-color: #242424;
+
+          font-synthesis: none;
+          text-rendering: optimizeLegibility;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+      }
+
+      a {
+          font-weight: 500;
+          color: #646cff;
+          text-decoration: inherit;
+      }
+      a:hover {
+          color: #535bf2;
+      }
+
+      .hidden {
+          display: none !important;
+      }
+
+      body {
+          margin: 0;
+          display: flex;
+          place-items: center;
+          min-width: 320px;
+          min-height: 100vh;
+      }
+
+      h1 {
+          font-size: 2.5em;
+          line-height: 1.1;
+      }
+
+      #app {
+          max-width: 1280px;
+          margin: 0 auto;
+          padding: 2rem;
+          text-align: center;
+          width: 100%;
+      }
+
+      .logo {
+          padding: 1.5em;
+          will-change: filter;
+          transition: filter 300ms;
+          max-width: 300px;
+      }
+      .logo:hover {
+          filter: drop-shadow(0 0 2em #646cffaa);
+      }
+      .logo.vanilla:hover {
+          filter: drop-shadow(0 0 2em #3178c6aa);
+      }
+
+      .message-container {
+          background: #1a1a1a;
+          border-radius: 12px;
+          padding: 20px;
+          display: flex;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+          flex-direction: column;
+          max-width: 600px;
+          margin: 0 auto;
+          height: 80vh;
+      }
+
+      .chat-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid #333;
+          padding-bottom: 10px;
+          margin-bottom: 15px;
+      }
+
+      .chat-header h1 {
+          font-size: 1.5em;
+          margin: 0;
+      }
+
+      .chat-header div {
+          display: flex;
+          align-items: center;
+      }
+
+      .chat-header-actions {
+          display: flex;
+          gap: 10px;
+      }
+
+      .messages {
+          flex-grow: 1;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          padding: 10px;
+          text-align: left;
+          scrollbar-width: thin;
+      }
+
+      .message-bubble {
+          max-width: 80%;
+          padding: 8px 15px;
+          border-radius: 18px;
+          font-size: 1em;
+          line-height: 1.4;
+          word-wrap: break-word;
+      }
+
+      .local-message {
+          align-self: flex-end;
+          background-color: #646cff;
+          color: white;
+          border-bottom-right-radius: 4px;
+      }
+
+      .remote-message {
+          align-self: flex-start;
+          background-color: #3178c6;
+          color: white;
+          border-bottom-left-radius: 4px;
+      }
+
+      .chat-input-area {
+          display: flex;
+          gap: 10px;
+          margin-top: 15px;
+          padding-top: 15px;
+          border-top: 1px solid #333;
+      }
+
+      input[type="text"] {
+          flex-grow: 1;
+          padding: 10px 15px;
+          border-radius: 20px;
+          border: 1px solid #333;
+          background: #242424;
+          color: white;
+          outline: none;
+      }
+
+      input[type="text"]:focus {
+          border-color: #646cff;
+      }
+
+      .heartbeat-indicator {
+          width: 12px;
+          height: 12px;
+          background-color: #4CAF50;
+          border-radius: 50%;
+          display: inline-block;
+          margin-right: 8px;
+          opacity: 1;
+          transition: opacity 0.2s;
+      }
+
+      .pulse {
+          animation: pulse-animation 0.5s ease-out;
+          opacity: 1;
+      }
+
+      @keyframes pulse-animation {
+          0% {
+              transform: scale(1);
+              box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+          }
+          70% {
+              transform: scale(1.2);
+              box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+          }
+          100% {
+              transform: scale(1);
+              box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+          }
+      }
+
+      .controls {
+          display: flex;
+          justify-content: center;
+          gap: 10px;
+          margin-top: 10px;
+      }
+
+      button {
+          margin: 0;
+          border-radius: 8px;
+          border: 1px solid transparent;
+          padding: 0.6em 1.2em;
+          font-size: 0.9em;
+          font-weight: 500;
+          font-family: inherit;
+          background-color: #1a1a1a;
+          cursor: pointer;
+          transition: all 0.25s;
+      }
+      button:hover {
+          border-color: #646cff;
+          background-color: #242424;
+      }
+
+      button.danger:hover {
+          border-color: #ff4444;
+          color: #ff4444;
+      }
+
+      button:focus,
+      button:focus-visible {
+          outline: 4px auto -webkit-focus-ring-color;
+      }
+      label {
+          font-size: 1.2em;
+          font-weight: bold;
+      }
+      @media (prefers-color-scheme: light) {
+          :root {
+              color: #213547;
+              background-color: #ffffff;
+          }
+          .message-container {
+              background: #f9f9f9;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          }
+          .chat-header, .chat-input-area {
+              border-color: #ddd;
+          }
+          input[type="text"] {
+              background: #fff;
+              border-color: #ddd;
+              color: #213547;
+          }
+          a:hover {
+              color: #747bff;
+          }
+          button {
+              background-color: #f0f0f0;
+          }
+      }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+
+
+
+       import nacl from 'https://esm.sh/tweetnacl';
+       import * as mod from "https://esm.sh/gh/phearzero/liquid-auth-js#fix/vendor-distribution/src";
+       const { SignalClient } = mod.signal;
+       const {toBase64URL} = mod.encoding;
+       export const testAccount = {
+         addr: "IKMUKRWTOEJMMJD4MUAQWWB4C473DEHXLCYHJ4R3RZWZKPNE7E2ZTQ7VD4",
+         sk: new Uint8Array([
+           153,
+           99,
+           94,
+           233,
+           195,
+           182,
+           109,
+           64,
+           9,
+           200,
+           81,
+           184,
+           78,
+           219,
+           114,
+           95,
+           177,
+           210,
+           244,
+           157,
+           200,
+           206,
+           99,
+           196,
+           224,
+           196,
+           38,
+           72,
+           151,
+           81,
+           204,
+           245,
+           66,
+           153,
+           69,
+           70,
+           211,
+           113,
+           18,
+           198,
+           36,
+           124,
+           101,
+           1,
+           11,
+           88,
+           60,
+           23,
+           63,
+           177,
+           144,
+           247,
+           88,
+           176,
+           116,
+           242,
+           59,
+           142,
+           109,
+           149,
+           61,
+           164,
+           249,
+           53
+         ])
+       }
+ window.addEventListener("load", ()=>{
+
+
+       // The Signaling Client
+       const client = new SignalClient(window.origin)
+       // WebRTC Configuration
+       const RTC_CONFIGURATION = {
+         iceServers: [
+           {
+             urls: [
+               'stun:stun.l.google.com:19302',
+               'stun:stun1.l.google.com:19302',
+               'stun:stun2.l.google.com:19302',
+             ],
+           },
+           {
+             urls: [
+               "turn:global.turn.nodely.network:80?transport=tcp",
+               "turns:global.turn.nodely.network:443?transport=tcp",
+               "turn:eu.turn.nodely.io:80?transport=tcp",
+               "turns:eu.turn.nodely.io:443?transport=tcp",
+               "turn:us.turn.nodely.io:80?transport=tcp",
+               "turns:us.turn.nodely.io:443?transport=tcp",
+             ],
+             username: 'username',
+             credential: 'credential',
+           },
+         ],
+         iceCandidatePoolSize: 10,
+       }
+       // RequestId for this client
+       const requestId = SignalClient.generateRequestId()
+       // RequestId for a remote client
+       let altRequestId = requestId
+       // Globals for connection management
+       let lastUserActivity = Date.now();
+       let heartbeatInterval = null;
+       let inactivityInterval = null;
+       let connectedAddress = null;
+
+       // Render the UI
+       const app = document.querySelector('#app');
+       app.innerHTML = `
+     <div>
+       <div class="call-session">
+           <div class="offer">
+               <a id="qr-link" href="https://github.com/algorandfoundation/liquid-auth-js" target="_blank">
+                 <img src="" class="logo hidden" alt="Liquid QR Code" />
+               </a>
+               <hgroup>
+               <h1>Offer Client</h1>
+               <h2>Local ID: ${requestId}</h2>
+               </hgroup>
+               <button id="start" onclick="handleOfferClient()">Start</button>
+               <button id="toggle" onclick="toggle()">Switch</button>
+           </div>
+           <div class="answer hidden">
+               <h1>Answer Client</h1>
+               <label for="alt-request">Remote ID:</label>
+               <input id="alt-request" value="${altRequestId}" onchange="handleAlternativeRequestId()"/>
+               <button id="attestation" onclick="handleSignChallenge()">Sign In</button>
+           </div>
+       </div>
+       <div class="message-container hidden">
+           <div class="chat-header">
+               <div>
+                   <span class="heartbeat-indicator" id="heartbeat-dot"></span>
+                   <h1>Messages</h1>
+               </div>
+               <div class="chat-header-actions">
+                   <button class="danger" onclick="clearHistory()">Clear History</button>
+                   <button class="danger" onclick="resetConnection('manual')">Disconnect</button>
+               </div>
+           </div>
+           <div class="messages"></div>
+           <div class="chat-input-area">
+               <input type="text" id="message" placeholder="Type a message..." onkeydown="if(event.key === 'Enter') sendMessage()" />
+               <button onclick="sendMessage()">Send</button>
+           </div>
+       </div>
+     </div>
+   `
+
+       /**
+        * Reset the connection and UI
+        */
+       function resetConnection(reason) {
+         if (reason) {
+           console.log(`Resetting connection. Reason: ${reason}`);
+         }
+         if (globalThis.dc) {
+           globalThis.dc.close();
+         }
+         if (heartbeatInterval) clearInterval(heartbeatInterval);
+         if (inactivityInterval) clearInterval(inactivityInterval);
+
+         document.querySelector('.message-container')?.classList.add('hidden');
+         document.querySelector('.call-session')?.classList.remove('hidden');
+         const msgs = document.querySelector('.messages')
+         msgs.innerHTML = '';
+
+         connectedAddress = null;
+
+         // Show the initial UI again
+         const isOffer = !document.querySelector('.offer')?.classList.contains('hidden');
+         const isAnswer = !document.querySelector('.answer')?.classList.contains('hidden');
+
+         if (!isOffer && !isAnswer) {
+           // If both were hidden, show offer by default or based on some state
+           document.querySelector('.offer')?.classList.remove('hidden');
+           document.querySelector('#start')?.classList.remove('hidden');
+           document.querySelector('#toggle')?.classList.remove('hidden');
+         }
+
+         // Re-initialize wait for link if we're in offer mode and just disconnected
+         if (!document.querySelector('.offer')?.classList.contains('hidden')) {
+           console.log("Re-initializing wait for link...");
+           handleOfferClient();
+         }
+       }
+
+       /**
+        * Clear chat history
+        */
+       function clearHistory() {
+         if (connectedAddress) {
+           localStorage.removeItem(`messages_${connectedAddress}`);
+           const messagesDiv = document.querySelector('.messages');
+           messagesDiv.innerHTML = '';
+         }
+       }
+
+       /**
+        * Trigger heartbeat pulse indicator
+        */
+       function pulseIndicator() {
+         const dot = document.getElementById('heartbeat-dot');
+         if (dot) {
+           dot.classList.remove('pulse');
+           // Force reflow
+           void dot.offsetWidth;
+           dot.classList.add('pulse');
+         }
+       }
+
+       /**
+        * Save a message to local storage
+        */
+       function saveMessage(address, message) {
+         const key = `messages_${address}`;
+         const existing = JSON.parse(localStorage.getItem(key) || '[]');
+         existing.push(message);
+         localStorage.setItem(key, JSON.stringify(existing));
+       }
+
+       /**
+        * Load and display messages from local storage
+        */
+       function loadMessages(address) {
+         const key = `messages_${address}`;
+         const messages = JSON.parse(localStorage.getItem(key) || '[]');
+         const messagesDiv = document.querySelector('.messages');
+         messagesDiv.innerHTML = '';
+         messages.forEach((m) => {
+           const className = m.sender === 'me' ? 'local-message' : 'remote-message';
+           messagesDiv.innerHTML += `<div class="message-bubble ${className}">${m.text}</div>`;
+         });
+         // Scroll to bottom
+         messagesDiv.scrollTop = messagesDiv.scrollHeight;
+       }
+
+       /**
+        * Send a Message to the remote client
+        */
+       function sendMessage() {
+         const messages = document.querySelector('.messages')
+         const message = document.querySelector('#message')
+         if (message.value.trim() && globalThis.dc && globalThis.dc.readyState === 'open') {
+           const text = message.value.trim();
+           globalThis.dc.send(text)
+           messages.innerHTML += `<div class="message-bubble local-message">${text}</div>`
+           message.value = ''
+           lastUserActivity = Date.now();
+           messages.scrollTop = messages.scrollHeight;
+           pulseIndicator();
+           if (connectedAddress) {
+             saveMessage(connectedAddress, { text, sender: 'me' });
+           }
+         }
+       }
+       /**
+        * Handle the data channel
+        * @param dataChannel
+        */
+       function handleDataChannel(dataChannel) {
+         globalThis.dc = dataChannel
+         const messagesContainer = document.querySelector('.message-container')
+         const callSession = document.querySelector('.call-session')
+
+         messagesContainer.classList.remove('hidden')
+         callSession.classList.add('hidden')
+
+         if (connectedAddress) {
+           loadMessages(connectedAddress);
+         }
+
+         const messages = document.querySelector('.messages')
+
+         lastUserActivity = Date.now();
+
+         heartbeatInterval = setInterval(() => {
+           if (globalThis.dc && globalThis.dc.readyState === 'open') {
+             console.log("Sending heartbeat message");
+             globalThis.dc.send('');
+             pulseIndicator();
+           }
+         }, 20000);
+
+         inactivityInterval = setInterval(() => {
+           const now = Date.now();
+           const inactiveTime = now - lastUserActivity;
+           if (inactiveTime >= 60000) {
+             resetConnection('inactivity (1 minute)');
+           }
+         }, 5000);
+
+         dc.onmessage = (e) => {
+           lastUserActivity = Date.now();
+           pulseIndicator();
+           if (!e.data) {
+             console.log("Heartbeat received");
+             return;
+           }
+           messages.innerHTML += `<div class="message-bubble remote-message">${e.data}</div>`
+           messages.scrollTop = messages.scrollHeight;
+           if (connectedAddress) {
+             saveMessage(connectedAddress, { text: e.data, sender: 'peer' });
+           }
+         }
+
+         dc.onclose = () => {
+           resetConnection('data channel closed by peer');
+         };
+
+         dc.onerror = (error) => {
+           console.error("Data channel error:", error);
+           resetConnection('data channel error');
+         };
+       }
+       /**
+        * Create a peer connection, wait for an offer and send an answer to the remote client
+        */
+       async function handleOfferClient() {
+         // Peer to the remote client and await their offer
+         console.log('requestId', requestId);
+         client.peer(requestId, 'offer', RTC_CONFIGURATION).then(handleDataChannel)
+
+         // Once the link message is received by the remote wallet, hide the offer
+         client.once('link-message', (data) => {
+           console.log('Link message received:', data);
+           document.querySelector('.offer')?.classList.add('hidden')
+           // The address should be available here if the wallet provides it in the link message
+           // But the type LinkMessage in signal.ts only has { credId, requestId, wallet }
+           // Looking at handleSignChallenge, it sends { requestId, origin, type, address, signature, device }
+           // Let's assume the server passes it back or we get it from data.wallet if that's the address
+           if (data.wallet) {
+             connectedAddress = data.wallet;
+           }
+         })
+
+         // Update the render
+         const image = document.querySelector('.logo')
+         if (image.classList.contains('hidden')) {
+           image.src = await client.qrCode()
+           image.classList.remove('hidden')
+         }
+
+         const deepLink = document.querySelector('#qr-link')
+         deepLink.href = client.deepLink(requestId)
+
+         document.querySelector('#start')?.classList.add('hidden')
+         document.querySelector('#toggle')?.classList.add('hidden')
+       }
+
+       /**
+        * Sign the challenge and send the offer to the remote client
+        *
+        * This is mainly for extension wallets or other browser-based wallets, they must sign the challenge
+        * before they can peer with the remote client.
+        */
+       async function handleSignChallenge() {
+         connectedAddress = testAccount.addr;
+         // Sign in to the service with a new credential
+         await client.attestation(async (challenge) => ({
+           requestId: altRequestId,
+           origin: window.origin,
+           type: 'algorand',
+           address: testAccount.addr,
+           signature: toBase64URL(nacl.sign.detached(challenge, testAccount.sk)),
+           device: 'Demo Web Wallet'
+         }), undefined, true)
+         // TODO: sign in with an existing credential
+         //await client.assertion()
+
+         document.querySelector('.answer')?.classList.add('hidden')
+
+         // Create the Peer Connection and await the remote client's answer
+         client.peer(altRequestId, 'answer', RTC_CONFIGURATION).then(handleDataChannel)
+       }
+
+       // UI Functions
+       function toggle() {
+         document.querySelector('.offer')?.classList.toggle('hidden')
+         document.querySelector('.answer')?.classList.toggle('hidden')
+       }
+       function handleAlternativeRequestId() {
+         altRequestId = document.querySelector('input')?.value
+       }
+
+
+       globalThis.toggle = toggle
+       globalThis.handleOfferClient = handleOfferClient
+       globalThis.handleSignChallenge = handleSignChallenge
+       globalThis.sendMessage = sendMessage
+       globalThis.clearHistory = clearHistory
+       globalThis.handleAlternativeRequestId = handleAlternativeRequestId
+       globalThis.resetConnection = resetConnection
+ })
+     </script>
+</body>
+</html>
