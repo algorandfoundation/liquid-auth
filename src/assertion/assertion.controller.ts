@@ -176,15 +176,12 @@ export class AssertionController {
     delete session.challenge;
     session.wallet = user.wallet;
     // Emit the signin event for the given request id
-    if (
-      typeof body?.clientExtensionResults?.liquid?.requestId !== 'undefined'
-    ) {
-      this.client.emit<string>('auth', {
-        requestId: body.clientExtensionResults.liquid.requestId,
-        wallet: user.wallet,
-        credId: body.id,
-      });
-    }
+    this.client.emit<string>('auth', {
+      requestId: body?.clientExtensionResults?.liquid?.requestId,
+      wallet: user.wallet,
+      credId: body.id,
+      sessionId: session.id,
+    });
     this.logger.debug('User', user);
     return user;
   }

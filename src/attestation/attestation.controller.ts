@@ -133,15 +133,14 @@ export class AttestationController {
     // Authorize user with a wallet session
     session.wallet = username;
     // Handle Liquid Extension
-    if (
-      typeof body?.clientExtensionResults?.liquid?.requestId !== 'undefined'
-    ) {
-      this.client.emit<string>('auth', {
-        requestId: body.clientExtensionResults.liquid.requestId,
-        wallet: user.wallet,
-        credId: credential.credId,
-      });
-    }
+    this.client.emit<string>('auth', {
+      requestId: body?.clientExtensionResults?.liquid?.requestId,
+      wallet: user.wallet,
+      credId: credential.credId,
+      sessionId: session.id,
+    });
+
+    console.log('session', session);
 
     this.logger.debug('User', user);
     return user;

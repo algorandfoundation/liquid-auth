@@ -15,6 +15,7 @@ import { Session } from 'express-session';
 const clientMock = {
   request: {
     session: sessionFixtures.authorized,
+    sessionID: 'authorized-session-id',
   },
   rooms: new Set(),
   join: jest.fn(),
@@ -35,6 +36,7 @@ jest.mock('socket.io', () => {
       return {
         emit: jest.fn(),
         in: jest.fn().mockReturnThis(),
+        socketsJoin: jest.fn(),
         sockets: {
           adapter: ioAdapterMock,
         },
@@ -99,7 +101,9 @@ describe('SignalsGateway', () => {
     await gateway.handleConnection({
       request: {
         session: sessionFixtures.unauthorized,
+        sessionID: 'unauthorized-session-id',
       },
+      join: jest.fn(),
     } as unknown as Socket);
     // @ts-expect-error, testing purposes
     expect(gateway.logger.debug).toHaveBeenCalled();
@@ -110,13 +114,22 @@ describe('SignalsGateway', () => {
     expect(gateway.logger.debug).toHaveBeenCalled();
   });
   it('should handle a link event', async () => {
-    await gateway.link(
+    const obs = await gateway.link(
       { requestId: '019097ff-bb8c-7d5d-9822-7c9eb2c0d419' },
       clientMock,
     );
-    expect(clientMock.join).toHaveBeenCalledWith(
-      sessionFixtures.authorized.wallet,
+    obs.subscribe();
+
+    await linkEventFn(
+      'auth',
+      JSON.stringify({
+        data: {
+          requestId: '019097ff-bb8c-7d5d-9822-7c9eb2c0d419',
+          wallet: sessionFixtures.authorized.wallet,
+        },
+      }),
     );
+    expect((sessionFixtures.authorized as any).reload).toHaveBeenCalled();
     expect(globalThis.handleObserver).toBeInstanceOf(Function);
     expect(
       globalThis.handleObserver({ next: jest.fn(), complete: jest.fn() }),
