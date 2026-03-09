@@ -49,6 +49,23 @@ export class SignalsGateway
    */
   afterInit(server: Server) {
     this.ioAdapter = server.sockets.adapter as unknown as RedisIoAdapter;
+    this.ioAdapter.subClient.subscribe('auth');
+    this.ioAdapter.subClient.on('message', (channel, message) => {
+      if (channel === 'auth') {
+        try {
+          const parsed = JSON.parse(message);
+          const data = parsed.data || parsed;
+          if (data.sessionId && data.wallet) {
+            this.logger.debug(
+              `(*) Global Auth Event: Joining Sockets for Session ${data.sessionId} to Room ${data.wallet}`,
+            );
+            server.in(data.sessionId).socketsJoin(data.wallet);
+          }
+        } catch (e) {
+          this.logger.error('Failed to handle global auth message', e);
+        }
+      }
+    });
   }
 
   /**
@@ -68,6 +85,9 @@ export class SignalsGateway
         session.wallet ? ` and PublicKey: ${session.wallet}` : ''
       }`,
     );
+    if (typeof request.sessionID === 'string') {
+      await socket.join(request.sessionID);
+    }
     if (
       typeof session.wallet === 'string' &&
       !socket.rooms.has(session.wallet)
@@ -105,20 +125,30 @@ export class SignalsGateway
     if (session) {
       await this.ioAdapter.subClient.subscribe('auth');
       const handleObserver = (observer: Subscriber<any>) => {
-        const handleAuthMessage = async (_: any, eventMessage: string) => {
-          const { data } = JSON.parse(eventMessage);
-          if (body.requestId === data.requestId) {
-            this.logger.debug(
-              `(*) Linking Wallet: ${data.wallet} to Session: ${request.sessionID}`,
-            );
-            await this.authService.updateSessionWallet(session, data.wallet);
-            this.logger.debug(
-              `(*) Joining Room: ${data.wallet} with Session: ${request.sessionID}`,
-            );
-            await client.join(data.wallet);
-            observer.next(data);
+        const handleAuthMessage = async (channel: string, eventMessage: string) => {
+          if (channel !== 'auth') {
+            return;
+          }
+          try {
+            const parsed = JSON.parse(eventMessage);
+            const data = parsed.data || parsed;
+            if (data && body.requestId === data.requestId) {
+              this.logger.debug(
+                `(*) Linking Wallet: ${data.wallet} to Session: ${request.sessionID}`,
+              );
+              await this.authService.updateSessionWallet(session, data.wallet);
+              await reloadSession(request.session);
+              this.logger.debug(
+                `(*) Joining Room: ${data.wallet} with Session: ${request.sessionID}`,
+              );
+              await client.join(data.wallet);
+              this.ioAdapter.subClient.off('message', handleAuthMessage);
+              observer.next(data);
+              observer.complete();
+            }
+          } catch (e) {
+            this.logger.error('Failed to handle auth message in link', e);
             this.ioAdapter.subClient.off('message', handleAuthMessage);
-            observer.complete();
           }
         };
 
