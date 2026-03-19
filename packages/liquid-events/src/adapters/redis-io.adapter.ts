@@ -1,9 +1,9 @@
 import { IoAdapter } from '@nestjs/platform-socket.io';
-import { ServerOptions } from 'socket.io';
+import type { ServerOptions } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { Redis } from 'ioredis';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { RequestHandler } from 'express';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import type { RequestHandler } from 'express';
 import { ConfigService } from '@nestjs/config';
 
 /**
@@ -11,9 +11,10 @@ import { ConfigService } from '@nestjs/config';
  */
 export class RedisIoAdapter extends IoAdapter {
   private readonly sessionHandler: RequestHandler;
-  private adapterConstructor: ReturnType<typeof createAdapter>;
-  private pubClient: Redis;
-  public subClient: Redis;
+  private adapterConstructor!: ReturnType<typeof createAdapter>;
+
+  private pubClient!: Redis;
+  public subClient!: Redis;
 
   constructor(app: NestExpressApplication, sessionHandler: RequestHandler) {
     super(app);

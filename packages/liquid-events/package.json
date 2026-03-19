@@ -1,0 +1,24 @@
+{
+  "name": "@algorand/liquid-events",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "ioredis": "^5.10.1",
+    "@nestjs/common": "^11.1.17",
+    "@nestjs/platform-express": "^11.1.17",
+    "@nestjs/config": "^4.0.3",
+    "@nestjs/platform-socket.io": "^11.1.17"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
