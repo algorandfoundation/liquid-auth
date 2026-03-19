@@ -9,9 +9,9 @@ import {
 import { AttestationSelectorDto } from './attestation.dto.js';
 import {
   decodeAddress,
-  fromBase64Url,
+  fromBase64URL,
   toBase64URL,
-} from '../encoding/index.js';
+} from '../encoding.js';
 import nacl from 'tweetnacl';
 import { AlgodService } from '../algod/algod.service.js';
 @Injectable()
@@ -32,8 +32,8 @@ export class AttestationService {
     if (type === 'algorand') {
       // Decode
       const publicKeyBytes = decodeAddress(address);
-      const signatureBytes = fromBase64Url(signature);
-      const challengeBytes = fromBase64Url(challenge);
+      const signatureBytes = fromBase64URL(signature);
+      const challengeBytes = fromBase64URL(challenge);
       const valid = nacl.sign.detached.verify(
         challengeBytes,
         signatureBytes,

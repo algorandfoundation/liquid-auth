@@ -10,7 +10,7 @@ import {
 } from '@simplewebauthn/server';
 import { AppService } from '../app.service.js';
 import { ConfigService } from '@nestjs/config';
-import { fromBase64Url } from '../encoding/index.js';
+import { fromBase64URL } from '../encoding.js';
 
 @Injectable()
 export class AssertionService {
@@ -71,7 +71,7 @@ export class AssertionService {
       expectedOrigin,
       expectedRPID,
       credential: {
-        publicKey: new Uint8Array(fromBase64Url(userCredential.publicKey)),
+        publicKey: new Uint8Array(fromBase64URL(userCredential.publicKey)),
         counter: userCredential.prevCounter,
         id: userCredential.credId,
       },
