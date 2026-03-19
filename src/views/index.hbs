@@ -265,7 +265,7 @@
 
 
        import nacl from 'https://esm.sh/tweetnacl';
-       import * as mod from "https://esm.sh/gh/phearzero/liquid-auth-js#fix/vendor-distribution/src";
+       import * as mod from "https://esm.sh/gh/phearzero/liquid-auth-js#98afdf2bcd9f39df1c579db18f1d0b4222332738";
        const { SignalClient } = mod.signal;
        const {toBase64URL} = mod.encoding;
        export const testAccount = {
@@ -342,6 +342,7 @@
 
        // The Signaling Client
        const client = new SignalClient(window.origin)
+       client.qrCodeOptions.image = 'https://algorand.co/hs-fs/hubfs/algorand-logomark-blue-RGB-1.png?width=128&height=128&name=algorand-logomark-blue-RGB-1.png'
        // WebRTC Configuration
        const RTC_CONFIGURATION = {
          iceServers: [

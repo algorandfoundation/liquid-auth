@@ -6,7 +6,7 @@ import { ConfigService } from '@nestjs/config';
 
 // Application
 import { AppModule } from './app.module.js';
-import { RedisIoAdapter } from './adapters/redis-io.adapter.js';
+import { RedisIoAdapter } from '@algorand/liquid-events';
 
 // Session
 import session from 'express-session';

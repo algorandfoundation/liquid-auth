@@ -5,6 +5,9 @@
   "author": "Algorand Foundation",
   "type": "module",
   "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
   "files": [
     "./src/**/*.md"
   ],
@@ -34,6 +37,10 @@
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org phearzero --project node-express dist && sentry-cli sourcemaps upload --org phearzero --project node-express dist"
   },
   "dependencies": {
+    "@algorand/liquid-auth": "*",
+    "@algorand/liquid-chain": "*",
+    "@algorand/liquid-events": "*",
+    "@algorand/liquid-connect": "*",
     "@nestjs/common": "^11.1.10",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.10",

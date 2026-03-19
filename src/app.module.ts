@@ -6,16 +6,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/configuration.js';
 
 // FIDO
-import { AttestationModule } from './attestation/attestation.module.js';
-import { AssertionModule } from './assertion/assertion.module.js';
+import { AuthModule, AttestationModule, AssertionModule, AndroidController } from '@algorand/liquid-auth';
 
-import { AndroidController } from './android/android.controller.js';
-// User Endpoints
-import { AuthModule } from './auth/auth.module.js';
 import { AppController } from './app.controller.js';
 
 // Signals
-import { SignalsModule } from './signals/signals.module.js';
+import { SignalsModule } from '@algorand/liquid-connect';
 
 export function mongooseModuleFactory(configService: ConfigService) {
   const database = configService.get('database');
