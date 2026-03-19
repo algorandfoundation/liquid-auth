@@ -1,3 +1,3 @@
-export * from './events.module.ts'
-export * from './events.service.ts'
-export * from './adapters/index.ts'
+export * from './events.module.js'
+export * from './events.service.js'
+export * from './adapters/index.js'

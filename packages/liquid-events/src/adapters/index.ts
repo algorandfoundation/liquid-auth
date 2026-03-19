@@ -1,1 +1,1 @@
-export * from './redis-io.adapter.ts'
+export * from './redis-io.adapter.js'
