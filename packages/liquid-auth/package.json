@@ -1,0 +1,34 @@
+{
+  "name": "@algorand/liquid-auth",
+  "version": "1.0.0",
+  "description": "Liquid Auth ",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@algorandfoundation/algokit-utils": "^10.0.0-alpha.42",
+    "@nestjs/common": "^11.1.10",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.1.10",
+    "@nestjs/microservices": "^11.1.10",
+    "@nestjs/mongoose": "^11.0.4",
+    "@nestjs/platform-express": "^11.1.10",
+    "@nestjs/platform-socket.io": "^11.1.10",
+    "@nestjs/swagger": "^11.2.3",
+    "@nestjs/websockets": "^11.1.10",
+    "@simplewebauthn/server": "^13.3.0",
+    "express": "^5.2.1",
+    "mongoose": "^9.3.1",
+    "rxjs": "^7.8.2",
+    "ua-parser-js": "^2.0.2"
+  },
+  "peerDependencies": {
+    "@algorand/liquid-events": "*"
+  }
+}

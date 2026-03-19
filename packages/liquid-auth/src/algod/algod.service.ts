@@ -4,10 +4,10 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AlgodService extends algosdk.Algodv2 {
-  constructor(private configService: ConfigService) {
+  constructor(configService: ConfigService) {
     const token = configService.get('algod.token') || '';
-    const server = configService.get('algod.server');
-    const port = configService.get('algod.port');
+    const server = configService.get('algod.server') || 'https://testnet-api.algonode.cloud';
+    const port = configService.get('algod.port') || '';
     super(token, server, port);
   }
 }

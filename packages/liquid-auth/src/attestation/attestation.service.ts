@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppService } from '../app.service.js';
 import {
@@ -19,8 +19,8 @@ export class AttestationService {
   encoder: TextEncoder = new TextEncoder();
   constructor(
     private appService: AppService,
-    private algodService: AlgodService,
     private configService: ConfigService,
+    @Optional() private algodService: AlgodService,
   ) {}
   async verify(
     algod: AlgodService,
@@ -125,8 +125,10 @@ export class AttestationService {
     const isLiquid =
       typeof credential.clientExtensionResults !== 'undefined' &&
       typeof credential.clientExtensionResults.liquid !== 'undefined';
+
     // Check for extension results
-    if (isLiquid && verified) {
+    // TODO: liquid-chain should handle this operation as a service
+    if (isLiquid && verified && typeof this.algodService !== 'undefined') {
       // Verify the signature
       verified = await this.verify(
         this.algodService,

@@ -1,4 +1,4 @@
-import { decodeAddress } from '../src/encoding/index.js';
+import { decodeAddress } from '../encoding.js';
 import * as crypto from 'node:crypto';
 
 export const accFixture = {
