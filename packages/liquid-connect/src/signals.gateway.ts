@@ -13,9 +13,8 @@ import type { Server, Socket } from 'socket.io';
 import { Session as SessionType } from 'express-session';
 import { Observable, Subscriber } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { RedisIoAdapter } from '../adapters/redis-io.adapter.js';
-import { AuthService } from '../auth/auth.service.js';
-import { Session } from '../auth/session.schema.js';
+import { RedisIoAdapter } from '@algorand/liquid-events';
+import { AuthService, Session } from '@algorand/liquid-auth';
 export async function reloadSession(session: SessionType) {
   return new Promise((resolve, reject) => {
     session.reload((err) => {

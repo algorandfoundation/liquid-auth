@@ -2,14 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SignalsGateway, reloadSession } from './signals.gateway.js';
 import { Server, Socket } from 'socket.io';
 import mongoose, { Model } from 'mongoose';
-import { User, UserSchema } from '../auth/auth.schema.js';
-import { AuthService } from '../auth/auth.service.js';
+import { User, UserSchema, AuthService } from '@algorand/liquid-auth';
 import { getModelToken } from '@nestjs/mongoose';
-import { mockAuthService } from '../__mocks__/auth.service.mock.js';
+import { mockAuthService } from './__mocks__/auth.service.mock.js';
 
-import candidateFixture from './__fixtures__/candidate.fixture.json';
-import sdpFixtures from './__fixtures__/sdp.fixtures.json';
-import sessionFixtures from '../__fixtures__/session.fixtures.json';
+import candidateFixture from './__fixtures__/candidate.fixture.json' with { type: 'json' };
+import sdpFixtures from './__fixtures__/sdp.fixtures.json' with { type: 'json' };
+import sessionFixtures from './__fixtures__/session.fixtures.json' with { type: 'json' };
 import { Session } from 'express-session';
 
 const clientMock = {
@@ -23,7 +22,7 @@ const clientMock = {
 let linkEventFn: any;
 const ioAdapterMock = {
   subClient: {
-    on: jest.fn((name: string, fn) => {
+    on: jest.fn((_name: string, fn) => {
       linkEventFn = fn;
     }),
     off: jest.fn(),
