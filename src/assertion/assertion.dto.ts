@@ -68,7 +68,7 @@ export class AssertionCredentialJSON implements AssertionCredentialJSONType {
   @ApiProperty({ type: AuthenticatorAssertionResponseJSON })
   response: AuthenticatorAssertionResponseJSON;
   @ApiProperty()
-  readonly type: 'public-key' = 'public-key';
+  readonly type: 'public-key' = 'public-key' as const;
   clientExtensionResults: AuthenticationExtensionsClientOutputs;
 }
 export type LiquidAssertionCredentialJSON = AssertionCredentialJSON & {

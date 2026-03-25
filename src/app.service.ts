@@ -23,7 +23,8 @@ export class AppService {
           process.env.ANDROID_PACKAGENAME &&
           process.env.ANDROID_SHA256HASH &&
           !assetLinks.some(
-            (al) => al?.target?.package_name === process.env.ANDROID_PACKAGENAME,
+            (al) =>
+              al?.target?.package_name === process.env.ANDROID_PACKAGENAME,
           )
         ) {
           additionalEntries.push({
