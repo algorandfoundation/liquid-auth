@@ -6,6 +6,7 @@ export default () => ({
   rpName: process.env.RP_NAME || 'Algorand Foundation FIDO2 Server',
   hostname: process.env.HOSTNAME || 'localhost',
   origin: process.env.ORIGIN || 'http://localhost',
+  enableIndexPage: process.env.ENABLE_INDEX_PAGE === 'true',
   session: {
     secure: process.env.SESSION_SECURE === 'true',
     secret: process.env.SESSION_SECRET || 'secret',

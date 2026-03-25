@@ -12,6 +12,7 @@ import { AssertionModule } from './assertion/assertion.module.js';
 import { AndroidController } from './android/android.controller.js';
 // User Endpoints
 import { AuthModule } from './auth/auth.module.js';
+import { AppController } from './app.controller.js';
 
 // Signals
 import { SignalsModule } from './signals/signals.module.js';
@@ -40,6 +41,6 @@ export function mongooseModuleFactory(configService: ConfigService) {
     AssertionModule,
     SignalsModule,
   ],
-  controllers: [AndroidController],
+  controllers: [AppController, AndroidController],
 })
 export class AppModule {}

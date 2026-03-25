@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { resolve } from 'node:path';
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
@@ -75,6 +76,10 @@ async function bootstrap() {
   await redisIoAdapter.connectToRedis(config);
 
   app.useWebSocketAdapter(redisIoAdapter);
+
+  app.useStaticAssets(resolve('./src/public'));
+  app.setBaseViewsDir(resolve('./src/views'));
+  app.setViewEngine('hbs');
 
   await app.listen(process.env.PORT || 3000);
 }
