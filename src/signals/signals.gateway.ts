@@ -156,6 +156,10 @@ export class SignalsGateway
         };
 
         this.ioAdapter.subClient.on('message', handleAuthMessage);
+
+        return () => {
+          this.ioAdapter.subClient.off('message', handleAuthMessage);
+        };
       };
       if (process.env.NODE_ENV === 'test') {
         globalThis.handleObserver = handleObserver;
