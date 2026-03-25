@@ -49,6 +49,7 @@ describe('SignalsGateway', () => {
   let gateway: SignalsGateway;
   let userModel: Model<User>;
   beforeEach(async () => {
+    jest.clearAllMocks();
     userModel = mongoose.model('User', UserSchema);
     Object.keys(sessionFixtures).forEach((key) => {
       sessionFixtures[key].reload = jest.fn(async (fn) => fn(null));
@@ -133,7 +134,7 @@ describe('SignalsGateway', () => {
     expect(globalThis.handleObserver).toBeInstanceOf(Function);
     expect(
       globalThis.handleObserver({ next: jest.fn(), complete: jest.fn() }),
-    ).toBeUndefined();
+    ).toBeInstanceOf(Function);
     expect(
       linkEventFn(
         null,
@@ -205,5 +206,14 @@ describe('SignalsGateway', () => {
     await expect(
       reloadSession(sessionFixtures.authorized as unknown as Session),
     ).rejects.toThrow('failed');
+  });
+  it('should remove the listener on unsubscription', async () => {
+    const obs = await gateway.link(
+      { requestId: 'test-request-id' },
+      clientMock,
+    );
+    const subscription = obs.subscribe();
+    subscription.unsubscribe();
+    expect(ioAdapterMock.subClient.off).toHaveBeenCalled();
   });
 });

@@ -36,6 +36,19 @@ jest.mock(
           },
         };
       }),
+      {
+        relation: [
+          'delegate_permission/common.handle_all_urls',
+          'delegate_permission/common.get_login_creds',
+        ],
+        target: {
+          namespace: 'android_app',
+          package_name: 'another.app',
+          sha256_cert_fingerprints: [
+            'BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB',
+          ],
+        },
+      },
     ];
   },
   { virtual: true },
@@ -65,9 +78,29 @@ describe('AppService', () => {
   });
   it('should return an android origin when it is from an app', () => {
     uaAndroidFixtures.forEach((ua) => {
-      expect(provider.getOrigin(ua)).toEqual(
+      expect(provider.getOrigin(ua)).toEqual([
         'android:apk-key-hash:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqo',
-      );
+        'android:apk-key-hash:u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7s',
+      ]);
     });
+  });
+
+  it('should include development android origins when in development mode', () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'development';
+    process.env.ANDROID_PACKAGENAME = 'dev.app';
+    process.env.ANDROID_SHA256HASH =
+      'CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC';
+
+    const ua = uaAndroidFixtures[0];
+    const origins = provider.getOrigin(ua);
+    expect(origins).toContain(
+      'android:apk-key-hash:zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMw',
+    );
+
+    // Cleanup
+    process.env.NODE_ENV = originalEnv;
+    delete process.env.ANDROID_PACKAGENAME;
+    delete process.env.ANDROID_SHA256HASH;
   });
 });
