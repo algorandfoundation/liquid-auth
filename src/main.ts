@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import {resolve} from 'node:path'
+import { resolve } from 'node:path';
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
