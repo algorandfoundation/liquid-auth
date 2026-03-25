@@ -8,6 +8,7 @@ describe('configuration', () => {
       env: 'development',
       hostname: 'localhost',
       origin: 'http://localhost',
+      enableIndexPage: false,
     });
     process.env.NODE_ENV = 'test';
   });
