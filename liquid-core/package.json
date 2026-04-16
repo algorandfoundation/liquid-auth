@@ -1,0 +1,49 @@
+{
+  "name": "@algorandfoundation/liquid-core",
+  "version": "1.0.0-beta.1",
+  "description": "Liquid Auth Core Middleware",
+  "author": "Algorand Foundation",
+  "type": "module",
+  "license": "Apache-2.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./adapters": {
+      "import": "./dist/adapters/index.js",
+      "types": "./dist/adapters/index.d.ts"
+    },
+    "./auth": {
+      "import": "./dist/auth/index.js",
+      "types": "./dist/auth/index.d.ts"
+    },
+    "./fido": {
+      "import": "./dist/fido/index.js",
+      "types": "./dist/fido/index.d.ts"
+    },
+    "./signal": {
+      "import": "./dist/signal/index.js",
+      "types": "./dist/signal/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint \"src/**/*.ts\""
+  },
+  "dependencies": {
+    "@simplewebauthn/server": "^13.2.2",
+    "tweetnacl": "^1.0.3"
+  },
+  "peerDependencies": {
+    "express": "^4.0.0 || ^5.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.5.0",
+    "typescript": "^5.0.0"
+  }
+}
