@@ -5,6 +5,7 @@ ngrok.yml
 .data
 
 assetlinks.json
+apple-app-site-association
 src/views
 src/public
 views

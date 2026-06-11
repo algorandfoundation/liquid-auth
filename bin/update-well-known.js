@@ -1,11 +1,20 @@
 #!/usr/bin/env node
 
-import {writeFileSync} from "node:fs";
+import { writeFileSync } from "node:fs";
 
-const url = 'https://raw.githubusercontent.com/awesome-algorand/registered-authenticators/main/.well-known/assetlinks.json'
+const baseUrl =
+  "https://raw.githubusercontent.com/algorandfoundation/registered-authenticators/main/.well-known";
 
-const body = await fetch(url).then(r=>r.text())
+const files = ["assetlinks.json", "apple-app-site-association"];
 
-writeFileSync('./assetlinks.json', body)
-
-
+for (const file of files) {
+  const res = await fetch(`${baseUrl}/${file}`);
+  if (!res.ok) {
+    console.warn(
+      `[update-well-known] Skipping ${file}: ${res.status} ${res.statusText}`,
+    );
+    continue;
+  }
+  const body = await res.text();
+  writeFileSync(`./${file}`, body);
+}
