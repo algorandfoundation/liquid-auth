@@ -17,6 +17,7 @@ import { AppController } from './app.controller.js';
 
 // Signals
 import { SignalsModule } from './signals/signals.module.js';
+import { PairingModule } from './pairings/pairing.module.js';
 
 export function mongooseModuleFactory(configService: ConfigService) {
   const database = configService.get('database');
@@ -40,6 +41,7 @@ export function mongooseModuleFactory(configService: ConfigService) {
     AuthModule,
     AttestationModule,
     AssertionModule,
+    PairingModule,
     SignalsModule,
   ],
   controllers: [AppController, AndroidController, IosController],

@@ -10,7 +10,11 @@ import { mockAccountLinkService } from '../__mocks__/account-link.service.mock.j
 import { AppService } from '../app.service.js';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AttestationService } from './attestation.service.js';
-import { NotImplementedException, UnauthorizedException } from '@nestjs/common';
+import {
+  NotFoundException,
+  NotImplementedException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import {
   AttestationCredentialJSONDto,
   AttestationSelectorDto,
@@ -22,12 +26,17 @@ import attestationRequestResponseFixtures from './__fixtures__/attestation.reque
 import attestationRequestBodyFixtures from './__fixtures__/attestation.request.body.fixtures.json';
 import attestationResponseBodyFixtures from './__fixtures__/attestation.response.body.fixtures.json';
 import attestationResponseResponseFixtures from './__fixtures__/attestation.response.response.fixtures.json';
+import { PairingService } from '../pairings/pairing.service.js';
+import { mockPairingService } from '../__mocks__/pairing.service.mock.js';
 describe('AttestationController', () => {
   let attestationController: AttestationController;
   let userModel: Model<User>;
   let authService: AuthService;
   beforeEach(async () => {
     jest.resetAllMocks();
+    mockPairingService.bindInvitation.mockRejectedValue(
+      new NotFoundException('Pairing invitation not found or expired'),
+    );
     userModel = mongoose.model('User', UserSchema);
 
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -50,6 +59,10 @@ describe('AttestationController', () => {
         {
           provide: 'ACCOUNT_LINK_SERVICE',
           useValue: mockAccountLinkService,
+        },
+        {
+          provide: PairingService,
+          useValue: mockPairingService,
         },
         {
           provide: getModelToken(User.name),
@@ -103,6 +116,41 @@ describe('AttestationController', () => {
         ).rejects.toThrow(NotImplementedException);
       });
     });
+    it('should bind a pairing invitation to the issued challenge', async () => {
+      const requestId = '019097ff-bb8c-7514-a0c6-5209d2405a4a';
+      const session: Record<string, any> = {};
+      mockPairingService.bindInvitation.mockResolvedValueOnce({
+        pairingId: requestId,
+      } as any);
+      await attestationController.request(session, {
+        ...attestationRequestBodyFixtures[0],
+        requestId,
+      } as AttestationSelectorDto);
+      expect(mockPairingService.bindInvitation).toHaveBeenCalledWith(requestId);
+      expect(session.pairingRequestId).toBe(requestId);
+    });
+    it('should proceed as legacy when a request id has no v2 invitation', async () => {
+      const session: Record<string, any> = {};
+      await expect(
+        attestationController.request(session, {
+          ...attestationRequestBodyFixtures[0],
+          requestId: 'legacy-request-123456789',
+        } as AttestationSelectorDto),
+      ).resolves.toEqual(
+        expect.objectContaining({ challenge: expect.any(String) }),
+      );
+      expect(session.pairingRequestId).toBeUndefined();
+    });
+    it('should propagate backend failures while looking up an invitation', async () => {
+      const failure = new Error('MongoDB is unavailable');
+      mockPairingService.bindInvitation.mockRejectedValueOnce(failure);
+      await expect(
+        attestationController.request({}, {
+          ...attestationRequestBodyFixtures[0],
+          requestId: 'legacy-request-123456789',
+        } as AttestationSelectorDto),
+      ).rejects.toBe(failure);
+    });
   });
 
   describe('POST /response', () => {
@@ -129,6 +177,96 @@ describe('AttestationController', () => {
         wallet: body.clientExtensionResults.liquid.address,
         credId: body.id,
       });
+    });
+    it('should approve and return the challenge-bound pairing', async () => {
+      const session: Record<string, any> = new Session();
+      const user = attestationResponseResponseFixtures[0];
+      const body =
+        attestationResponseBodyFixtures[0] as AttestationCredentialJSONDto;
+      const requestId = body.clientExtensionResults.liquid.requestId;
+      const pairing = {
+        version: 2 as const,
+        pairingId: requestId,
+        role: 'controller' as const,
+        credential: 'controller-credential',
+      };
+      authService.addCredential = jest.fn().mockResolvedValue(user);
+      mockPairingService.approveInvitation.mockResolvedValueOnce(pairing);
+      session.challenge = attestationRequestResponseFixtures[0].challenge;
+      session.liquidExtension = true;
+      session.pairingRequestId = requestId;
+
+      await expect(
+        attestationController.response(
+          session,
+          { 'user-agent': androidUserAgentFixtures[0] },
+          body,
+        ),
+      ).resolves.toEqual({ ...user, pairing });
+      expect(mockPairingService.approveInvitation).toHaveBeenCalledWith(
+        requestId,
+        user.wallet,
+        body.id,
+      );
+      expect(mockAccountLinkService.emit).toHaveBeenCalledWith(
+        'auth',
+        expect.objectContaining({
+          requestId,
+          pairingId: requestId,
+          wallet: user.wallet,
+        }),
+      );
+    });
+    it('should approve a v2 pairing supplied only in a verified legacy response', async () => {
+      const session: Record<string, any> = new Session();
+      const user = attestationResponseResponseFixtures[0];
+      const body =
+        attestationResponseBodyFixtures[0] as AttestationCredentialJSONDto;
+      const requestId = body.clientExtensionResults.liquid.requestId;
+      const pairing = {
+        version: 2 as const,
+        pairingId: requestId,
+        role: 'controller' as const,
+        credential: 'controller-credential',
+      };
+      authService.addCredential = jest.fn().mockResolvedValue(user);
+      mockPairingService.bindInvitation.mockResolvedValueOnce({
+        pairingId: requestId,
+      } as any);
+      mockPairingService.approveInvitation.mockResolvedValueOnce(pairing);
+      session.challenge = attestationRequestResponseFixtures[0].challenge;
+      session.liquidExtension = true;
+
+      await expect(
+        attestationController.response(
+          session,
+          { 'user-agent': androidUserAgentFixtures[0] },
+          body,
+        ),
+      ).resolves.toEqual({ ...user, pairing });
+      expect(mockPairingService.bindInvitation).toHaveBeenCalledWith(requestId);
+      expect(mockPairingService.approveInvitation).toHaveBeenCalledWith(
+        requestId,
+        user.wallet,
+        body.id,
+      );
+    });
+    it('should propagate backend failures for response-only pairing ids', async () => {
+      const session: Record<string, any> = new Session();
+      const body =
+        attestationResponseBodyFixtures[0] as AttestationCredentialJSONDto;
+      const failure = new Error('MongoDB is unavailable');
+      mockPairingService.bindInvitation.mockRejectedValueOnce(failure);
+      session.challenge = attestationRequestResponseFixtures[0].challenge;
+      session.liquidExtension = true;
+
+      await expect(
+        attestationController.response(
+          session,
+          { 'user-agent': androidUserAgentFixtures[0] },
+          body,
+        ),
+      ).rejects.toBe(failure);
     });
     it('should set a default device if empty', async () => {
       const session: Record<string, any> = new Session();
@@ -207,6 +345,21 @@ describe('AttestationController', () => {
           ).rejects.toThrow(UnauthorizedException);
         }),
       );
+    });
+    it('should reject a pairing response for a different challenge binding', async () => {
+      const body =
+        attestationResponseBodyFixtures[0] as AttestationCredentialJSONDto;
+      await expect(
+        attestationController.response(
+          {
+            challenge: attestationRequestResponseFixtures[0].challenge,
+            liquidExtension: true,
+            pairingRequestId: 'different-pairing-id',
+          },
+          { 'user-agent': androidUserAgentFixtures[0] },
+          body,
+        ),
+      ).rejects.toThrow(UnauthorizedException);
     });
     it(`should fail when the extension data is invalid`, async () => {
       await Promise.all(

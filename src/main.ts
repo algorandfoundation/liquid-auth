@@ -23,6 +23,13 @@ async function bootstrap() {
     logger: ['error', 'warn', 'debug', 'log', 'verbose'],
   });
   const config = app.get<ConfigService>(ConfigService);
+  if (config.get<boolean>('session.trustProxy')) {
+    app.set('trust proxy', 1);
+  }
+  app.enableCors({
+    origin: config.get<string[]>('cors.origins') || [],
+    credentials: true,
+  });
 
   const isSentryEnabled =
     config.get('sentry') || typeof process.env.SENTRY_DNS !== 'undefined';
@@ -57,17 +64,22 @@ async function bootstrap() {
 
   const store = MongoStore.create({
     mongoUrl: uri,
-    ttl: 20000,
+    ttl: config.get<number>('session.ttlSeconds'),
   });
 
   const sessionHandler = session({
     secret: config.get('session.secret'),
-    // TODO: optimize session
+    // Legacy clients still need an initial session during the Socket.IO
+    // handshake. Durable v2 pairing authorization does not depend on it.
     saveUninitialized: true,
-    resave: true,
+    resave: false,
+    rolling: true,
+    proxy: config.get<boolean>('session.trustProxy'),
     cookie: {
       httpOnly: true,
       secure: config.get('session.secure'),
+      maxAge: config.get<number>('session.cookieMaxAgeMs'),
+      sameSite: config.get('session.sameSite'),
     },
     store,
   });

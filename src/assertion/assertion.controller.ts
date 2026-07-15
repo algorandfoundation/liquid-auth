@@ -4,6 +4,7 @@ import {
   Headers,
   Inject,
   Logger,
+  NotFoundException,
   Param,
   Post,
   Session,
@@ -29,6 +30,36 @@ import {
 } from '@nestjs/swagger';
 import { User } from '../auth/auth.schema.js';
 import { AuthenticationResponseJSON } from '@simplewebauthn/server';
+import {
+  PairingApprovalResult,
+  PairingService,
+} from '../pairings/pairing.service.js';
+
+async function saveSession(session: Record<string, any>): Promise<void> {
+  if (typeof session?.save !== 'function') return;
+  await new Promise<void>((resolve, reject) => {
+    session.save((error?: Error) => (error ? reject(error) : resolve()));
+  });
+}
+
+function responseWithPairing(user: any, pairing?: PairingApprovalResult) {
+  if (!pairing) return user;
+  const serialized =
+    typeof user?.toObject === 'function' ? user.toObject() : { ...user };
+  return { ...serialized, pairing };
+}
+
+async function bindPairingIfPresent(
+  pairingService: PairingService,
+  requestId: string,
+): Promise<string | undefined> {
+  try {
+    return (await pairingService.bindInvitation(requestId)).pairingId;
+  } catch (error) {
+    if (error instanceof NotFoundException) return undefined;
+    throw error;
+  }
+}
 // TODO: make a loader for descriptions
 const requestDescription = '';
 const responseDescription = '';
@@ -47,6 +78,7 @@ export class AssertionController {
     @Inject('ACCOUNT_LINK_SERVICE') private client: ClientProxy,
     private assertionService: AssertionService,
     private authService: AuthService,
+    private pairingService: PairingService,
   ) {}
 
   /**
@@ -93,10 +125,23 @@ export class AssertionController {
       });
     }
 
+    let pairingRequestId: string | undefined;
+    if (typeof body?.requestId === 'string') {
+      pairingRequestId = await bindPairingIfPresent(
+        this.pairingService,
+        body.requestId,
+      );
+    }
+
     // Get options, save challenge and respond
     const options = await this.assertionService.request(user, credId, body);
 
     session.challenge = options.challenge;
+    if (pairingRequestId) {
+      session.pairingRequestId = pairingRequestId;
+    } else {
+      delete session.pairingRequestId;
+    }
 
     this.logger.debug('Assertion Options', options);
     return options;
@@ -140,10 +185,21 @@ export class AssertionController {
     this.logger.log(`POST /response for Session: ${session.id}`);
     this.logger.debug('Authenticator Response', body);
     const expectedChallenge = session.challenge;
+    const boundRequestId = session.pairingRequestId as string | undefined;
+    const responseRequestId = body?.clientExtensionResults?.liquid?.requestId;
     if (typeof expectedChallenge !== 'string') {
       throw new UnauthorizedException({
         reason: 'unauthorized',
         error: 'Challenge not found.',
+      });
+    }
+    if (
+      typeof boundRequestId === 'string' &&
+      responseRequestId !== boundRequestId
+    ) {
+      throw new UnauthorizedException({
+        reason: 'unauthorized',
+        error: 'Pairing request does not match the issued challenge',
       });
     }
     const savedUser = await this.authService.search({
@@ -171,18 +227,36 @@ export class AssertionController {
       });
     }
 
+    const pairingRequestId =
+      boundRequestId ||
+      (typeof responseRequestId === 'string'
+        ? await bindPairingIfPresent(this.pairingService, responseRequestId)
+        : undefined);
+
     await this.authService.update(user);
+    const pairing =
+      typeof pairingRequestId === 'string'
+        ? await this.pairingService.approveInvitation(
+            pairingRequestId,
+            user.wallet,
+            body.id,
+          )
+        : undefined;
 
     delete session.challenge;
+    delete session.pairingRequestId;
     session.wallet = user.wallet;
+    await saveSession(session);
     // Emit the signin event for the given request id
-    this.client.emit<string>('auth', {
-      requestId: body?.clientExtensionResults?.liquid?.requestId,
+    const authEvent: Record<string, any> = {
+      requestId: pairingRequestId || responseRequestId,
       wallet: user.wallet,
       credId: body.id,
-      sessionId: session.id,
-    });
+    };
+    if (session.id) authEvent.sessionId = session.id;
+    if (pairing) authEvent.pairingId = pairing.pairingId;
+    this.client.emit<string>('auth', authEvent);
     this.logger.debug('User', user);
-    return user;
+    return responseWithPairing(user, pairing);
   }
 }

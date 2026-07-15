@@ -1,6 +1,7 @@
 import type { RegistrationResponseJSON } from '@simplewebauthn/server';
 
 export type AttestationSelectorDto = {
+  requestId?: string;
   username: string;
   displayName: string;
   authenticatorSelection: AuthenticatorSelectionCriteria;
