@@ -13,6 +13,7 @@ export class RedisIoAdapter extends IoAdapter {
   private readonly sessionHandler: RequestHandler;
   private adapterConstructor: ReturnType<typeof createAdapter>;
   private pubClient: Redis;
+  private config: ConfigService;
   public subClient: Redis;
 
   constructor(app: NestExpressApplication, sessionHandler: RequestHandler) {
@@ -20,6 +21,7 @@ export class RedisIoAdapter extends IoAdapter {
     this.sessionHandler = sessionHandler;
   }
   async connectToRedis(config: ConfigService): Promise<void> {
+    this.config = config;
     this.pubClient = new Redis({
       host: config.get('socket.host'),
       port: config.get('socket.port'),
@@ -33,7 +35,15 @@ export class RedisIoAdapter extends IoAdapter {
   }
 
   createIOServer(port: number, options?: ServerOptions): any {
-    const server = super.createIOServer(port, options);
+    const origins = this.config?.get<string[]>('cors.origins') || [];
+    const server = super.createIOServer(port, {
+      ...options,
+      cors: {
+        ...(options?.cors || {}),
+        origin: origins,
+        credentials: true,
+      },
+    });
     server.engine.use(this.sessionHandler);
     server.adapter(this.adapterConstructor);
     return server;

@@ -3,3 +3,4 @@ export * from './app.module.js';
 export * from './app.service.js';
 export * from './sentry.filter.js';
 export * from './adapters/redis-io.adapter.js';
+export * from './pairings/index.js';

@@ -6,7 +6,18 @@
   "origin": "http://catfish-pro-wolf.ngrok-free.app",
   "session": {
     "secure": false,
-    "secret": "secret"
+    "secret": "secret",
+    "ttlSeconds": 20000,
+    "cookieMaxAgeMs": 20000000,
+    "sameSite": "lax",
+    "trustProxy": false
+  },
+  "cors": {
+    "origins": ["http://localhost"]
+  },
+  "pairing": {
+    "credentialSecret": "secret",
+    "invitationTtlSeconds": 900
   },
   "socket": {
     "host": "localhost",

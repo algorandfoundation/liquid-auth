@@ -5,6 +5,7 @@ import {
   Logger,
   Post,
   Headers,
+  NotFoundException,
   Session,
   UnauthorizedException,
   NotImplementedException,
@@ -18,6 +19,36 @@ import {
   AttestationCredentialJSONDto,
   AttestationSelectorDto,
 } from './attestation.dto.js';
+import {
+  PairingApprovalResult,
+  PairingService,
+} from '../pairings/pairing.service.js';
+
+async function saveSession(session: Record<string, any>): Promise<void> {
+  if (typeof session?.save !== 'function') return;
+  await new Promise<void>((resolve, reject) => {
+    session.save((error?: Error) => (error ? reject(error) : resolve()));
+  });
+}
+
+function responseWithPairing(user: any, pairing?: PairingApprovalResult) {
+  if (!pairing) return user;
+  const serialized =
+    typeof user?.toObject === 'function' ? user.toObject() : { ...user };
+  return { ...serialized, pairing };
+}
+
+async function bindPairingIfPresent(
+  pairingService: PairingService,
+  requestId: string,
+): Promise<string | undefined> {
+  try {
+    return (await pairingService.bindInvitation(requestId)).pairingId;
+  } catch (error) {
+    if (error instanceof NotFoundException) return undefined;
+    throw error;
+  }
+}
 
 @Controller('attestation')
 @ApiTags('attestation')
@@ -27,6 +58,7 @@ export class AttestationController {
     @Inject('ACCOUNT_LINK_SERVICE') private client: ClientProxy,
     private attestationService: AttestationService,
     private authService: AuthService,
+    private pairingService: PairingService,
   ) {}
   /**
    * Request Attestation Options
@@ -54,11 +86,23 @@ export class AttestationController {
         error: 'Liquid extension is required',
       });
     }
-    session.liquidExtension = true;
+    let pairingRequestId: string | undefined;
+    if (typeof options.requestId === 'string') {
+      pairingRequestId = await bindPairingIfPresent(
+        this.pairingService,
+        options.requestId,
+      );
+    }
     // Request Attestation Options
     const attestationOptions = await this.attestationService.request(options);
     // This challenge is used to verify the response
+    session.liquidExtension = true;
     session.challenge = attestationOptions.challenge;
+    if (pairingRequestId) {
+      session.pairingRequestId = pairingRequestId;
+    } else {
+      delete session.pairingRequestId;
+    }
     // Return the Attestation Options
     this.logger.debug('Attestation Options', attestationOptions);
     return attestationOptions;
@@ -87,11 +131,22 @@ export class AttestationController {
     // Session state
     const isLiquid = session.liquidExtension || false;
     const expectedChallenge = session.challenge;
+    const boundRequestId = session.pairingRequestId as string | undefined;
+    const responseRequestId = body?.clientExtensionResults?.liquid?.requestId;
     // This request should only be called after a request
     if (typeof expectedChallenge !== 'string') {
       throw new UnauthorizedException({
         reason: 'unauthorized',
         error: 'Challenge not found',
+      });
+    }
+    if (
+      typeof boundRequestId === 'string' &&
+      responseRequestId !== boundRequestId
+    ) {
+      throw new UnauthorizedException({
+        reason: 'unauthorized',
+        error: 'Pairing request does not match the issued challenge',
       });
     }
     // If the liquid extension is enabled, the client must send the liquid extension
@@ -122,27 +177,43 @@ export class AttestationController {
         });
       });
 
+    const pairingRequestId =
+      boundRequestId ||
+      (typeof responseRequestId === 'string'
+        ? await bindPairingIfPresent(this.pairingService, responseRequestId)
+        : undefined);
+
     const username = body.clientExtensionResults.liquid.address;
     // Initialize a new user if it doesn't exist
     await this.authService.init(username);
     // Add the new credential to the user
     const user = await this.authService.addCredential(username, credential);
+    const pairing =
+      typeof pairingRequestId === 'string'
+        ? await this.pairingService.approveInvitation(
+            pairingRequestId,
+            user.wallet,
+            credential.credId,
+          )
+        : undefined;
     // Cleanup Session
     delete session.liquidExtension;
     delete session.challenge;
+    delete session.pairingRequestId;
     // Authorize user with a wallet session
     session.wallet = username;
+    await saveSession(session);
     // Handle Liquid Extension
-    this.client.emit<string>('auth', {
-      requestId: body?.clientExtensionResults?.liquid?.requestId,
+    const authEvent: Record<string, any> = {
+      requestId: pairingRequestId || responseRequestId,
       wallet: user.wallet,
       credId: credential.credId,
-      sessionId: session.id,
-    });
-
-    console.log('session', session);
+    };
+    if (session.id) authEvent.sessionId = session.id;
+    if (pairing) authEvent.pairingId = pairing.pairingId;
+    this.client.emit<string>('auth', authEvent);
 
     this.logger.debug('User', user);
-    return user;
+    return responseWithPairing(user, pairing);
   }
 }

@@ -1,7 +1,7 @@
 ---
-title: "Server: Integrations"
+title: 'Server: Integrations'
 sidebar:
-  order: 3
+  order: 4
   label: 'Integrations'
 next: false
 ---
@@ -19,7 +19,7 @@ server {
     listen            80;
     listen       [::]:80;
     server_name  localhost;
-    
+
     root   /usr/share/nginx/html;
 
     location / {
@@ -39,6 +39,7 @@ server {
 ```
 
 ### Vite
+
 > We recommend running a proxy server like Nginx in production. This will work for local development
 
 ```typescript
@@ -57,12 +58,13 @@ export default defineConfig({
         target: process.env.WSS_PROXY_SERVER || DEFAULT_WSS_PROXY_URL,
         ws: true,
       },
-    }
+    },
   },
-})
+});
 ```
 
 ### Next.js
+
 > We recommend running a proxy server like Nginx in production. This will work in a pinch or to test locally.
 
 Deploy the service to a platform like Render or AWS then configure the Proxy in `next.config.js`.
@@ -71,7 +73,7 @@ Deploy the service to a platform like Render or AWS then configure the Proxy in 
 //next.config.js
 /** @type {import('next').NextConfig} */
 
-const serverURL = "https://my-liquid-service.com";
+const serverURL = 'https://my-liquid-service.com';
 
 const nextConfig = {
   trailingSlash: true,
@@ -102,7 +104,7 @@ const nextConfig = {
         source: '/socket.io',
         destination: `${serverURL}/socket.io/`,
       },
-    ]
+    ];
   },
 };
 
@@ -110,8 +112,15 @@ export default nextConfig;
 ```
 
 ### Nest.js
+
 > Warning, the Service package is still a work in progress.
 > Please contact if you are interested in mounting the server
+
+The mounted `AppModule` uses the same production configuration checks as the
+standalone server. Provide independent `SESSION_SECRET` and
+`PAIRING_CREDENTIAL_SECRET` environment variables, and keep the pairing secret
+stable across replicas, restarts, and database restores. See the
+[configuration guide](./environment-variables/) before creating pairings.
 
 ```shell
 npm install algorandfoundation/liquid-auth --save
@@ -126,10 +135,10 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'debug', 'log', 'verbose'],
   });
-  
+
   // Get Configuration
   const config = app.get<ConfigService>(ConfigService);
- 
+
   // Enable Swagger Docs
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Liquid Dapp')
@@ -139,14 +148,14 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, document);
- 
+
   // Setup Session Storeage
   const username = config.get('database.username');
   const host = config.get('database.host');
   const password = config.get('database.password');
   const name = config.get('database.name');
   const isAtlas = config.get('database.atlas');
- 
+
   const uri = `mongodb${
     isAtlas ? '+srv' : ''
   }://${username}:${password}@${host}/${name}?authSource=admin&retryWrites=true&w=majority`;
@@ -157,7 +166,7 @@ async function bootstrap() {
   });
 
   const sessionHandler = session({
-    secret: "REPLACE_WITH_SESSION_SECRET",
+    secret: 'REPLACE_WITH_SESSION_SECRET',
     saveUninitialized: true,
     resave: true,
     cookie: {
@@ -167,7 +176,7 @@ async function bootstrap() {
     store,
   });
   app.use(sessionHandler);
-  
+
   // Configure Redis Adapter
   const redisIoAdapter = new RedisIoAdapter(app, sessionHandler);
   await redisIoAdapter.connectToRedis(config);
@@ -180,6 +189,7 @@ async function bootstrap() {
 ```
 
 ### Vercel
+
 > We recommend running a proxy server like Nginx in production. This will work in a pinch
 
 ```json
@@ -214,4 +224,3 @@ async function bootstrap() {
   ]
 }
 ```
-

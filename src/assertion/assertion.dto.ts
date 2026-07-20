@@ -35,6 +35,8 @@ export class AuthenticationExtensionsClientInputs {
 
 // Wrapped Implementations
 export class PublicKeyCredentialRequestOptions implements PublicKeyCredentialRequestOptionsType {
+  @ApiProperty({ required: false })
+  requestId?: string;
   @ApiProperty()
   allowCredentials: PublicKeyCredentialDescriptor[];
   @ApiProperty()

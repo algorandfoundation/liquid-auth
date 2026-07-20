@@ -9,10 +9,12 @@ import { User, UserSchema } from '../auth/auth.schema.js';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { Session, SessionSchema } from '../auth/session.schema.js';
 import { AlgodService } from '../algod/algod.service.js';
+import { PairingModule } from '../pairings/pairing.module.js';
 
 @Module({
   imports: [
     ConfigModule,
+    PairingModule,
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: Session.name, schema: SessionSchema },

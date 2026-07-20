@@ -17,7 +17,8 @@ This guide is designed to get the project running locally in a dockerized contai
 See the full [Service Documentation](https://liquidauth.com/server/introduction/) for more information
 
 ### Prerequisites
-- Node.js 18+
+
+- Node.js 20+
 - Docker
 
 #### Clone the project
@@ -39,6 +40,7 @@ Don't run the ngrok commands directly as expressed in the ngrok guide as it will
 Add a `ngrok.yml` configuration to the root directory.
 
 ##### Example Configuration
+
 ```yaml
 version: 2
 authtoken: <NGROK_AUTH_TOKEN>
@@ -47,22 +49,32 @@ tunnels:
     addr: liquid-auth:3000
     proto: http
     domain: <NGROK_STATIC_DOMAIN>
-
 ```
-*Make sure to update the `authtoken` and `domain` in the `ngrok.yml` file with your ngrok details.*
+
+_Make sure to update the `authtoken` and `domain` in the `ngrok.yml` file with your ngrok details._
 
 ### Service Configuration
 
-Update the [.env.docker](.env.docker) file with the following keys with the values from ngrok:
+Update the [.env.docker](.env.docker) file with the following keys. Generate
+`SESSION_SECRET` and `PAIRING_CREDENTIAL_SECRET` independently by running
+`openssl rand -base64 48` twice; production startup rejects the checked-in
+placeholders.
 
 ```bash
 HOSTNAME=<NGROK_STATIC_DOMAIN>
 ORIGIN=https://<NGROK_STATIC_DOMAIN>
+SESSION_SECRET=<FIRST_RANDOM_VALUE>
+PAIRING_CREDENTIAL_SECRET=<SECOND_RANDOM_VALUE>
 ```
+
+Keep `PAIRING_CREDENTIAL_SECRET` stable when reusing or restoring MongoDB. Losing
+or changing it makes existing durable pairing credentials unverifiable. See the
+[server configuration guide](https://liquidauth.com/server/environment-variables/)
+for backup and deployment requirements.
 
 ### User Interface
 
-A quick way to test the service is using the documentation site included in this repository. 
+A quick way to test the service is using the documentation site included in this repository.
 
 Navigate to the `docs` directory:
 

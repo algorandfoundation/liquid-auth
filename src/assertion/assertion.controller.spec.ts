@@ -18,7 +18,7 @@ import assertionRequestResponseFixtures from './__fixtures__/assertion.request.r
 import assertionResponseBodyFixtures from './__fixtures__/assertion.response.body.fixtures.json';
 import assertionResponseResponseFixtures from './__fixtures__/assertion.response.response.fixtures.json';
 
-import { UnauthorizedException } from '@nestjs/common';
+import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import {
   AssertionCredentialJSON,
   LiquidAssertionCredentialJSON,
@@ -26,6 +26,8 @@ import {
 } from './assertion.dto.js';
 import configurationFixture from '../__fixtures__/configuration.fixture.json';
 import androidUserAgentFixtures from '../__fixtures__/user-agent.android.fixtures.json';
+import { PairingService } from '../pairings/pairing.service.js';
+import { mockPairingService } from '../__mocks__/pairing.service.mock.js';
 
 // AssertionCredentialJSON
 const dummyAssertionCredentialJSON = {
@@ -45,6 +47,10 @@ describe('AssertionController', () => {
   let userModel: Model<User>;
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+    mockPairingService.bindInvitation.mockRejectedValue(
+      new NotFoundException('Pairing invitation not found or expired'),
+    );
     userModel = mongoose.model('User', UserSchema);
 
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -66,6 +72,10 @@ describe('AssertionController', () => {
         {
           provide: 'ACCOUNT_LINK_SERVICE',
           useValue: { ...mockAccountLinkService },
+        },
+        {
+          provide: PairingService,
+          useValue: mockPairingService,
         },
         {
           provide: getModelToken(User.name),
@@ -122,6 +132,57 @@ describe('AssertionController', () => {
         }),
       );
     });
+    it('should bind a pairing invitation to the issued challenge', async () => {
+      const requestId = '019097ff-bb8c-75b3-a913-761d038cb9c0';
+      const session: Record<string, any> = {};
+      mockPairingService.bindInvitation.mockResolvedValueOnce({
+        pairingId: requestId,
+      } as any);
+      authService.search = jest
+        .fn()
+        .mockResolvedValue(assertionResponseResponseFixtures[0]);
+      await assertionController.request(
+        session,
+        assertionRequestParamFixtures[0],
+        {
+          ...assertionRequestBodyFixtures[0],
+          requestId,
+        } as PublicKeyCredentialRequestOptions,
+      );
+      expect(mockPairingService.bindInvitation).toHaveBeenCalledWith(requestId);
+      expect(session.pairingRequestId).toBe(requestId);
+    });
+    it('should proceed as legacy when a request id has no v2 invitation', async () => {
+      const requestId = 'legacy-request-123456789';
+      const session: Record<string, any> = {};
+      authService.search = jest
+        .fn()
+        .mockResolvedValue(assertionResponseResponseFixtures[0]);
+
+      await expect(
+        assertionController.request(session, assertionRequestParamFixtures[0], {
+          ...assertionRequestBodyFixtures[0],
+          requestId,
+        } as PublicKeyCredentialRequestOptions),
+      ).resolves.toEqual(
+        expect.objectContaining({ challenge: expect.any(String) }),
+      );
+      expect(session.pairingRequestId).toBeUndefined();
+    });
+    it('should propagate backend failures while looking up an invitation', async () => {
+      const failure = new Error('MongoDB is unavailable');
+      mockPairingService.bindInvitation.mockRejectedValueOnce(failure);
+      authService.search = jest
+        .fn()
+        .mockResolvedValue(assertionResponseResponseFixtures[0]);
+
+      await expect(
+        assertionController.request({}, assertionRequestParamFixtures[0], {
+          ...assertionRequestBodyFixtures[0],
+          requestId: 'legacy-request-123456789',
+        } as PublicKeyCredentialRequestOptions),
+      ).rejects.toBe(failure);
+    });
   });
 
   describe('POST /response', () => {
@@ -152,6 +213,125 @@ describe('AssertionController', () => {
           ).resolves.toStrictEqual(assertionResponseResponseFixtures[i]);
         }),
       );
+    });
+    it('should approve and return the challenge-bound pairing', async () => {
+      const savedUser = {
+        ...assertionResponseResponseFixtures[0],
+        credentials: [
+          {
+            ...assertionResponseResponseFixtures[0].credentials[0],
+            prevCounter:
+              assertionResponseResponseFixtures[0].credentials[0].prevCounter -
+              1,
+          },
+        ],
+      };
+      authService.search = jest.fn().mockResolvedValue(savedUser);
+      const body =
+        assertionResponseBodyFixtures[0] as unknown as AssertionCredentialJSON & {
+          clientExtensionResults: { liquid: { requestId: string } };
+        };
+      const requestId = body.clientExtensionResults.liquid.requestId;
+      const pairing = {
+        version: 2 as const,
+        pairingId: requestId,
+        role: 'controller' as const,
+        credential: 'controller-credential',
+      };
+      mockPairingService.approveInvitation.mockResolvedValueOnce(pairing);
+
+      await expect(
+        assertionController.response(
+          {
+            challenge: assertionRequestResponseFixtures[0].challenge,
+            pairingRequestId: requestId,
+          },
+          { 'user-agent': androidUserAgentFixtures[0] },
+          body,
+        ),
+      ).resolves.toEqual({
+        ...assertionResponseResponseFixtures[0],
+        pairing,
+      });
+      expect(mockPairingService.approveInvitation).toHaveBeenCalledWith(
+        requestId,
+        assertionResponseResponseFixtures[0].wallet,
+        body.id,
+      );
+    });
+    it('should approve a v2 pairing supplied only in a verified legacy response', async () => {
+      const savedUser = {
+        ...assertionResponseResponseFixtures[0],
+        credentials: [
+          {
+            ...assertionResponseResponseFixtures[0].credentials[0],
+            prevCounter:
+              assertionResponseResponseFixtures[0].credentials[0].prevCounter -
+              1,
+          },
+        ],
+      };
+      authService.search = jest.fn().mockResolvedValue(savedUser);
+      const body =
+        assertionResponseBodyFixtures[0] as unknown as AssertionCredentialJSON & {
+          clientExtensionResults: { liquid: { requestId: string } };
+        };
+      const requestId = body.clientExtensionResults.liquid.requestId;
+      const pairing = {
+        version: 2 as const,
+        pairingId: requestId,
+        role: 'controller' as const,
+        credential: 'controller-credential',
+      };
+      mockPairingService.bindInvitation.mockResolvedValueOnce({
+        pairingId: requestId,
+      } as any);
+      mockPairingService.approveInvitation.mockResolvedValueOnce(pairing);
+
+      await expect(
+        assertionController.response(
+          { challenge: assertionRequestResponseFixtures[0].challenge },
+          { 'user-agent': androidUserAgentFixtures[0] },
+          body,
+        ),
+      ).resolves.toEqual({
+        ...assertionResponseResponseFixtures[0],
+        pairing,
+      });
+      expect(mockPairingService.bindInvitation).toHaveBeenCalledWith(requestId);
+      expect(mockPairingService.approveInvitation).toHaveBeenCalledWith(
+        requestId,
+        assertionResponseResponseFixtures[0].wallet,
+        body.id,
+      );
+    });
+    it('should propagate backend failures for response-only pairing ids', async () => {
+      const savedUser = {
+        ...assertionResponseResponseFixtures[0],
+        credentials: [
+          {
+            ...assertionResponseResponseFixtures[0].credentials[0],
+            prevCounter:
+              assertionResponseResponseFixtures[0].credentials[0].prevCounter -
+              1,
+          },
+        ],
+      };
+      authService.search = jest.fn().mockResolvedValue(savedUser);
+      const failure = new Error('MongoDB is unavailable');
+      mockPairingService.bindInvitation.mockRejectedValueOnce(failure);
+      const body =
+        assertionResponseBodyFixtures[0] as unknown as AssertionCredentialJSON & {
+          clientExtensionResults: { liquid: { requestId: string } };
+        };
+
+      await expect(
+        assertionController.response(
+          { challenge: assertionRequestResponseFixtures[0].challenge },
+          { 'user-agent': androidUserAgentFixtures[0] },
+          body,
+        ),
+      ).rejects.toBe(failure);
     });
     it('should fail if the user is not found', async () => {
       await Promise.all(
@@ -232,6 +412,22 @@ describe('AssertionController', () => {
           session,
           req,
           dummyAssertionCredentialJSON,
+        ),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+    it('should reject a pairing response for a different challenge binding', async () => {
+      const body =
+        assertionResponseBodyFixtures[0] as unknown as AssertionCredentialJSON & {
+          clientExtensionResults: { liquid: { requestId: string } };
+        };
+      await expect(
+        assertionController.response(
+          {
+            challenge: assertionRequestResponseFixtures[0].challenge,
+            pairingRequestId: 'different-pairing-id',
+          },
+          { 'user-agent': androidUserAgentFixtures[0] },
+          body,
         ),
       ).rejects.toThrow(UnauthorizedException);
     });
