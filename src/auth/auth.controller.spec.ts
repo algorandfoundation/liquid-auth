@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { SignalsGateway } from '../signals/signals.gateway.js';
 import { Session } from './session.schema.js';
 import mongoose, { Error, Model } from 'mongoose';
 import { User, UserSchema } from './auth.schema.js';
@@ -17,10 +18,12 @@ import {
 describe('AuthController', () => {
   let authController: AuthController;
   let authService: AuthService;
+  let signalsGateway: { countDevices: jest.Mock };
   let userModel: Model<User>;
 
   beforeEach(async () => {
     userModel = mongoose.model('User', UserSchema);
+    signalsGateway = { countDevices: jest.fn().mockResolvedValue(0) };
 
     const moduleRef: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -28,6 +31,10 @@ describe('AuthController', () => {
         {
           provide: AuthService,
           useValue: { ...mockAuthService },
+        },
+        {
+          provide: SignalsGateway,
+          useValue: signalsGateway,
         },
         {
           provide: getModelToken(User.name),
@@ -132,6 +139,20 @@ describe('AuthController', () => {
       await expect(
         authController.read(sessionFixtures.authorized),
       ).resolves.toEqual({ session: sessionFixtures.authorized, user: null });
+    });
+
+    it('(OK) should report the live device count for the session requestId', async () => {
+      signalsGateway.countDevices.mockResolvedValueOnce(2);
+      const session = {
+        wallet: sessionFixtures.authorized.wallet,
+        requestId: '019097ff-bb8c-7d5d-9822-7c9eb2c0d419',
+        deviceCount: 1,
+      } as Record<string, any>;
+      const result = await authController.read(session);
+      expect(signalsGateway.countDevices).toHaveBeenCalledWith(
+        '019097ff-bb8c-7d5d-9822-7c9eb2c0d419',
+      );
+      expect(result.session.deviceCount).toBe(2);
     });
   });
 });

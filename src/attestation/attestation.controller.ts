@@ -132,9 +132,16 @@ export class AttestationController {
     delete session.challenge;
     // Authorize user with a wallet session
     session.wallet = username;
+    // Presence: remember the requestId on the wallet's own session so that
+    // when its signaling socket (re)connects, handleConnection joins it to the
+    // requestId room and it is counted as a connected device.
+    const requestId = body?.clientExtensionResults?.liquid?.requestId;
+    if (typeof requestId === 'string' && requestId.length > 0) {
+      session.requestId = requestId;
+    }
     // Handle Liquid Extension
     this.client.emit<string>('auth', {
-      requestId: body?.clientExtensionResults?.liquid?.requestId,
+      requestId,
       wallet: user.wallet,
       credId: credential.credId,
       sessionId: session.id,

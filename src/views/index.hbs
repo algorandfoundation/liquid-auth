@@ -142,6 +142,12 @@
           border-bottom-left-radius: 4px;
       }
 
+      /* Live, still-streaming agent preview (committed on `finalize`). */
+      .message-bubble.stream-preview {
+          opacity: 0.7;
+          font-style: italic;
+      }
+
       .chat-input-area {
           display: flex;
           gap: 10px;
@@ -231,6 +237,42 @@
       label {
           font-size: 1.2em;
           font-weight: bold;
+      }
+      .presence {
+          font-size: 0.9em;
+          margin: 8px 0;
+          color: #aaa;
+      }
+      .presence.online {
+          color: #4CAF50;
+      }
+      .presence.offline {
+          color: #ff4444;
+      }
+      .status-bar {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          align-items: center;
+          font-size: 0.8em;
+          color: #aaa;
+          padding: 4px 10px 10px;
+          border-bottom: 1px solid #333;
+          margin-bottom: 10px;
+      }
+      .status-bar .status-pill {
+          padding: 2px 8px;
+          border-radius: 10px;
+          background: #242424;
+          border: 1px solid #333;
+      }
+      .status-bar .status-pill.ac2 {
+          border-color: #646cff;
+          color: #646cff;
+      }
+      .status-bar .status-pill.agent-active {
+          border-color: #4CAF50;
+          color: #4CAF50;
       }
       @media (prefers-color-scheme: light) {
           :root {
@@ -367,8 +409,14 @@
          ],
          iceCandidatePoolSize: 10,
        }
-       // RequestId for this client
-       const requestId = SignalClient.generateRequestId()
+       // RequestId for this client. Use a generated UUID as the basis, but
+       // persist it and allow editing so the same id can be reused across
+       // reloads to exercise reconnect/reuse against a wallet that remembers it.
+       // `forgetRequestId()` clears the saved id and mints a fresh one, mirroring
+       // the open-claw reference plugin's `ac2 forget`.
+       const REQUEST_ID_STORAGE_KEY = 'liquid_request_id'
+       let requestId = localStorage.getItem(REQUEST_ID_STORAGE_KEY) || SignalClient.generateRequestId()
+       localStorage.setItem(REQUEST_ID_STORAGE_KEY, requestId)
        // RequestId for a remote client
        let altRequestId = requestId
        // Globals for connection management
@@ -376,6 +424,22 @@
        let heartbeatInterval = null;
        let inactivityInterval = null;
        let connectedAddress = null;
+       // AC2 data-channel state. An AC2 wallet negotiates dedicated channels
+       // (`ac2-v1`, `ac2-stream`, `ac2-heartbeat`) instead of the single legacy
+       // `liquid` channel, so we route by label and track them here.
+       let isAc2 = false;
+       let heartbeatChannel = null;
+       let streamChannel = null;
+       let heartbeatCount = 0;
+       // STX (0x02) prefix for `ac2-stream` control frames (matches the wallet
+       // and the open-claw reference plugin's stream protocol).
+       const AC2_STREAM_CONTROL_PREFIX = '\u0002';
+       // Thread id last seen from the wallet/agent; used when replaying history
+       // back to the wallet. Defaults to the plugin's default thread.
+       let currentThid = 'default';
+       // Live "still streaming" preview bubble for the agent's `ac2-stream`
+       // preview frames; committed as a normal message on `finalize`.
+       let streamPreviewEl = null;
 
        // Render the UI
        const app = document.querySelector('#app');
@@ -388,16 +452,21 @@
                </a>
                <hgroup>
                <h1>Offer Client</h1>
-               <h2>Local ID: ${requestId}</h2>
                </hgroup>
+               <label for="local-request">Local ID:</label>
+               <input id="local-request" value="${requestId}" onchange="handleLocalRequestId()"/>
+               <p id="offer-presence" class="presence"></p>
                <button id="start" onclick="handleOfferClient()">Start</button>
                <button id="toggle" onclick="toggle()">Switch</button>
+               <button class="danger" onclick="forgetRequestId()">Forget</button>
            </div>
            <div class="answer hidden">
                <h1>Answer Client</h1>
                <label for="alt-request">Remote ID:</label>
                <input id="alt-request" value="${altRequestId}" onchange="handleAlternativeRequestId()"/>
+               <button id="check-presence" onclick="checkPresence()">Check Presence</button>
                <button id="attestation" onclick="handleSignChallenge()">Sign In</button>
+               <p id="answer-presence" class="presence"></p>
            </div>
        </div>
        <div class="message-container hidden">
@@ -407,9 +476,15 @@
                    <h1>Messages</h1>
                </div>
                <div class="chat-header-actions">
+                   <button onclick="sendHistory()">Send History</button>
                    <button class="danger" onclick="clearHistory()">Clear History</button>
                    <button class="danger" onclick="resetConnection('manual')">Disconnect</button>
                </div>
+           </div>
+           <div class="status-bar">
+               <span class="status-pill" id="connection-status">Connecting…</span>
+               <span class="status-pill" id="heartbeat-status">Heartbeats: 0</span>
+               <span class="status-pill hidden" id="agent-status">Agent: idle</span>
            </div>
            <div class="messages"></div>
            <div class="chat-input-area">
@@ -421,6 +496,89 @@
    `
 
        /**
+        * Render presence information into the given element
+        *
+        * @param el - The element to render into
+        * @param data - Presence payload { requestId, deviceCount, online }
+        */
+       function renderPresence(el, data) {
+         if (!el) return;
+         if (!data) {
+           el.textContent = '';
+           el.classList.remove('online', 'offline');
+           return;
+         }
+         const status = data.online ? 'online' : 'offline';
+         el.textContent = `Presence: ${status} — ${data.deviceCount} device(s) connected for ${data.requestId}`;
+         el.classList.toggle('online', !!data.online);
+         el.classList.toggle('offline', !data.online);
+       }
+
+       /**
+        * Query the presence for a requestId on demand
+        *
+        * Used to detect whether there is anyone available to connect to before
+        * attempting to (re)connect. Emits the `presence` event and renders the ack.
+        *
+        * @param id - Optional requestId to query, defaults to the remote (alt) ID
+        */
+       function checkPresence(id) {
+         const targetId = typeof id === 'string' ? id : altRequestId;
+         whenSocketReady((socket) => {
+           socket.emit('presence', { requestId: targetId }, (data) => {
+             console.log('Presence check:', data);
+             renderPresence(document.querySelector('#answer-presence'), data);
+             if (data && !data.online) {
+               console.warn(`No devices online for ${targetId}; reconnect may not succeed.`);
+             }
+           });
+         });
+       }
+
+       /**
+        * Run a callback once the signaling socket is available.
+        *
+        * `SignalClient` initializes its socket asynchronously (it dynamically
+        * imports socket.io-client), so `client.socket` can be undefined right
+        * after construction. This guard avoids the "cannot read 'on' of
+        * undefined" crash that previously prevented presence updates (and every
+        * handler wired after it) from ever registering.
+        *
+        * @param cb - Invoked with the ready socket
+        */
+       function whenSocketReady(cb) {
+         if (client.socket) {
+           cb(client.socket);
+           return;
+         }
+         const timer = setInterval(() => {
+           if (client.socket) {
+             clearInterval(timer);
+             cb(client.socket);
+           }
+         }, 50);
+       }
+
+       // Listen for presence broadcasts from the server and keep the UI in sync
+       whenSocketReady((socket) => {
+         socket.on('presence', (data) => {
+           console.log('Presence update:', data);
+           if (!data) return;
+           if (data.requestId === requestId) {
+             renderPresence(document.querySelector('#offer-presence'), data);
+           }
+           if (data.requestId === altRequestId) {
+             renderPresence(document.querySelector('#answer-presence'), data);
+           }
+         });
+       });
+
+       // Route every negotiated data channel by label. Registered once so it
+       // survives reconnects; it handles both the legacy single `liquid` channel
+       // and the AC2 wallet's `ac2-v1` / `ac2-stream` / `ac2-heartbeat` set.
+       client.on('data-channel', routeChannel);
+
+       /**
         * Reset the connection and UI
         */
        function resetConnection(reason) {
@@ -429,6 +587,12 @@
          }
          if (globalThis.dc) {
            globalThis.dc.close();
+         }
+         if (heartbeatChannel) {
+           try { heartbeatChannel.close(); } catch (e) { /* noop */ }
+         }
+         if (streamChannel) {
+           try { streamChannel.close(); } catch (e) { /* noop */ }
          }
          if (heartbeatInterval) clearInterval(heartbeatInterval);
          if (inactivityInterval) clearInterval(inactivityInterval);
@@ -439,6 +603,16 @@
          msgs.innerHTML = '';
 
          connectedAddress = null;
+         // Reset AC2 channel + status state for the next connection
+         isAc2 = false;
+         heartbeatChannel = null;
+         streamChannel = null;
+         heartbeatCount = 0;
+         // The messages list was cleared above; drop the stale preview ref too.
+         streamPreviewEl = null;
+         setConnectionStatus('Connecting…', false);
+         updateHeartbeatStatus();
+         setAgentStatus(null);
 
          // Show the initial UI again
          const isOffer = !document.querySelector('.offer')?.classList.contains('hidden');
@@ -528,7 +702,308 @@
          }
        }
        /**
-        * Handle the data channel
+        * Update the connection status pill
+        *
+        * @param text - Status text to show
+        * @param ac2 - Whether the peer is an AC2 wallet (highlights the pill)
+        */
+       function setConnectionStatus(text, ac2) {
+         const el = document.getElementById('connection-status');
+         if (!el) return;
+         el.textContent = text;
+         el.classList.toggle('ac2', !!ac2);
+       }
+
+       /**
+        * Refresh the heartbeat counter pill
+        */
+       function updateHeartbeatStatus() {
+         const el = document.getElementById('heartbeat-status');
+         if (el) el.textContent = `Heartbeats: ${heartbeatCount}`;
+       }
+
+       /**
+        * Count a heartbeat and pulse the indicator
+        *
+        * Any inbound liveness frame (legacy empty message, or an `ac2-heartbeat`
+        * ping/pong) counts. Keeps the status bar and indicator in sync so the
+        * debug app reflects liveness even against an AC2 wallet.
+        */
+       function noteHeartbeat() {
+         heartbeatCount += 1;
+         lastUserActivity = Date.now();
+         pulseIndicator();
+         updateHeartbeatStatus();
+       }
+
+       /**
+        * Render the agent presence reported over the `ac2-stream` channel
+        *
+        * @param frame - Parsed stream control frame, or null to reset to idle
+        */
+       function setAgentStatus(frame) {
+         const el = document.getElementById('agent-status');
+         if (!el) return;
+         if (!frame) {
+           el.textContent = 'Agent: idle';
+           el.classList.remove('agent-active');
+           el.classList.add('hidden');
+           return;
+         }
+         let label = 'idle';
+         if (frame.t === 'preview') {
+           label = frame.phase || 'thinking';
+           if (frame.detail) label += ` (${frame.detail})`;
+         } else if (frame.t === 'tool') {
+           label = `tool${frame.name ? ` (${frame.name})` : ''}`;
+         } else if (frame.t === 'finalize' || frame.t === 'discard') {
+           label = 'idle';
+         } else {
+           label = frame.t;
+         }
+         el.textContent = `Agent: ${label}`;
+         el.classList.toggle('agent-active', label !== 'idle');
+         el.classList.remove('hidden');
+       }
+
+       /**
+        * Ensure the message view is visible.
+        *
+        * Inbound chat can arrive on `ac2-stream` before (or without) the
+        * `ac2-v1` handler has revealed the chat UI, so surface it on demand.
+        */
+       function ensureMessagesVisible() {
+         document.querySelector('.message-container')?.classList.remove('hidden');
+         document.querySelector('.call-session')?.classList.add('hidden');
+       }
+
+       /**
+        * Append a remote (peer/agent) chat bubble and persist it.
+        *
+        * Uses textContent so remote content can never inject markup.
+        *
+        * @param text - The message text to render
+        */
+       function renderRemoteMessage(text) {
+         if (!text) return;
+         ensureMessagesVisible();
+         const messages = document.querySelector('.messages');
+         if (!messages) return;
+         pulseIndicator();
+         const bubble = document.createElement('div');
+         bubble.className = 'message-bubble remote-message';
+         bubble.textContent = text;
+         messages.appendChild(bubble);
+         messages.scrollTop = messages.scrollHeight;
+         lastUserActivity = Date.now();
+         if (connectedAddress) {
+           saveMessage(connectedAddress, { text, sender: 'peer' });
+         }
+       }
+
+       /**
+        * Update the live streaming-preview bubble with the agent's cumulative
+        * `preview` text (from the `ac2-stream` channel). Created on first use.
+        *
+        * @param text - Cumulative preview text
+        */
+       function updateStreamPreview(text) {
+         ensureMessagesVisible();
+         const messages = document.querySelector('.messages');
+         if (!messages) return;
+         if (!streamPreviewEl) {
+           streamPreviewEl = document.createElement('div');
+           streamPreviewEl.className = 'message-bubble remote-message stream-preview';
+           messages.appendChild(streamPreviewEl);
+         }
+         streamPreviewEl.textContent = text;
+         messages.scrollTop = messages.scrollHeight;
+       }
+
+       /**
+        * Remove the live streaming-preview bubble (on `discard`/reset).
+        */
+       function clearStreamPreview() {
+         if (streamPreviewEl) {
+           streamPreviewEl.remove();
+           streamPreviewEl = null;
+         }
+       }
+
+       /**
+        * Commit the streaming preview as the agent's final message (on
+        * `finalize`). Falls back to whatever the preview already showed.
+        *
+        * @param text - Final message text
+        */
+       function commitStreamPreview(text) {
+         const finalText = (
+           (typeof text === 'string' && text) ||
+           (streamPreviewEl ? streamPreviewEl.textContent : '') ||
+           ''
+         ).trim();
+         clearStreamPreview();
+         if (finalText) renderRemoteMessage(finalText);
+       }
+
+       /**
+        * Handle an inbound AC2 frame from either `ac2-stream` or `ac2-v1`.
+        *
+        * AC2 peers (a wallet + its agent) don't exchange plain frames the way a
+        * legacy `liquid` peer does: the agent emits STX(0x02)-prefixed control
+        * frames (`preview`/`finalize`/`tool`/…) carrying its reply text over
+        * `ac2-stream`, while the wallet sends chat as a plain `{ thid, text }`
+        * JSON envelope. Decode both so the debug app actually displays what the
+        * wallet/agent sends instead of only reflecting its status.
+        *
+        * @param raw - The raw string frame
+        * @returns true if the frame was consumed (control frame or chat)
+        */
+       function handleAc2Frame(raw) {
+         if (typeof raw !== 'string' || raw.length === 0) return false;
+         lastUserActivity = Date.now();
+         // STX-prefixed control frame: drives the agent status pill plus the
+         // streamed live preview / finalized reply.
+         if (raw.charCodeAt(0) === 0x02) {
+           let frame;
+           try {
+             frame = JSON.parse(raw.slice(1));
+           } catch (err) {
+             return true; // malformed control frame, swallow
+           }
+           console.log('Stream control frame:', frame);
+           if (frame && typeof frame.thid === 'string') currentThid = frame.thid;
+           setAgentStatus(frame);
+           if (frame && frame.t === 'preview') {
+             if (typeof frame.text === 'string') updateStreamPreview(frame.text);
+           } else if (frame && frame.t === 'finalize') {
+             commitStreamPreview(typeof frame.text === 'string' ? frame.text : '');
+           } else if (frame && frame.t === 'discard') {
+             clearStreamPreview();
+           }
+           return true;
+         }
+         const trimmed = raw.trim();
+         if (!trimmed) return false;
+         // The wallet sends chat as `{ thid, text }` JSON; other AC2 envelopes
+         // (e.g. signing/key requests) are JSON objects without a `text` field.
+         const first = trimmed.charCodeAt(0);
+         if (first === 0x7b || first === 0x5b) { // '{' or '['
+           let obj;
+           try {
+             obj = JSON.parse(trimmed);
+           } catch (err) {
+             obj = null;
+           }
+           if (obj && typeof obj === 'object') {
+             if (typeof obj.thid === 'string') currentThid = obj.thid;
+             if (typeof obj.text === 'string' && obj.text.trim()) {
+               renderRemoteMessage(obj.text.trim());
+             } else {
+               console.log('AC2 envelope received (not chat):', obj);
+             }
+             return true;
+           }
+         }
+         // Bare-string chat (legacy `liquid` peer or plain-text AC2 message).
+         renderRemoteMessage(trimmed);
+         return true;
+       }
+
+       /**
+        * Route a negotiated data channel by label
+        *
+        * An AC2 wallet negotiates dedicated channels (`ac2-v1`, `ac2-stream`,
+        * `ac2-heartbeat`) rather than the single legacy `liquid` channel. We
+        * dispatch each to the right handler so heartbeats are counted on
+        * `ac2-heartbeat` (ping/pong) and agent status is read from `ac2-stream`.
+        *
+        * @param channel - The RTCDataChannel to route
+        */
+       function routeChannel(channel) {
+         console.log('Data channel negotiated:', channel.label);
+         switch (channel.label) {
+           case 'ac2-heartbeat':
+             isAc2 = true;
+             setupHeartbeatChannel(channel);
+             setConnectionStatus('Connected (AC2 wallet)', true);
+             break;
+           case 'ac2-stream':
+             isAc2 = true;
+             setupStreamChannel(channel);
+             setConnectionStatus('Connected (AC2 wallet)', true);
+             break;
+           case 'ac2-v1':
+             isAc2 = true;
+             setConnectionStatus('Connected (AC2 wallet)', true);
+             handleDataChannel(channel);
+             break;
+           default:
+             handleDataChannel(channel);
+         }
+       }
+
+       /**
+        * Wire up the dedicated `ac2-heartbeat` channel
+        *
+        * The wallet pings on an interval; we count every inbound frame as
+        * liveness and reply `pong` to its `ping` so its watchdog sees us alive.
+        * We also ping periodically so the indicator keeps pulsing when the wallet
+        * is quiet.
+        *
+        * @param channel - The `ac2-heartbeat` RTCDataChannel
+        */
+       function setupHeartbeatChannel(channel) {
+         heartbeatChannel = channel;
+         channel.onmessage = (e) => {
+           noteHeartbeat();
+           const data = typeof e.data === 'string' ? e.data : '';
+           console.log(`Heartbeat received${data ? ` (${data})` : ''}`);
+           if (data === 'ping') {
+             try {
+               if (channel.readyState === 'open') channel.send('pong');
+             } catch (err) {
+               /* noop */
+             }
+           }
+         };
+         const startPinging = () => {
+           if (heartbeatInterval) clearInterval(heartbeatInterval);
+           heartbeatInterval = setInterval(() => {
+             if (channel.readyState === 'open') {
+               try {
+                 channel.send('ping');
+               } catch (err) {
+                 /* noop */
+               }
+             }
+           }, 15000);
+         };
+         if (channel.readyState === 'open') startPinging();
+         else channel.onopen = startPinging;
+       }
+
+       /**
+        * Wire up the `ac2-stream` channel
+        *
+        * The agent emits STX-prefixed (0x02) JSON control frames describing its
+        * activity AND carrying its reply text (`preview`/`finalize`), and the
+        * wallet sends chat here as a plain `{ thid, text }` JSON envelope. All of
+        * it is decoded by `handleAc2Frame` so the debug app both updates the
+        * agent status pill and renders the actual messages the wallet/agent send.
+        *
+        * @param channel - The `ac2-stream` RTCDataChannel
+        */
+       function setupStreamChannel(channel) {
+         streamChannel = channel;
+         channel.onmessage = (e) => {
+           const raw = typeof e.data === 'string' ? e.data : '';
+           handleAc2Frame(raw);
+         };
+       }
+
+       /**
+        * Handle the messaging data channel (legacy `liquid` or AC2 `ac2-v1`)
         * @param dataChannel
         */
        function handleDataChannel(dataChannel) {
@@ -539,21 +1014,29 @@
          messagesContainer.classList.remove('hidden')
          callSession.classList.add('hidden')
 
+         if (!isAc2) {
+           setConnectionStatus('Connected', false);
+         }
+         updateHeartbeatStatus();
+
          if (connectedAddress) {
            loadMessages(connectedAddress);
          }
 
-         const messages = document.querySelector('.messages')
-
          lastUserActivity = Date.now();
 
-         heartbeatInterval = setInterval(() => {
-           if (globalThis.dc && globalThis.dc.readyState === 'open') {
-             console.log("Sending heartbeat message");
-             globalThis.dc.send('');
-             pulseIndicator();
-           }
-         }, 20000);
+         // Legacy peers keep liveness on the message channel via empty frames.
+         // AC2 wallets use the dedicated `ac2-heartbeat` channel instead, so we
+         // must NOT send empty keepalives here or they would surface as noise.
+         if (!isAc2) {
+           heartbeatInterval = setInterval(() => {
+             if (globalThis.dc && globalThis.dc.readyState === 'open') {
+               console.log("Sending heartbeat message");
+               globalThis.dc.send('');
+               pulseIndicator();
+             }
+           }, 20000);
+         }
 
          inactivityInterval = setInterval(() => {
            const now = Date.now();
@@ -563,25 +1046,28 @@
            }
          }, 5000);
 
-         dc.onmessage = (e) => {
+         dataChannel.onmessage = (e) => {
            lastUserActivity = Date.now();
-           pulseIndicator();
            if (!e.data) {
+             // Legacy empty-frame heartbeat.
+             noteHeartbeat();
              console.log("Heartbeat received");
              return;
            }
-           messages.innerHTML += `<div class="message-bubble remote-message">${e.data}</div>`
-           messages.scrollTop = messages.scrollHeight;
-           if (connectedAddress) {
-             saveMessage(connectedAddress, { text: e.data, sender: 'peer' });
-           }
+           const raw = typeof e.data === 'string' ? e.data : '';
+           // Route AC2 control frames / chat envelopes through the shared handler
+           // so `ac2-v1` renders messages the same way as `ac2-stream` (the
+           // wallet may fall back to `ac2-v1` when no stream channel exists).
+           if (handleAc2Frame(raw)) return;
+           // Anything else (e.g. non-string data): render as-is.
+           renderRemoteMessage(String(e.data));
          }
 
-         dc.onclose = () => {
+         dataChannel.onclose = () => {
            resetConnection('data channel closed by peer');
          };
 
-         dc.onerror = (error) => {
+         dataChannel.onerror = (error) => {
            console.error("Data channel error:", error);
            resetConnection('data channel error');
          };
@@ -590,9 +1076,13 @@
         * Create a peer connection, wait for an offer and send an answer to the remote client
         */
        async function handleOfferClient() {
-         // Peer to the remote client and await their offer
+         // Peer to the remote client and await their offer. Negotiated channels
+         // are dispatched by the `data-channel` listener (`routeChannel`), so we
+         // only need to surface errors here.
          console.log('requestId', requestId);
-         client.peer(requestId, 'offer', RTC_CONFIGURATION).then(handleDataChannel)
+         client.peer(requestId, 'offer', RTC_CONFIGURATION).catch((err) => {
+           console.error('Peer connection error:', err);
+         })
 
          // Once the link message is received by the remote wallet, hide the offer
          client.once('link-message', (data) => {
@@ -643,8 +1133,11 @@
 
          document.querySelector('.answer')?.classList.add('hidden')
 
-         // Create the Peer Connection and await the remote client's answer
-         client.peer(altRequestId, 'answer', RTC_CONFIGURATION).then(handleDataChannel)
+         // Create the Peer Connection and await the remote client's answer.
+         // Negotiated channels are dispatched by `routeChannel`.
+         client.peer(altRequestId, 'answer', RTC_CONFIGURATION).catch((err) => {
+           console.error('Peer connection error:', err);
+         })
        }
 
        // UI Functions
@@ -653,7 +1146,83 @@
          document.querySelector('.answer')?.classList.toggle('hidden')
        }
        function handleAlternativeRequestId() {
-         altRequestId = document.querySelector('input')?.value
+         altRequestId = document.querySelector('#alt-request')?.value
+       }
+
+       /**
+        * Update the local (offer) requestId from its input, persist it, and keep
+        * the remote (alt) id in sync when it still mirrors the local id. Lets us
+        * reuse a known requestId across reloads to test reconnect/reuse.
+        */
+       function handleLocalRequestId() {
+         const input = document.querySelector('#local-request');
+         const value = (input?.value || '').trim();
+         if (!value) return;
+         const mirrored = altRequestId === requestId;
+         requestId = value;
+         localStorage.setItem(REQUEST_ID_STORAGE_KEY, requestId);
+         if (mirrored) {
+           altRequestId = requestId;
+           const alt = document.querySelector('#alt-request');
+           if (alt) alt.value = altRequestId;
+         }
+       }
+
+       /**
+        * Forget the current requestId, mirroring the open-claw plugin's `ac2
+        * forget`: drop the persisted pairing id and mint a fresh UUID so the next
+        * pairing starts clean. Resets the visible ids and clears presence.
+        */
+       function forgetRequestId() {
+         localStorage.removeItem(REQUEST_ID_STORAGE_KEY);
+         requestId = SignalClient.generateRequestId();
+         localStorage.setItem(REQUEST_ID_STORAGE_KEY, requestId);
+         altRequestId = requestId;
+         const local = document.querySelector('#local-request');
+         if (local) local.value = requestId;
+         const alt = document.querySelector('#alt-request');
+         if (alt) alt.value = altRequestId;
+         renderPresence(document.querySelector('#offer-presence'), null);
+         renderPresence(document.querySelector('#answer-presence'), null);
+         console.log('Forgot requestId; new local id:', requestId);
+       }
+
+       /**
+        * Send the stored conversation history to the wallet as an `ac2-stream`
+        * `history` control frame, aligning with the open-claw reference plugin's
+        * `replayConversationHistory`. Local messages map to `user`, remote to
+        * `assistant`; sent over the stream channel when present, else `ac2-v1`.
+        */
+       function sendHistory() {
+         if (!connectedAddress) {
+           console.warn('No connected peer; cannot send history.');
+           return;
+         }
+         const stored = JSON.parse(localStorage.getItem(`messages_${connectedAddress}`) || '[]');
+         const messages = stored
+           .filter((m) => m && typeof m.text === 'string' && m.text.trim())
+           .map((m) => ({
+             role: m.sender === 'me' ? 'user' : 'assistant',
+             text: m.text,
+           }));
+         if (messages.length === 0) {
+           console.warn('No stored history to send.');
+           return;
+         }
+         const frame = AC2_STREAM_CONTROL_PREFIX + JSON.stringify({
+           t: 'history',
+           thid: currentThid,
+           messages,
+         });
+         if (streamChannel && streamChannel.readyState === 'open') {
+           streamChannel.send(frame);
+         } else if (globalThis.dc && globalThis.dc.readyState === 'open') {
+           globalThis.dc.send(frame);
+         } else {
+           console.warn('No open channel to send history over.');
+           return;
+         }
+         console.log(`Sent history (${messages.length} message(s)) on thid ${currentThid}`);
        }
 
 
@@ -663,7 +1232,11 @@
        globalThis.sendMessage = sendMessage
        globalThis.clearHistory = clearHistory
        globalThis.handleAlternativeRequestId = handleAlternativeRequestId
+       globalThis.handleLocalRequestId = handleLocalRequestId
+       globalThis.forgetRequestId = forgetRequestId
+       globalThis.sendHistory = sendHistory
        globalThis.resetConnection = resetConnection
+       globalThis.checkPresence = checkPresence
  })
      </script>
 </body>

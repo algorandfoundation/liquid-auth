@@ -4,6 +4,7 @@ import { AuthService } from './auth.service.js';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './auth.schema.js';
 import { Session, SessionSchema } from './session.schema.js';
+import { SignalsModule } from '../signals/signals.module.js';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { Session, SessionSchema } from './session.schema.js';
       { name: User.name, schema: UserSchema },
       { name: Session.name, schema: SessionSchema },
     ]),
+    SignalsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService],

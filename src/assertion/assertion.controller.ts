@@ -175,9 +175,16 @@ export class AssertionController {
 
     delete session.challenge;
     session.wallet = user.wallet;
+    // Presence: remember the requestId on the wallet's own session so that
+    // when its signaling socket (re)connects, handleConnection joins it to the
+    // requestId room and it is counted as a connected device.
+    const requestId = body?.clientExtensionResults?.liquid?.requestId;
+    if (typeof requestId === 'string' && requestId.length > 0) {
+      session.requestId = requestId;
+    }
     // Emit the signin event for the given request id
     this.client.emit<string>('auth', {
-      requestId: body?.clientExtensionResults?.liquid?.requestId,
+      requestId,
       wallet: user.wallet,
       credId: body.id,
       sessionId: session.id,

@@ -21,11 +21,15 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { User } from './auth.schema.js';
+import { SignalsGateway } from '../signals/signals.gateway.js';
 
 @Controller('auth')
 @ApiTags('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private signalsGateway: SignalsGateway,
+  ) {}
 
   /**
    * Display user keys
@@ -97,6 +101,16 @@ export class AuthController {
   @ApiOperation({ summary: 'Get Session' })
   async read(@Session() session: Record<string, any>) {
     const user = await this.authService.find(session.wallet);
+    // Presence: report the live device count for this session's requestId
+    // rather than a value persisted earlier. Counting on read avoids the race
+    // where a peer joined the request room after the last persisted update, so
+    // the session information always reflects how many devices are currently
+    // connected (used to decide whether an offline client should reconnect).
+    if (typeof session.requestId === 'string' && session.requestId.length > 0) {
+      session.deviceCount = await this.signalsGateway.countDevices(
+        session.requestId,
+      );
+    }
     return {
       user: user
         ? {
