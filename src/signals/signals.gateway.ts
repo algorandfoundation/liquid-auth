@@ -75,6 +75,19 @@ export class SignalsGateway
               server.in(data.sessionId).socketsJoin(data.requestId);
               await this.updatePresence(data.requestId);
             }
+            // Device deduplication: a credential (`credId`) can only ever
+            // belong to a single device, so any other session carrying the same
+            // credId is a stale login from that same device (e.g. a legacy
+            // application that re-authenticates on every connection, or a wallet
+            // that logs in again). Kick those out so the device is always
+            // counted once — other devices that merely share the wallet address
+            // are left alone (a wallet key may live on many devices).
+            if (typeof data.credId === 'string' && data.credId.length > 0) {
+              await this.evictDuplicateCredentialSessions(
+                data.credId,
+                data.sessionId,
+              );
+            }
           }
         } catch (e) {
           this.logger.error('Failed to handle global auth message', e);
@@ -102,6 +115,11 @@ export class SignalsGateway
     );
     if (typeof request.sessionID === 'string') {
       await socket.join(request.sessionID);
+      // Stamp the session id onto the socket so presence counting can collapse
+      // multiple sockets belonging to the same device (session) into a single
+      // device. socket.data is propagated across nodes by the Redis adapter, so
+      // it is available on the RemoteSockets returned by fetchSockets.
+      socket.data.sessionId = request.sessionID;
     }
     if (
       typeof session.wallet === 'string' &&
@@ -155,11 +173,15 @@ export class SignalsGateway
   /**
    * Count Devices
    *
-   * Counts how many sockets (devices) are currently connected for a given
-   * requestId room. Works across nodes via the Redis adapter's fetchSockets.
-   * This is the live source of truth for presence, so callers (e.g.
-   * /auth/session) can check the count on demand instead of relying on a
-   * value persisted at an earlier, possibly racy, moment.
+   * Counts how many distinct devices are currently connected for a given
+   * requestId room. Devices are identified by their session id (not by raw
+   * socket) so that a single device is only ever counted once even if it owns
+   * several sockets in the room (e.g. a lingering socket from a previous
+   * connection plus a freshly reconnected one). Works across nodes via the
+   * Redis adapter's fetchSockets. This is the live source of truth for
+   * presence, so callers (e.g. /auth/session) can check the count on demand
+   * instead of relying on a value persisted at an earlier, possibly racy,
+   * moment.
    *
    * @param requestId - The request identifier peers are connecting for
    * @returns The number of connected devices for the requestId
@@ -169,7 +191,24 @@ export class SignalsGateway
       return 0;
     }
     const sockets = await this.server.in(requestId).fetchSockets();
-    return sockets.length;
+    // Count distinct devices, not raw sockets. A single device (session) may
+    // briefly own more than one socket in the room — e.g. when it reconnects
+    // and its previous socket has not been cleaned up yet, or when the socket
+    // service closes and reopens — and each socket would otherwise inflate the
+    // count, making the same device look like a new one on every reconnect.
+    // Since one session is always the same device, collapse the sockets by
+    // their session id (stamped in handleConnection) so a device is only ever
+    // counted once no matter how it reconnects. Sockets missing a session id
+    // fall back to their own id so they are still counted individually.
+    const devices = new Set<string>();
+    for (const socket of sockets) {
+      const sessionId =
+        socket.data && typeof socket.data.sessionId === 'string'
+          ? socket.data.sessionId
+          : socket.id;
+      devices.add(sessionId);
+    }
+    return devices.size;
   }
 
   /**
@@ -208,6 +247,104 @@ export class SignalsGateway
       session.save();
     }
     return deviceCount;
+  }
+
+  /**
+   * Evict stale sessions bound to the same credential
+   *
+   * A credential (`credId`) can only ever belong to a single device. When a
+   * device authenticates (attestation or assertion — see the global `auth`
+   * handler) any previously stored session carrying the same credId is a stale
+   * login from that same device, so its sockets are disconnected: they
+   * immediately stop counting toward presence for whatever request they were
+   * connected to. This keeps a device — including a legacy application that
+   * re-authenticates on every connection — counted once instead of accumulating
+   * a new device on every login/link. Sessions that merely share the wallet
+   * address (a different device the user owns) are left untouched.
+   *
+   * @param credId - The credential id that identifies the device to deduplicate
+   * @param keepSessionId - The freshly authenticated session to keep
+   */
+  async evictDuplicateCredentialSessions(
+    credId: string,
+    keepSessionId?: string,
+  ): Promise<void> {
+    if (typeof credId !== 'string' || credId.length === 0) {
+      return;
+    }
+    try {
+      const staleSessions = await this.authService.findSessionsByCredId(
+        credId,
+        keepSessionId,
+      );
+      for (const sessionId of staleSessions) {
+        this.logger.debug(
+          `(*) Evicting stale session ${sessionId} for credential ${credId}`,
+        );
+        // Disconnect the stale session's sockets so it stops counting toward
+        // presence for any request it was connected to.
+        const sockets = await this.server.in(sessionId).fetchSockets();
+        for (const socket of sockets) {
+          socket.disconnect(true);
+        }
+      }
+    } catch (e) {
+      this.logger.error('Failed to evict stale credential sessions', e);
+    }
+  }
+
+  /**
+   * Re-announce Auth for a genuinely present wallet
+   *
+   * When a peer links for a requestId that a wallet has ALREADY authenticated
+   * for and is currently connected to (a live socket in the requestId room),
+   * re-announce that wallet's `auth`. This drives an order-independent pairing
+   * rendezvous: the wallet only broadcasts `auth` once on connect, so a peer
+   * that links afterwards would otherwise never learn the wallet is present.
+   *
+   * The re-announce is strictly gated on LIVE presence — it verifies the
+   * wallet's own session still has a connected socket — so a link never
+   * resolves against a wallet that has gone offline.
+   *
+   * @param requestId - The request identifier peers are connecting for
+   * @param excludeSessionId - The linking peer's own session, ignored so the
+   *   match identifies the OTHER party (the wallet) rather than the caller
+   */
+  async reannounceIfWalletPresent(
+    requestId: string,
+    excludeSessionId?: string,
+  ): Promise<void> {
+    if (typeof requestId !== 'string' || requestId.length === 0) {
+      return;
+    }
+    try {
+      const authed = await this.authService.findAuthenticatedSessionByRequestId(
+        requestId,
+        excludeSessionId,
+      );
+      if (!authed) {
+        return;
+      }
+      // Confirm the wallet is genuinely online right now: its session must
+      // still own a connected socket. Without this a stale (persisted) session
+      // would resolve a link for a wallet that is no longer available.
+      const walletSockets = await this.server
+        .in(authed.sessionId)
+        .fetchSockets();
+      if (walletSockets.length === 0) {
+        return;
+      }
+      this.logger.debug(
+        `(link): wallet ${authed.wallet} already present for RequestId: ${requestId}; re-announcing auth`,
+      );
+      this.client.emit<string>('auth', {
+        requestId,
+        wallet: authed.wallet,
+        sessionId: authed.sessionId,
+      });
+    } catch (e) {
+      this.logger.error('Failed to re-announce auth for present wallet', e);
+    }
   }
 
   /**
@@ -266,9 +403,7 @@ export class SignalsGateway
                 body.requestId.length > 0
               ) {
                 if (typeof data.sessionId === 'string') {
-                  this.server
-                    .in(data.sessionId)
-                    .socketsJoin(body.requestId);
+                  this.server.in(data.sessionId).socketsJoin(body.requestId);
                 }
                 await this.updatePresence(body.requestId, request.session);
               }
@@ -283,6 +418,19 @@ export class SignalsGateway
         };
 
         this.ioAdapter.subClient.on('message', handleAuthMessage);
+
+        // Order-independent rendezvous: the wallet re-announces `auth` once when
+        // its socket connects (see handleConnection). A peer that links AFTER
+        // the wallet is already connected would miss that one-shot announce and
+        // wait forever — its `once(offer-description)` never arms, so every
+        // offer the wallet sends is dropped and negotiation times out. Now that
+        // this peer's auth listener is armed, re-announce `auth` if the wallet
+        // is genuinely present (a live socket) for this requestId, so the link
+        // resolves regardless of which side connected first. Gated on live
+        // presence, so a link never resolves against an offline wallet. The
+        // caller's own session is excluded so we detect the OTHER party (both
+        // peers share the same wallet + requestId after a first pairing).
+        void this.reannounceIfWalletPresent(body.requestId, request.sessionID);
 
         return () => {
           this.ioAdapter.subClient.off('message', handleAuthMessage);
@@ -311,8 +459,15 @@ export class SignalsGateway
    * On Presence request, report how many devices are connected for a requestId.
    *
    * A (potentially offline) client can query this to detect whether there is
-   * anyone available to connect to before attempting to reconnect. The current
-   * presence is also persisted to the requesting user's session information.
+   * anyone available to connect to before attempting to reconnect.
+   *
+   * This is a pure read: it must NOT persist the requestId onto the querying
+   * client's session. Persisting it here would cause that client to auto-join
+   * the requestId room on its next (re)connect (see handleConnection), so it
+   * would be counted as a connected device even though it never linked and is
+   * not armed to receive a connection. Presence membership is only established
+   * by actually waiting for a connection (link) or negotiating, so we count and
+   * broadcast without touching the caller's session.
    *
    * @param body
    * @param client
@@ -326,10 +481,7 @@ export class SignalsGateway
     this.logger.debug(
       `(presence): request for Session: ${request.sessionID} with RequestId: ${body.requestId}`,
     );
-    const deviceCount = await this.updatePresence(
-      body.requestId,
-      request.session,
-    );
+    const deviceCount = await this.updatePresence(body.requestId);
     return {
       requestId: body.requestId,
       deviceCount,

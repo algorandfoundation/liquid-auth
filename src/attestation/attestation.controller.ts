@@ -132,6 +132,13 @@ export class AttestationController {
     delete session.challenge;
     // Authorize user with a wallet session
     session.wallet = username;
+    // Device identity: remember the credential this session authenticated with.
+    // A credId can only ever belong to a single device, so the auth event below
+    // lets the gateway kick out any other (stale) session bound to the same
+    // credId. This deduplicates a device — e.g. a legacy application that
+    // re-attests on every connection — so it always counts as a single device,
+    // while other devices sharing the same wallet address are left alone.
+    session.credId = credential.credId;
     // Presence: remember the requestId on the wallet's own session so that
     // when its signaling socket (re)connects, handleConnection joins it to the
     // requestId room and it is counted as a connected device.
@@ -139,7 +146,9 @@ export class AttestationController {
     if (typeof requestId === 'string' && requestId.length > 0) {
       session.requestId = requestId;
     }
-    // Handle Liquid Extension
+    // Handle Liquid Extension. `credId` tells the gateway to kick out any other
+    // (stale) session bound to the same credential (see
+    // evictDuplicateCredentialSessions).
     this.client.emit<string>('auth', {
       requestId,
       wallet: user.wallet,

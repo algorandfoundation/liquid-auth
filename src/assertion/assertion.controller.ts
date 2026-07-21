@@ -175,6 +175,12 @@ export class AssertionController {
 
     delete session.challenge;
     session.wallet = user.wallet;
+    // Device identity: remember the credential this session asserted with. A
+    // credId can only ever belong to a single device, so the auth event below
+    // lets the gateway kick out any other (stale) session bound to the same
+    // credId. Without this the same device asserting again (a fresh login/link)
+    // would be counted as an extra device on every login, inflating presence.
+    session.credId = body.id;
     // Presence: remember the requestId on the wallet's own session so that
     // when its signaling socket (re)connects, handleConnection joins it to the
     // requestId room and it is counted as a connected device.
@@ -182,7 +188,9 @@ export class AssertionController {
     if (typeof requestId === 'string' && requestId.length > 0) {
       session.requestId = requestId;
     }
-    // Emit the signin event for the given request id
+    // Emit the signin event for the given request id. `credId` tells the
+    // gateway to kick out any other (stale) session bound to the same
+    // credential (see evictDuplicateCredentialSessions).
     this.client.emit<string>('auth', {
       requestId,
       wallet: user.wallet,

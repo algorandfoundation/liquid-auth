@@ -48,6 +48,9 @@ describe('AuthService', () => {
     mockSessionModel.findOneAndUpdate = jest.fn().mockReturnValue({
       exec: jest.fn().mockResolvedValue(mockSession),
     });
+    mockSessionModel.find = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue([]),
+    });
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         {
@@ -126,5 +129,89 @@ describe('AuthService', () => {
       mockUser.wallet,
     );
     expect(session).toEqual(mockSession);
+  });
+  it('should find an authenticated session by requestId', async () => {
+    const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
+    mockSessionModel.find = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue([
+        {
+          _id: mockSession._id,
+          session: JSON.stringify({ requestId, wallet: mockUser.wallet }),
+        },
+      ]),
+    });
+    const result = await service.findAuthenticatedSessionByRequestId(requestId);
+    expect(result).toEqual({
+      sessionId: mockSession._id,
+      wallet: mockUser.wallet,
+    });
+  });
+  it('should return null for an empty requestId', async () => {
+    await expect(
+      service.findAuthenticatedSessionByRequestId(''),
+    ).resolves.toBeNull();
+  });
+  it('should exclude the caller session when finding the other party', async () => {
+    const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
+    mockSessionModel.find = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue([
+        {
+          _id: 'offer-session-id',
+          session: JSON.stringify({ requestId, wallet: mockUser.wallet }),
+        },
+        {
+          _id: 'wallet-session-id',
+          session: JSON.stringify({ requestId, wallet: mockUser.wallet }),
+        },
+      ]),
+    });
+    const result = await service.findAuthenticatedSessionByRequestId(
+      requestId,
+      'offer-session-id',
+    );
+    expect(result).toEqual({
+      sessionId: 'wallet-session-id',
+      wallet: mockUser.wallet,
+    });
+  });
+  it('should return null when no session carries a wallet for the requestId', async () => {
+    const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
+    mockSessionModel.find = jest.fn().mockReturnValue({
+      exec: jest
+        .fn()
+        .mockResolvedValue([
+          { _id: mockSession._id, session: JSON.stringify({ requestId }) },
+        ]),
+    });
+    await expect(
+      service.findAuthenticatedSessionByRequestId(requestId),
+    ).resolves.toBeNull();
+  });
+  it('should find other sessions bound to the same credential, excluding the kept one', async () => {
+    const credId = 'a-credential-id';
+    mockSessionModel.find = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue([
+        {
+          _id: 'new-session',
+          session: JSON.stringify({ wallet: mockUser.wallet, credId }),
+        },
+        {
+          _id: 'stale-session',
+          session: JSON.stringify({ wallet: mockUser.wallet, credId }),
+        },
+        {
+          _id: 'other-device-session',
+          session: JSON.stringify({
+            wallet: mockUser.wallet,
+            credId: 'a-different-credential',
+          }),
+        },
+      ]),
+    });
+    const result = await service.findSessionsByCredId(credId, 'new-session');
+    expect(result).toEqual(['stale-session']);
+  });
+  it('should return no sessions for an empty credId', async () => {
+    await expect(service.findSessionsByCredId('')).resolves.toEqual([]);
   });
 });
