@@ -249,6 +249,41 @@
       .presence.offline {
           color: #ff4444;
       }
+      .connecting {
+          max-width: 600px;
+          margin: 0 auto;
+          background: #1a1a1a;
+          border-radius: 12px;
+          padding: 20px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+          text-align: left;
+      }
+      .connecting h1 {
+          font-size: 1.5em;
+          margin: 0 0 10px;
+          text-align: center;
+      }
+      .debug-log {
+          list-style: none;
+          margin: 12px 0 0;
+          padding: 10px;
+          background: #242424;
+          border: 1px solid #333;
+          border-radius: 8px;
+          max-height: 200px;
+          overflow-y: auto;
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 0.8em;
+          color: #aaa;
+      }
+      .debug-log li {
+          padding: 2px 0;
+          border-bottom: 1px solid #2c2c2c;
+          word-break: break-all;
+      }
+      .debug-log li:last-child {
+          border-bottom: none;
+      }
       .status-bar {
           display: flex;
           flex-wrap: wrap;
@@ -273,6 +308,30 @@
       .status-bar .status-pill.agent-active {
           border-color: #4CAF50;
           color: #4CAF50;
+      }
+      .thread-bar {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          align-items: center;
+          font-size: 0.85em;
+          color: #aaa;
+          padding: 4px 10px;
+      }
+      .thread-bar label {
+          color: #aaa;
+      }
+      .thread-bar select {
+          flex: 1 1 auto;
+          min-width: 120px;
+          background: #242424;
+          border: 1px solid #333;
+          border-radius: 8px;
+          color: inherit;
+          padding: 4px 8px;
+      }
+      .thread-bar button {
+          padding: 4px 12px;
       }
       @media (prefers-color-scheme: light) {
           :root {
@@ -382,8 +441,12 @@
  window.addEventListener("load", ()=>{
 
 
-       // The Signaling Client
-       const client = new SignalClient(window.origin)
+       // The Signaling Client. Construct with `autoConnect: false` so simply
+       // opening the debug app (the main menu) does NOT open a socket to the
+       // signaling service. The connection is established lazily the first time
+       // the user takes an action that needs it — clicking Start (offer), Sign
+       // In (answer), or Check Presence — via `ensureSocketConnected()`.
+       const client = new SignalClient(window.origin, { autoConnect: false })
        // WebRTC Configuration
        const RTC_CONFIGURATION = {
          iceServers: [
@@ -409,14 +472,21 @@
          ],
          iceCandidatePoolSize: 10,
        }
-       // RequestId for this client. Use a generated UUID as the basis, but
-       // persist it and allow editing so the same id can be reused across
-       // reloads to exercise reconnect/reuse against a wallet that remembers it.
-       // `forgetRequestId()` clears the saved id and mints a fresh one, mirroring
-       // the open-claw reference plugin's `ac2 forget`.
+       // RequestId for this client. Use a generated UUID as the basis, but allow
+       // editing so the same id can be reused across reloads to exercise
+       // reconnect/reuse against a wallet that remembers it.
+       //
+       // We only PERSIST a requestId once it has actually connected (see
+       // `saveConnectedRequestId`, called from `routeChannel`). A freshly minted
+       // or edited id stays in memory until it reaches a live connection, so the
+       // debug app never "remembers" an id that never paired. Mirroring that,
+       // `forgetRequestId()` only forgets an id that has connected.
        const REQUEST_ID_STORAGE_KEY = 'liquid_request_id'
        let requestId = localStorage.getItem(REQUEST_ID_STORAGE_KEY) || SignalClient.generateRequestId()
-       localStorage.setItem(REQUEST_ID_STORAGE_KEY, requestId)
+       // Whether the current requestId has reached a live p2p connection. A
+       // stored id means it connected on a previous run, so seed the flag from
+       // storage. Drives implicit save-on-connect and gates the Forget button.
+       let hasConnected = !!localStorage.getItem(REQUEST_ID_STORAGE_KEY)
        // RequestId for a remote client
        let altRequestId = requestId
        // Globals for connection management
@@ -434,12 +504,44 @@
        // STX (0x02) prefix for `ac2-stream` control frames (matches the wallet
        // and the open-claw reference plugin's stream protocol).
        const AC2_STREAM_CONTROL_PREFIX = '\u0002';
-       // Thread id last seen from the wallet/agent; used when replaying history
-       // back to the wallet. Defaults to the plugin's default thread.
-       let currentThid = 'default';
+       // Conversation threads for AC2. The debug app plays the agent/plugin
+       // side, and a single connection can carry multiple conversations, each
+       // keyed by a thread id (`thid`). We keep a per-thread message store so
+       // several conversations can be tested at once and switched between in the
+       // chat header. `'default'` matches the plugin/wallet default thread.
+       const DEFAULT_THID = 'default';
+       // The conversation currently shown in the chat window.
+       let activeThid = DEFAULT_THID;
+       // thid -> { title, messages: [{ text, sender }], unread }. Loaded per
+       // connected address and persisted to `threads_<address>` in localStorage.
+       let threads = Object.create(null);
+       // Whether the thread store has been loaded for the current connection.
+       // Loaded once (in `routeChannel`) before any channel delivers a message so
+       // inbound frames aren't clobbered by a later load. Reset on disconnect.
+       let threadsReady = false;
        // Live "still streaming" preview bubble for the agent's `ac2-stream`
        // preview frames; committed as a normal message on `finalize`.
        let streamPreviewEl = null;
+       // The outstanding offer `link-message` listener while the offer client is
+       // awaiting a peer to link (QR shown). Tracked so a manual Disconnect can
+       // detach it and stop the link await instead of leaving a stale handler
+       // that a later peer link could fire.
+       let offerLinkHandler = null;
+       // True while a user-initiated (manual) disconnect is tearing things down.
+       // Closing `client.peerClient` fires the data channel's `onclose`/`onerror`
+       // asynchronously, which would otherwise call `resetConnection(...)` with a
+       // non-manual reason and re-show the QR + re-await a link (the "disconnect
+       // then immediately reconnects" bug). This flag lets those handlers no-op
+       // during a deliberate disconnect; it is cleared when a new connection is
+       // started (Start / Sign In).
+       let deliberateDisconnect = false;
+       // True once a peer has actually linked to the offer client (we entered the
+       // connecting/negotiating or chat state). Used so a `presence` broadcast
+       // showing the peer has left (deviceCount <= 1) can immediately return us to
+       // the QR/awaiting-link state instead of waiting out the slow data-channel
+       // `onclose` / ICE timeout. Not armed while merely awaiting a first link (so
+       // our own single-device presence never triggers a spurious reset).
+       let peerLinked = false;
 
        // Render the UI
        const app = document.querySelector('#app');
@@ -458,7 +560,8 @@
                <p id="offer-presence" class="presence"></p>
                <button id="start" onclick="handleOfferClient()">Start</button>
                <button id="toggle" onclick="toggle()">Switch</button>
-               <button class="danger" onclick="forgetRequestId()">Forget</button>
+               <button id="forget" class="danger ${hasConnected ? '' : 'hidden'}" onclick="forgetRequestId()">Forget</button>
+               <button id="offer-cancel" class="danger hidden" onclick="resetConnection('manual')">Cancel</button>
            </div>
            <div class="answer hidden">
                <h1>Answer Client</h1>
@@ -467,6 +570,14 @@
                <button id="check-presence" onclick="checkPresence()">Check Presence</button>
                <button id="attestation" onclick="handleSignChallenge()">Sign In</button>
                <p id="answer-presence" class="presence"></p>
+           </div>
+       </div>
+       <div class="connecting hidden">
+           <h1>Linking…</h1>
+           <p id="connecting-info" class="presence"></p>
+           <ul id="connecting-log" class="debug-log"></ul>
+           <div class="controls">
+               <button class="danger" onclick="resetConnection('manual')">Cancel</button>
            </div>
        </div>
        <div class="message-container hidden">
@@ -480,6 +591,11 @@
                    <button class="danger" onclick="clearHistory()">Clear History</button>
                    <button class="danger" onclick="resetConnection('manual')">Disconnect</button>
                </div>
+           </div>
+           <div class="thread-bar">
+               <label for="thread-select">Thread:</label>
+               <select id="thread-select" onchange="switchThread()"></select>
+               <button onclick="newThread()">New</button>
            </div>
            <div class="status-bar">
                <span class="status-pill" id="connection-status">Connecting…</span>
@@ -524,6 +640,9 @@
         */
        function checkPresence(id) {
          const targetId = typeof id === 'string' ? id : altRequestId;
+         // A presence check needs the socket; connect it on demand (the main
+         // menu stays offline until an action like this).
+         ensureSocketConnected();
          whenSocketReady((socket) => {
            socket.emit('presence', { requestId: targetId }, (data) => {
              console.log('Presence check:', data);
@@ -559,6 +678,74 @@
          }, 50);
        }
 
+       /**
+        * Open the signaling socket if it is not already connected.
+        *
+        * The client is constructed with `autoConnect: false`, so the socket
+        * stays closed until the user takes an action that needs it (Start, Sign
+        * In, or Check Presence). This keeps the main menu offline until then.
+        */
+       function ensureSocketConnected() {
+         whenSocketReady((socket) => {
+           if (!socket.connected) {
+             console.log('Connecting to signaling service…');
+             socket.connect();
+           }
+         });
+       }
+
+       /**
+        * Show the connecting/negotiating debug view.
+        *
+        * After a peer links, the WebRTC offer/answer + ICE exchange happens
+        * before any data channel opens. Without this the offer view is hidden
+        * and the chat is still hidden, leaving the screen blank. This surfaces
+        * the requestId and a live negotiation log so that gap is debuggable.
+        *
+        * @param keepCallSession - When true (the offer client's link flow) the
+        *   call session is left visible so the QR code is still shown while
+        *   linking. The sign-in flow has no QR, so it hides the call session.
+        */
+       function showConnectingView(keepCallSession = false) {
+         if (!keepCallSession) {
+           document.querySelector('.call-session')?.classList.add('hidden');
+         }
+         document.querySelector('.message-container')?.classList.add('hidden');
+         document.querySelector('.connecting')?.classList.remove('hidden');
+         const info = document.querySelector('#connecting-info');
+         if (info) info.textContent = `requestId: ${requestId}`;
+       }
+
+       /**
+        * Hide the connecting/negotiating debug view and clear its log.
+        */
+       function hideConnectingView() {
+         document.querySelector('.connecting')?.classList.add('hidden');
+         // The offer client keeps its call session (and QR code) visible while
+         // linking; once the transport is live we leave the connecting view, so
+         // hide the call session too (resetConnection re-shows it when returning
+         // to the menu).
+         document.querySelector('.call-session')?.classList.add('hidden');
+         const log = document.querySelector('#connecting-log');
+         if (log) log.innerHTML = '';
+       }
+
+       /**
+        * Append a timestamped line to the connecting debug log.
+        *
+        * @param message - The line to append
+        */
+       function logConnecting(message) {
+         console.log('[connecting]', message);
+         const log = document.querySelector('#connecting-log');
+         if (!log) return;
+         const li = document.createElement('li');
+         const time = new Date().toLocaleTimeString();
+         li.textContent = `${time} — ${message}`;
+         log.appendChild(li);
+         log.scrollTop = log.scrollHeight;
+       }
+
        // Listen for presence broadcasts from the server and keep the UI in sync
        whenSocketReady((socket) => {
          socket.on('presence', (data) => {
@@ -570,6 +757,22 @@
            if (data.requestId === altRequestId) {
              renderPresence(document.querySelector('#answer-presence'), data);
            }
+           // While linking, surface presence in the connecting debug view so the
+           // wait for peer information is visible rather than a blank screen.
+           if (!document.querySelector('.connecting')?.classList.contains('hidden')
+             && (data.requestId === requestId || data.requestId === altRequestId)) {
+             logConnecting(`presence: ${data.deviceCount} device(s), online=${data.online}`);
+           }
+           // If a peer had linked to our offer and presence now shows only us
+           // (deviceCount <= 1), the wallet went offline. Don't sit in the
+           // connecting view or wait out the data-channel/ICE timeout: return to
+           // the QR code and await a fresh link. Skip during a deliberate
+           // disconnect (we're already tearing down).
+           if (peerLinked && !deliberateDisconnect
+             && data.requestId === requestId && data.deviceCount <= 1) {
+             console.log('Peer went offline (presence); returning to QR / awaiting link.');
+             resetConnection('peer offline (presence)');
+           }
          });
        });
 
@@ -578,13 +781,63 @@
        // and the AC2 wallet's `ac2-v1` / `ac2-stream` / `ac2-heartbeat` set.
        client.on('data-channel', routeChannel);
 
+       // Trace the signaling/negotiation exchange into the connecting debug view.
+       // `SignalClient` emits these as it links and exchanges SDP/ICE, so the
+       // otherwise-blank "waiting for peer information" gap now shows progress.
+       client.on('signal', (data) => logConnecting(`signal: ${data?.type ?? ''}`.trim()));
+       client.on('offer-description', () => logConnecting('offer-description'));
+       client.on('answer-description', () => logConnecting('answer-description'));
+       client.on('offer-candidate', () => logConnecting('offer-candidate'));
+       client.on('answer-candidate', () => logConnecting('answer-candidate'));
+
        /**
-        * Reset the connection and UI
+        * Restore the Offer client to its initial, pre-Start state.
+        *
+        * Re-shows the Start/Switch/Forget controls and hides the QR code so the
+        * main menu looks the same as a fresh load, ready for another Start.
+        */
+       function resetOfferView() {
+         const offer = document.querySelector('.offer');
+         offer?.classList.remove('hidden');
+         document.querySelector('.answer')?.classList.add('hidden');
+         document.querySelector('#start')?.classList.remove('hidden');
+         document.querySelector('#toggle')?.classList.remove('hidden');
+         // Hide the awaiting-link Cancel button; we're back to the pre-Start menu.
+         document.querySelector('#offer-cancel')?.classList.add('hidden');
+         // Back on the main menu: reveal Forget again, but only if a connection
+         // has ever been established for the current id.
+         updateForgetButton();
+         document.querySelector('.logo')?.classList.add('hidden');
+       }
+
+       /**
+        * Show the Forget button only on the main menu and only when a connection
+        * has ever been established (`hasConnected`). It is hidden while inviting
+        * (awaiting a link / negotiating) since forgetting mid-invite makes no
+        * sense, and hidden for a never-paired id.
+        */
+       function updateForgetButton() {
+         document.querySelector('#forget')?.classList.toggle('hidden', !hasConnected);
+       }
+
+       /**
+        * Reset the connection and UI.
+        *
+        * A `'manual'` reason (the Disconnect button) returns to the main menu and
+        * does NOT attempt to reconnect: the p2p peer is torn down, the socket is
+        * dropped (matching the "offline until Start" main-menu behavior), and no
+        * new link/offer is initiated. Any other reason (peer close, inactivity,
+        * error) keeps the previous auto-reconnect behavior for the offer client.
+        *
+        * @param reason - Why the connection is being reset
         */
        function resetConnection(reason) {
          if (reason) {
            console.log(`Resetting connection. Reason: ${reason}`);
          }
+         const manual = reason === 'manual';
+         // A new peer must link again before presence can drive another reset.
+         peerLinked = false;
          if (globalThis.dc) {
            globalThis.dc.close();
          }
@@ -597,6 +850,7 @@
          if (heartbeatInterval) clearInterval(heartbeatInterval);
          if (inactivityInterval) clearInterval(inactivityInterval);
 
+         hideConnectingView();
          document.querySelector('.message-container')?.classList.add('hidden');
          document.querySelector('.call-session')?.classList.remove('hidden');
          const msgs = document.querySelector('.messages')
@@ -610,9 +864,46 @@
          heartbeatCount = 0;
          // The messages list was cleared above; drop the stale preview ref too.
          streamPreviewEl = null;
+         // Reset the conversation threads so the next connection reloads its own
+         // store; also clear the thread selector.
+         threads = Object.create(null);
+         activeThid = DEFAULT_THID;
+         threadsReady = false;
+         renderThreadList();
          setConnectionStatus('Connecting…', false);
          updateHeartbeatStatus();
          setAgentStatus(null);
+
+         if (manual) {
+           // User-initiated disconnect: return to the main window and stay there.
+           // Tear down the p2p peer and drop the signaling socket so we are back
+           // to the "offline until Start" main-menu state, then bail before any
+           // reconnect logic runs.
+           //
+           // Mark the teardown as deliberate first: closing the peer below fires
+           // the data channel's `onclose`/`onerror` asynchronously, and this flag
+           // stops those handlers from kicking off a non-manual reset that would
+           // re-show the QR and re-await a link (the "immediately reconnects" bug).
+           deliberateDisconnect = true;
+           //
+           // Stop awaiting a link: detach the outstanding offer `link-message`
+           // listener so a peer that links after we cancelled cannot resurrect
+           // this offer (the whole point of "disconnect stops the link await").
+           if (offerLinkHandler) {
+             client.off?.('link-message', offerLinkHandler);
+             offerLinkHandler = null;
+           }
+           try { client.peerClient?.close(); } catch (e) { /* noop */ }
+           client.peerClient = undefined;
+           client.type = null;
+           delete client.requestId;
+           client.authenticated = false;
+           whenSocketReady((socket) => {
+             if (socket.connected) socket.disconnect();
+           });
+           resetOfferView();
+           return;
+         }
 
          // Show the initial UI again
          const isOffer = !document.querySelector('.offer')?.classList.contains('hidden');
@@ -633,14 +924,17 @@
        }
 
        /**
-        * Clear chat history
+        * Clear the active conversation thread's history (message store + view).
         */
        function clearHistory() {
-         if (connectedAddress) {
-           localStorage.removeItem(`messages_${connectedAddress}`);
-           const messagesDiv = document.querySelector('.messages');
-           messagesDiv.innerHTML = '';
+         const thread = threads[activeThid];
+         if (thread) {
+           thread.messages = [];
+           thread.unread = 0;
+           persistThreads();
          }
+         renderActiveThread();
+         renderThreadList();
        }
 
        /**
@@ -657,48 +951,259 @@
        }
 
        /**
-        * Save a message to local storage
+        * localStorage key for a connected address's thread store.
         */
-       function saveMessage(address, message) {
-         const key = `messages_${address}`;
-         const existing = JSON.parse(localStorage.getItem(key) || '[]');
-         existing.push(message);
-         localStorage.setItem(key, JSON.stringify(existing));
+       function threadsStorageKey(address) {
+         return `threads_${address}`;
        }
 
        /**
-        * Load and display messages from local storage
+        * Persist the in-memory thread store for the connected address.
+        *
+        * No-op when there is no connected address yet (threads still live in
+        * memory and are persisted once the peer address is known).
         */
-       function loadMessages(address) {
-         const key = `messages_${address}`;
-         const messages = JSON.parse(localStorage.getItem(key) || '[]');
-         const messagesDiv = document.querySelector('.messages');
-         messagesDiv.innerHTML = '';
-         messages.forEach((m) => {
-           const className = m.sender === 'me' ? 'local-message' : 'remote-message';
-           messagesDiv.innerHTML += `<div class="message-bubble ${className}">${m.text}</div>`;
+       function persistThreads() {
+         if (!connectedAddress) return;
+         localStorage.setItem(threadsStorageKey(connectedAddress), JSON.stringify(threads));
+       }
+
+       /**
+        * Ensure a thread exists in the in-memory store, creating it if needed.
+        *
+        * @param thid - Thread id (falls back to the default thread)
+        * @param title - Optional human title to attach on first creation
+        * @returns The thread record `{ title, messages, unread }`
+        */
+       function ensureThread(thid, title) {
+         const id = (typeof thid === 'string' && thid) ? thid : DEFAULT_THID;
+         if (!threads[id]) {
+           threads[id] = { title: title || '', messages: [], unread: 0 };
+           renderThreadList();
+         } else if (title && !threads[id].title) {
+           threads[id].title = title;
+         }
+         return threads[id];
+       }
+
+       /**
+        * Load the thread store for a connected address into memory.
+        *
+        * Migrates the legacy flat `messages_<address>` list into the default
+        * thread so history from before threading isn't lost. Always guarantees a
+        * default thread exists.
+        *
+        * @param address - The connected peer address
+        */
+       function loadThreads(address) {
+         threads = Object.create(null);
+         try {
+           const raw = localStorage.getItem(threadsStorageKey(address));
+           if (raw) {
+             const parsed = JSON.parse(raw);
+             if (parsed && typeof parsed === 'object') {
+               Object.keys(parsed).forEach((thid) => {
+                 const t = parsed[thid] || {};
+                 threads[thid] = {
+                   title: t.title || '',
+                   messages: Array.isArray(t.messages) ? t.messages : [],
+                   unread: 0,
+                 };
+               });
+             }
+           }
+         } catch (e) {
+           console.warn('Failed to load threads; starting fresh.', e);
+           threads = Object.create(null);
+         }
+         let migrated = false;
+         if (Object.keys(threads).length === 0) {
+           try {
+             const legacy = JSON.parse(localStorage.getItem(`messages_${address}`) || '[]');
+             if (Array.isArray(legacy) && legacy.length) {
+               threads[DEFAULT_THID] = { title: '', messages: legacy, unread: 0 };
+               migrated = true;
+             }
+           } catch (e) {
+             /* ignore corrupt legacy list */
+           }
+         }
+         ensureThread(DEFAULT_THID);
+         if (migrated) persistThreads();
+       }
+
+       /**
+        * Append a message to a thread's store and persist it.
+        *
+        * @param thid - Thread id
+        * @param message - `{ text, sender }`
+        */
+       function saveThreadMessage(thid, message) {
+         const thread = ensureThread(thid);
+         thread.messages.push(message);
+         persistThreads();
+       }
+
+       /**
+        * Populate the thread selector from the in-memory store, marking the
+        * active thread and showing per-thread unread counts.
+        */
+       function renderThreadList() {
+         const select = document.querySelector('#thread-select');
+         if (!select) return;
+         select.innerHTML = '';
+         Object.keys(threads).forEach((thid) => {
+           const t = threads[thid] || {};
+           const opt = document.createElement('option');
+           opt.value = thid;
+           const base = t.title ? `${t.title} [${thid}]` : thid;
+           const unread = t.unread ? ` (${t.unread})` : '';
+           opt.textContent = `${base}${unread}`;
+           if (thid === activeThid) opt.selected = true;
+           select.appendChild(opt);
          });
-         // Scroll to bottom
+       }
+
+       /**
+        * Render the active thread's stored messages into the chat window.
+        */
+       function renderActiveThread() {
+         const messagesDiv = document.querySelector('.messages');
+         if (!messagesDiv) return;
+         clearStreamPreview();
+         messagesDiv.innerHTML = '';
+         const thread = threads[activeThid];
+         const msgs = (thread && thread.messages) || [];
+         msgs.forEach((m) => {
+           const bubble = document.createElement('div');
+           bubble.className = `message-bubble ${m.sender === 'me' ? 'local-message' : 'remote-message'}`;
+           bubble.textContent = m.text;
+           messagesDiv.appendChild(bubble);
+         });
          messagesDiv.scrollTop = messagesDiv.scrollHeight;
        }
 
        /**
-        * Send a Message to the remote client
+        * Switch the active conversation to the selected thread, re-rendering the
+        * chat window and clearing that thread's unread count.
+        */
+       function switchThread() {
+         const select = document.querySelector('#thread-select');
+         if (!select) return;
+         activeThid = select.value || DEFAULT_THID;
+         const thread = threads[activeThid];
+         if (thread) thread.unread = 0;
+         renderThreadList();
+         renderActiveThread();
+       }
+
+       /**
+        * Create a new conversation thread and switch to it.
+        *
+        * The debug app is the agent side, so it also advertises the updated
+        * thread list to the wallet via a `conversations` control frame.
+        */
+       function newThread() {
+         const suggestion = `t-${Date.now().toString(36)}`;
+         const input = prompt('New thread id:', suggestion);
+         if (input === null) return;
+         const thid = (input || '').trim() || suggestion;
+         ensureThread(thid);
+         activeThid = thid;
+         renderThreadList();
+         renderActiveThread();
+         sendConversations();
+       }
+
+       /**
+        * Advertise the debug app's threads to the wallet as a `conversations`
+        * control frame, mirroring the open-claw plugin's `replayConversationList`
+        * so the wallet's thread list reflects the conversations we hold.
+        *
+        * Best-effort: sent over the stream channel when present, else `ac2-v1`.
+        */
+       function sendConversations() {
+         const list = Object.keys(threads).map((thid) => ({
+           thid,
+           ...(threads[thid] && threads[thid].title ? { title: threads[thid].title } : {}),
+         }));
+         if (list.length === 0) return;
+         const frame = AC2_STREAM_CONTROL_PREFIX + JSON.stringify({ t: 'conversations', threads: list });
+         if (streamChannel && streamChannel.readyState === 'open') {
+           streamChannel.send(frame);
+         } else if (globalThis.dc && globalThis.dc.readyState === 'open') {
+           globalThis.dc.send(frame);
+         }
+       }
+
+       /**
+        * Initialise the thread store for the current connection.
+        *
+        * Called once (guarded by `threadsReady`) from `routeChannel` before any
+        * channel delivers a message, so inbound frames land in threads that are
+        * already loaded from storage rather than being clobbered by a later load.
+        * When the peer address is known its persisted threads are loaded;
+        * otherwise a fresh default thread is used.
+        */
+       function initThreads() {
+         if (threadsReady) return;
+         if (connectedAddress) {
+           loadThreads(connectedAddress);
+         } else {
+           threads = Object.create(null);
+           ensureThread(DEFAULT_THID);
+         }
+         activeThid = DEFAULT_THID;
+         threadsReady = true;
+         renderThreadList();
+         renderActiveThread();
+       }
+
+       /**
+        * Send chat text to the remote client, tagged with the active thread.
+        *
+        * The debug app plays the agent side, so — matching how the wallet
+        * routes/displays agent messages — it sends an STX `finalize` control
+        * frame carrying the active `thid` over the stream channel when present.
+        * Falls back to a `{thid,text}` envelope on `ac2-v1`, then to plain text
+        * for a legacy `liquid` peer.
+        *
+        * @param text - The message text to send
+        */
+       function sendChatText(text) {
+         if (isAc2 && streamChannel && streamChannel.readyState === 'open') {
+           streamChannel.send(
+             AC2_STREAM_CONTROL_PREFIX + JSON.stringify({ t: 'finalize', thid: activeThid, text })
+           );
+           return;
+         }
+         if (isAc2 && globalThis.dc && globalThis.dc.readyState === 'open') {
+           globalThis.dc.send(JSON.stringify({ thid: activeThid, text }));
+           return;
+         }
+         if (globalThis.dc && globalThis.dc.readyState === 'open') {
+           globalThis.dc.send(text);
+         }
+       }
+
+       /**
+        * Send a Message to the remote client in the active conversation thread.
         */
        function sendMessage() {
          const messages = document.querySelector('.messages')
          const message = document.querySelector('#message')
          if (message.value.trim() && globalThis.dc && globalThis.dc.readyState === 'open') {
            const text = message.value.trim();
-           globalThis.dc.send(text)
-           messages.innerHTML += `<div class="message-bubble local-message">${text}</div>`
+           sendChatText(text);
+           const bubble = document.createElement('div');
+           bubble.className = 'message-bubble local-message';
+           bubble.textContent = text;
+           messages.appendChild(bubble);
            message.value = ''
            lastUserActivity = Date.now();
            messages.scrollTop = messages.scrollHeight;
            pulseIndicator();
-           if (connectedAddress) {
-             saveMessage(connectedAddress, { text, sender: 'me' });
-           }
+           saveThreadMessage(activeThid, { text, sender: 'me' });
          }
        }
        /**
@@ -778,26 +1283,37 @@
        }
 
        /**
-        * Append a remote (peer/agent) chat bubble and persist it.
+        * Append a remote (peer/agent) chat bubble to its thread and persist it.
         *
-        * Uses textContent so remote content can never inject markup.
+        * The message is stored in the thread named by `thid` (defaulting to the
+        * active thread). It is only rendered into the chat window when it belongs
+        * to the active conversation; otherwise its thread's unread count is bumped
+        * so the thread selector shows there's something new. Uses textContent so
+        * remote content can never inject markup.
         *
         * @param text - The message text to render
+        * @param thid - The thread the message belongs to (defaults to active)
         */
-       function renderRemoteMessage(text) {
+       function renderRemoteMessage(text, thid) {
          if (!text) return;
-         ensureMessagesVisible();
-         const messages = document.querySelector('.messages');
-         if (!messages) return;
-         pulseIndicator();
-         const bubble = document.createElement('div');
-         bubble.className = 'message-bubble remote-message';
-         bubble.textContent = text;
-         messages.appendChild(bubble);
-         messages.scrollTop = messages.scrollHeight;
+         const targetThid = (typeof thid === 'string' && thid) ? thid : activeThid;
+         ensureThread(targetThid);
+         saveThreadMessage(targetThid, { text, sender: 'peer' });
          lastUserActivity = Date.now();
-         if (connectedAddress) {
-           saveMessage(connectedAddress, { text, sender: 'peer' });
+         if (targetThid === activeThid) {
+           ensureMessagesVisible();
+           const messages = document.querySelector('.messages');
+           if (!messages) return;
+           pulseIndicator();
+           const bubble = document.createElement('div');
+           bubble.className = 'message-bubble remote-message';
+           bubble.textContent = text;
+           messages.appendChild(bubble);
+           messages.scrollTop = messages.scrollHeight;
+         } else {
+           const thread = threads[targetThid];
+           if (thread) thread.unread = (thread.unread || 0) + 1;
+           renderThreadList();
          }
        }
 
@@ -805,9 +1321,15 @@
         * Update the live streaming-preview bubble with the agent's cumulative
         * `preview` text (from the `ac2-stream` channel). Created on first use.
         *
+        * Live previews are only shown for the active thread; a preview for a
+        * background thread is ignored (its `finalize` will still be stored).
+        *
         * @param text - Cumulative preview text
+        * @param thid - The thread the preview belongs to (defaults to active)
         */
-       function updateStreamPreview(text) {
+       function updateStreamPreview(text, thid) {
+         const targetThid = (typeof thid === 'string' && thid) ? thid : activeThid;
+         if (targetThid !== activeThid) return;
          ensureMessagesVisible();
          const messages = document.querySelector('.messages');
          if (!messages) return;
@@ -835,15 +1357,17 @@
         * `finalize`). Falls back to whatever the preview already showed.
         *
         * @param text - Final message text
+        * @param thid - The thread the message belongs to (defaults to active)
         */
-       function commitStreamPreview(text) {
+       function commitStreamPreview(text, thid) {
+         const targetThid = (typeof thid === 'string' && thid) ? thid : activeThid;
          const finalText = (
            (typeof text === 'string' && text) ||
-           (streamPreviewEl ? streamPreviewEl.textContent : '') ||
+           (targetThid === activeThid && streamPreviewEl ? streamPreviewEl.textContent : '') ||
            ''
          ).trim();
-         clearStreamPreview();
-         if (finalText) renderRemoteMessage(finalText);
+         if (targetThid === activeThid) clearStreamPreview();
+         if (finalText) renderRemoteMessage(finalText, targetThid);
        }
 
        /**
@@ -872,14 +1396,34 @@
              return true; // malformed control frame, swallow
            }
            console.log('Stream control frame:', frame);
-           if (frame && typeof frame.thid === 'string') currentThid = frame.thid;
-           setAgentStatus(frame);
+           // Route by the frame's thread; unknown threads are created so a new
+           // conversation started by the peer shows up in the selector.
+           const fthid = (frame && typeof frame.thid === 'string' && frame.thid) ? frame.thid : activeThid;
+           if (frame && frame.t === 'conversations') {
+             // The peer advertised the conversations it holds; merge them into
+             // our thread list so they can be selected.
+             if (Array.isArray(frame.threads)) {
+               frame.threads
+                 .filter((t) => t && typeof t.thid === 'string' && t.thid)
+                 .forEach((t) => ensureThread(t.thid, typeof t.title === 'string' ? t.title : ''));
+               renderThreadList();
+             }
+             return true;
+           }
+           ensureThread(fthid);
+           if (frame && frame.t === 'history') {
+             // The peer replayed a thread's history; restore it into that thread.
+             mergeThreadHistory(fthid, Array.isArray(frame.messages) ? frame.messages : []);
+             return true;
+           }
+           // Only reflect agent status for the active conversation.
+           if (fthid === activeThid) setAgentStatus(frame);
            if (frame && frame.t === 'preview') {
-             if (typeof frame.text === 'string') updateStreamPreview(frame.text);
+             if (typeof frame.text === 'string') updateStreamPreview(frame.text, fthid);
            } else if (frame && frame.t === 'finalize') {
-             commitStreamPreview(typeof frame.text === 'string' ? frame.text : '');
+             commitStreamPreview(typeof frame.text === 'string' ? frame.text : '', fthid);
            } else if (frame && frame.t === 'discard') {
-             clearStreamPreview();
+             if (fthid === activeThid) clearStreamPreview();
            }
            return true;
          }
@@ -896,9 +1440,10 @@
              obj = null;
            }
            if (obj && typeof obj === 'object') {
-             if (typeof obj.thid === 'string') currentThid = obj.thid;
+             const othid = (typeof obj.thid === 'string' && obj.thid) ? obj.thid : activeThid;
+             ensureThread(othid);
              if (typeof obj.text === 'string' && obj.text.trim()) {
-               renderRemoteMessage(obj.text.trim());
+               renderRemoteMessage(obj.text.trim(), othid);
              } else {
                console.log('AC2 envelope received (not chat):', obj);
              }
@@ -906,8 +1451,31 @@
            }
          }
          // Bare-string chat (legacy `liquid` peer or plain-text AC2 message).
-         renderRemoteMessage(trimmed);
+         renderRemoteMessage(trimmed, activeThid);
          return true;
+       }
+
+       /**
+        * Merge a replayed `history` frame's messages into a thread's store,
+        * replacing our copy of that thread so it is idempotent. Re-renders the
+        * chat window when the restored thread is the active one.
+        *
+        * @param thid - The thread to restore
+        * @param messages - The replayed `[{ role, text }]` list
+        */
+       function mergeThreadHistory(thid, messages) {
+         const thread = ensureThread(thid);
+         // The peer is the agent from our POV, so `role: 'assistant'` is the peer
+         // and `role: 'user'` is us (mirrors how we send history).
+         thread.messages = messages
+           .filter((m) => m && typeof m.text === 'string' && m.text.trim())
+           .map((m) => ({ text: m.text, sender: m.role === 'user' ? 'me' : 'peer' }));
+         persistThreads();
+         if (thid === activeThid) {
+           renderActiveThread();
+         } else {
+           renderThreadList();
+         }
        }
 
        /**
@@ -922,6 +1490,16 @@
         */
        function routeChannel(channel) {
          console.log('Data channel negotiated:', channel.label);
+         // The p2p transport is live: leave the connecting/negotiating debug
+         // view and show the chat.
+         hideConnectingView();
+         // Load this connection's conversation threads once, before any channel
+         // delivers a message, so inbound frames route into loaded threads.
+         initThreads();
+         // A negotiated data channel means the pairing reached a live p2p
+         // connection, so implicitly remember this requestId for reuse across
+         // reloads (and enable Forget).
+         saveConnectedRequestId();
          switch (channel.label) {
            case 'ac2-heartbeat':
              isAc2 = true;
@@ -1019,9 +1597,8 @@
          }
          updateHeartbeatStatus();
 
-         if (connectedAddress) {
-           loadMessages(connectedAddress);
-         }
+         // Conversation threads are loaded once in `routeChannel` (before any
+         // message arrives), so nothing to load here.
 
          lastUserActivity = Date.now();
 
@@ -1064,10 +1641,14 @@
          }
 
          dataChannel.onclose = () => {
+           // A deliberate (manual) disconnect closes the peer itself; ignore the
+           // resulting close so we don't bounce back into a reconnect.
+           if (deliberateDisconnect) return;
            resetConnection('data channel closed by peer');
          };
 
          dataChannel.onerror = (error) => {
+           if (deliberateDisconnect) return;
            console.error("Data channel error:", error);
            resetConnection('data channel error');
          };
@@ -1076,6 +1657,12 @@
         * Create a peer connection, wait for an offer and send an answer to the remote client
         */
        async function handleOfferClient() {
+         // Starting a fresh connection clears any prior deliberate-disconnect
+         // state so later genuine drops still reset the UI.
+         deliberateDisconnect = false;
+         // Opening the app leaves the socket closed; connect it now that the user
+         // has started the offer flow.
+         ensureSocketConnected();
          // Peer to the remote client and await their offer. Negotiated channels
          // are dispatched by the `data-channel` listener (`routeChannel`), so we
          // only need to surface errors here.
@@ -1084,10 +1671,26 @@
            console.error('Peer connection error:', err);
          })
 
-         // Once the link message is received by the remote wallet, hide the offer
-         client.once('link-message', (data) => {
+         // Once the link message is received by the remote wallet, the WebRTC
+         // offer/answer + ICE exchange runs before any data channel opens. Show
+         // the connecting/negotiating debug view for that window instead of
+         // leaving the screen blank while we wait for peer information.
+         //
+         // Track the handler in `offerLinkHandler` (and clear any stale one from a
+         // previous Start) so a manual Disconnect can detach it and stop the link
+         // await. The handler nulls the ref on fire since `once` self-removes.
+         if (offerLinkHandler) client.off?.('link-message', offerLinkHandler);
+         offerLinkHandler = (data) => {
+           offerLinkHandler = null;
+           // A peer has linked: arm presence-driven teardown so that if the wallet
+           // later goes offline we return to the QR / awaiting-link state.
+           peerLinked = true;
            console.log('Link message received:', data);
-           document.querySelector('.offer')?.classList.add('hidden')
+           // Keep the offer view (and its QR code) visible while linking so the
+           // QR is still shown during the WebRTC offer/answer + ICE exchange;
+           // surface the negotiation log alongside it.
+           showConnectingView(true);
+           logConnecting(`linked${data && data.wallet ? ` with ${data.wallet}` : ''}; negotiating peer connection…`);
            // The address should be available here if the wallet provides it in the link message
            // But the type LinkMessage in signal.ts only has { credId, requestId, wallet }
            // Looking at handleSignChallenge, it sends { requestId, origin, type, address, signature, device }
@@ -1095,7 +1698,8 @@
            if (data.wallet) {
              connectedAddress = data.wallet;
            }
-         })
+         };
+         client.once('link-message', offerLinkHandler)
 
          // Update the render
          const image = document.querySelector('.logo')
@@ -1109,6 +1713,10 @@
 
          document.querySelector('#start')?.classList.add('hidden')
          document.querySelector('#toggle')?.classList.add('hidden')
+         // Inviting/awaiting a link: hide Forget (it only belongs on the menu).
+         document.querySelector('#forget')?.classList.add('hidden')
+         // Now awaiting a peer link: offer a Cancel that stops the link await.
+         document.querySelector('#offer-cancel')?.classList.remove('hidden')
        }
 
        /**
@@ -1118,6 +1726,12 @@
         * before they can peer with the remote client.
         */
        async function handleSignChallenge() {
+         // Starting a fresh connection clears any prior deliberate-disconnect
+         // state so later genuine drops still reset the UI.
+         deliberateDisconnect = false;
+         // Opening the app leaves the socket closed; connect it now that the user
+         // has started the answer flow.
+         ensureSocketConnected();
          connectedAddress = testAccount.addr;
          // Sign in to the service with a new credential
          await client.attestation(async (challenge) => ({
@@ -1132,6 +1746,12 @@
          //await client.assertion()
 
          document.querySelector('.answer')?.classList.add('hidden')
+
+         // Signed in; the offer/answer + ICE exchange runs before any data
+         // channel opens. Show the connecting/negotiating debug view for that
+         // window instead of leaving the screen blank.
+         showConnectingView();
+         logConnecting('signed in; negotiating peer connection…');
 
          // Create the Peer Connection and await the remote client's answer.
          // Negotiated channels are dispatched by `routeChannel`.
@@ -1150,9 +1770,13 @@
        }
 
        /**
-        * Update the local (offer) requestId from its input, persist it, and keep
-        * the remote (alt) id in sync when it still mirrors the local id. Lets us
-        * reuse a known requestId across reloads to test reconnect/reuse.
+        * Update the local (offer) requestId from its input and keep the remote
+        * (alt) id in sync when it still mirrors the local id. Lets us reuse a
+        * known requestId across reloads to test reconnect/reuse.
+        *
+        * Editing an id resets `hasConnected` and does NOT persist: an id is only
+        * remembered once it actually connects (see `saveConnectedRequestId`), so
+        * typing a new id to try never leaves a stale, never-paired id behind.
         */
        function handleLocalRequestId() {
          const input = document.querySelector('#local-request');
@@ -1160,7 +1784,7 @@
          if (!value) return;
          const mirrored = altRequestId === requestId;
          requestId = value;
-         localStorage.setItem(REQUEST_ID_STORAGE_KEY, requestId);
+         hasConnected = false;
          if (mirrored) {
            altRequestId = requestId;
            const alt = document.querySelector('#alt-request');
@@ -1169,14 +1793,35 @@
        }
 
        /**
+        * Persist the current requestId once it has connected.
+        *
+        * Called from `routeChannel` when a data channel is negotiated (i.e. the
+        * pairing reached a live p2p connection). This is the implicit
+        * save-on-connect: only a requestId that actually paired is remembered
+        * across reloads, and only a remembered id can be forgotten.
+        */
+       function saveConnectedRequestId() {
+         hasConnected = true;
+         localStorage.setItem(REQUEST_ID_STORAGE_KEY, requestId);
+       }
+
+       /**
         * Forget the current requestId, mirroring the open-claw plugin's `ac2
         * forget`: drop the persisted pairing id and mint a fresh UUID so the next
         * pairing starts clean. Resets the visible ids and clears presence.
+        *
+        * We only forget an id that has actually connected (either this run or a
+        * remembered one from storage). Forgetting a never-paired id would be a
+        * no-op that just churns the visible id, so we warn and bail instead.
         */
        function forgetRequestId() {
+         if (!hasConnected && !localStorage.getItem(REQUEST_ID_STORAGE_KEY)) {
+           console.warn('Nothing to forget: requestId has not connected yet.');
+           return;
+         }
          localStorage.removeItem(REQUEST_ID_STORAGE_KEY);
+         hasConnected = false;
          requestId = SignalClient.generateRequestId();
-         localStorage.setItem(REQUEST_ID_STORAGE_KEY, requestId);
          altRequestId = requestId;
          const local = document.querySelector('#local-request');
          if (local) local.value = requestId;
@@ -1184,45 +1829,78 @@
          if (alt) alt.value = altRequestId;
          renderPresence(document.querySelector('#offer-presence'), null);
          renderPresence(document.querySelector('#answer-presence'), null);
+         // Nothing left to forget for the fresh id, so hide the button.
+         updateForgetButton();
          console.log('Forgot requestId; new local id:', requestId);
        }
 
        /**
-        * Send the stored conversation history to the wallet as an `ac2-stream`
-        * `history` control frame, aligning with the open-claw reference plugin's
-        * `replayConversationHistory`. Local messages map to `user`, remote to
-        * `assistant`; sent over the stream channel when present, else `ac2-v1`.
+        * Send every conversation thread's stored history to the wallet, one
+        * `ac2-stream` `history` control frame per thread (each tagged with its own
+        * `thid`), aligning with the open-claw reference plugin's
+        * `replayConversationHistory`. The wallet restores each frame independently
+        * via `setThreadHistory`, so all conversations are replayed at once.
+        *
+        * The debug app plays the agent/plugin side of the conversation, so from
+        * the wallet's point of view its own outbound messages (`sender: 'me'`)
+        * are the `assistant` and the wallet's messages we received
+        * (`sender: 'peer'`) are the `user`. This mirrors how the wallet restores
+        * a `history` frame (`role: 'user'` → its own `sender: 'me'`,
+        * `role: 'assistant'` → the peer's `sender: 'peer'`); mapping them the
+        * other way round is what made the replayed conversation appear reversed.
+        *
+        * We also advertise the full thread list first (`conversations` frame) so
+        * the wallet's selector reflects every conversation we're about to replay.
+        * Sent over the stream channel when present, else `ac2-v1`.
         */
        function sendHistory() {
-         if (!connectedAddress) {
-           console.warn('No connected peer; cannot send history.');
-           return;
-         }
-         const stored = JSON.parse(localStorage.getItem(`messages_${connectedAddress}`) || '[]');
-         const messages = stored
-           .filter((m) => m && typeof m.text === 'string' && m.text.trim())
-           .map((m) => ({
-             role: m.sender === 'me' ? 'user' : 'assistant',
-             text: m.text,
-           }));
-         if (messages.length === 0) {
-           console.warn('No stored history to send.');
-           return;
-         }
-         const frame = AC2_STREAM_CONTROL_PREFIX + JSON.stringify({
-           t: 'history',
-           thid: currentThid,
-           messages,
+         const send = (frame) => {
+           if (streamChannel && streamChannel.readyState === 'open') {
+             streamChannel.send(frame);
+             return true;
+           }
+           if (globalThis.dc && globalThis.dc.readyState === 'open') {
+             globalThis.dc.send(frame);
+             return true;
+           }
+           return false;
+         };
+         // Make sure the wallet knows about every thread before we replay them.
+         sendConversations();
+         let sentThreads = 0;
+         let sentMessages = 0;
+         let channelMissing = false;
+         Object.keys(threads).forEach((thid) => {
+           const thread = threads[thid];
+           const stored = (thread && thread.messages) || [];
+           const messages = stored
+             .filter((m) => m && typeof m.text === 'string' && m.text.trim())
+             .map((m) => ({
+               role: m.sender === 'me' ? 'assistant' : 'user',
+               text: m.text,
+             }));
+           if (messages.length === 0) return;
+           const frame = AC2_STREAM_CONTROL_PREFIX + JSON.stringify({
+             t: 'history',
+             thid,
+             messages,
+           });
+           if (send(frame)) {
+             sentThreads += 1;
+             sentMessages += messages.length;
+           } else {
+             channelMissing = true;
+           }
          });
-         if (streamChannel && streamChannel.readyState === 'open') {
-           streamChannel.send(frame);
-         } else if (globalThis.dc && globalThis.dc.readyState === 'open') {
-           globalThis.dc.send(frame);
-         } else {
+         if (channelMissing) {
            console.warn('No open channel to send history over.');
            return;
          }
-         console.log(`Sent history (${messages.length} message(s)) on thid ${currentThid}`);
+         if (sentThreads === 0) {
+           console.warn('No stored history to send.');
+           return;
+         }
+         console.log(`Sent history for ${sentThreads} thread(s) (${sentMessages} message(s) total)`);
        }
 
 
@@ -1237,7 +1915,9 @@
        globalThis.sendHistory = sendHistory
        globalThis.resetConnection = resetConnection
        globalThis.checkPresence = checkPresence
- })
+       globalThis.switchThread = switchThread
+       globalThis.newThread = newThread
+})
      </script>
 </body>
 </html>
