@@ -105,36 +105,44 @@ export class AuthService {
   }
 
   /**
-   * Find an authenticated Session bound to a requestId
+   * Find ALL authenticated Sessions bound to a requestId
    *
-   * Looks up a stored session whose serialized data is tied to the given
+   * Looks up every stored session whose serialized data is tied to the given
    * requestId and already carries an authenticated wallet. Used to drive an
    * order-independent pairing rendezvous: when a peer links for a requestId a
    * wallet has already authenticated for, the caller can re-announce that wallet
    * (gated on live presence) so the peer resolves regardless of who connected
    * first.
    *
+   * Returning EVERY match (rather than just the first) is what makes the
+   * rendezvous robust to stale duplicate sessions: repeated peer/app restarts
+   * accumulate several sessions carrying the same requestId + wallet, only one
+   * of which still owns a live socket. The caller can then scan these
+   * candidates and re-announce the one that is genuinely present, instead of
+   * giving up when the first (possibly dead) match has no socket.
+   *
    * @param requestId - The request identifier peers are connecting for
    * @param excludeSessionId - A session id to ignore (e.g. the linking peer's
    *   own session, which after a first pairing also carries the wallet), so the
-   *   result identifies the OTHER party
-   * @returns The wallet + sessionId when found, otherwise null
+   *   results identify the OTHER party
+   * @returns The wallet + sessionId of every match, in stored order (may be empty)
    */
-  async findAuthenticatedSessionByRequestId(
+  async findAuthenticatedSessionsByRequestId(
     requestId: string,
     excludeSessionId?: string,
-  ): Promise<{ sessionId: string; wallet: string } | null> {
+  ): Promise<{ sessionId: string; wallet: string }[]> {
     if (typeof requestId !== 'string' || requestId.length === 0) {
-      return null;
+      return [];
     }
     // The session payload is stored as a JSON string, so narrow the scan with a
     // substring match on the requestId before parsing each candidate.
     const sessions = await this.sessionModel
       .find({ session: { $regex: requestId } })
       .exec();
+    const matches: { sessionId: string; wallet: string }[] = [];
     for (const stored of sessions) {
       const sessionId = String(stored._id);
-      // Skip the caller's own session so the match identifies the other peer
+      // Skip the caller's own session so the matches identify the other peer
       // (both peers share the same wallet + requestId after a first pairing).
       if (excludeSessionId && sessionId === excludeSessionId) {
         continue;
@@ -147,13 +155,37 @@ export class AuthService {
           typeof data.wallet === 'string' &&
           data.wallet.length > 0
         ) {
-          return { sessionId, wallet: data.wallet };
+          matches.push({ sessionId, wallet: data.wallet });
         }
       } catch {
         // Skip sessions whose payload can't be parsed.
       }
     }
-    return null;
+    return matches;
+  }
+
+  /**
+   * Find an authenticated Session bound to a requestId
+   *
+   * Convenience wrapper over {@link findAuthenticatedSessionsByRequestId} that
+   * returns only the first match (or null). Prefer the plural form when the
+   * caller needs to skip stale sessions and pick the one that is genuinely
+   * present.
+   *
+   * @param requestId - The request identifier peers are connecting for
+   * @param excludeSessionId - A session id to ignore (e.g. the linking peer's
+   *   own session)
+   * @returns The wallet + sessionId of the first match, otherwise null
+   */
+  async findAuthenticatedSessionByRequestId(
+    requestId: string,
+    excludeSessionId?: string,
+  ): Promise<{ sessionId: string; wallet: string } | null> {
+    const [first] = await this.findAuthenticatedSessionsByRequestId(
+      requestId,
+      excludeSessionId,
+    );
+    return first ?? null;
   }
 
   /**

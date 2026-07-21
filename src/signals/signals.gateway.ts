@@ -302,13 +302,16 @@ export class SignalsGateway
    * rendezvous: the wallet only broadcasts `auth` once on connect, so a peer
    * that links afterwards would otherwise never learn the wallet is present.
    *
-   * The re-announce is strictly gated on LIVE presence — it verifies the
-   * wallet's own session still has a connected socket — so a link never
-   * resolves against a wallet that has gone offline.
+   * The re-announce is strictly gated on LIVE presence — it verifies a
+   * candidate wallet session still has a connected socket — so a link never
+   * resolves against a wallet that has gone offline. All authenticated
+   * sessions for the requestId are considered (not just the first stored one),
+   * so an accumulated stale/dead duplicate can never shadow the one wallet
+   * session that is genuinely present.
    *
    * @param requestId - The request identifier peers are connecting for
    * @param excludeSessionId - The linking peer's own session, ignored so the
-   *   match identifies the OTHER party (the wallet) rather than the caller
+   *   matches identify the OTHER party (the wallet) rather than the caller
    */
   async reannounceIfWalletPresent(
     requestId: string,
@@ -318,30 +321,40 @@ export class SignalsGateway
       return;
     }
     try {
-      const authed = await this.authService.findAuthenticatedSessionByRequestId(
-        requestId,
-        excludeSessionId,
-      );
-      if (!authed) {
+      // Scan EVERY authenticated session for this requestId, not just the
+      // first: repeated peer/app restarts accumulate several sessions carrying
+      // the same requestId + wallet, and typically only one still owns a live
+      // socket. Picking only the first match and bailing when it has no socket
+      // (the previous behaviour) let a stale/dead session shadow the genuinely
+      // present wallet, so the linking peer's `auth` never fired and its `link`
+      // hung forever — the peer sat "waiting to pair" while presence showed the
+      // wallet online. Re-announce the FIRST candidate that is actually present.
+      const candidates =
+        await this.authService.findAuthenticatedSessionsByRequestId(
+          requestId,
+          excludeSessionId,
+        );
+      for (const authed of candidates) {
+        // Confirm the wallet is genuinely online right now: its session must
+        // still own a connected socket. Without this a stale (persisted)
+        // session would resolve a link for a wallet that is no longer
+        // available.
+        const walletSockets = await this.server
+          .in(authed.sessionId)
+          .fetchSockets();
+        if (walletSockets.length === 0) {
+          continue;
+        }
+        this.logger.debug(
+          `(link): wallet ${authed.wallet} already present for RequestId: ${requestId}; re-announcing auth`,
+        );
+        this.client.emit<string>('auth', {
+          requestId,
+          wallet: authed.wallet,
+          sessionId: authed.sessionId,
+        });
         return;
       }
-      // Confirm the wallet is genuinely online right now: its session must
-      // still own a connected socket. Without this a stale (persisted) session
-      // would resolve a link for a wallet that is no longer available.
-      const walletSockets = await this.server
-        .in(authed.sessionId)
-        .fetchSockets();
-      if (walletSockets.length === 0) {
-        return;
-      }
-      this.logger.debug(
-        `(link): wallet ${authed.wallet} already present for RequestId: ${requestId}; re-announcing auth`,
-      );
-      this.client.emit<string>('auth', {
-        requestId,
-        wallet: authed.wallet,
-        sessionId: authed.sessionId,
-      });
     } catch (e) {
       this.logger.error('Failed to re-announce auth for present wallet', e);
     }

@@ -277,12 +277,14 @@ describe('SignalsGateway', () => {
   });
   it('should re-announce auth on link when a wallet is genuinely present', async () => {
     const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
-    (gateway as any).authService.findAuthenticatedSessionByRequestId = jest
+    (gateway as any).authService.findAuthenticatedSessionsByRequestId = jest
       .fn()
-      .mockResolvedValue({
-        sessionId: 'wallet-session-id',
-        wallet: sessionFixtures.authorized.wallet,
-      });
+      .mockResolvedValue([
+        {
+          sessionId: 'wallet-session-id',
+          wallet: sessionFixtures.authorized.wallet,
+        },
+      ]);
     // The wallet's own session still owns a live socket → genuinely present.
     (gateway.server.fetchSockets as jest.Mock).mockResolvedValueOnce([{}]);
     await gateway.reannounceIfWalletPresent(requestId);
@@ -291,6 +293,38 @@ describe('SignalsGateway', () => {
       requestId,
       wallet: sessionFixtures.authorized.wallet,
       sessionId: 'wallet-session-id',
+    });
+  });
+  it('should skip a stale wallet session and re-announce the live one', async () => {
+    // Repeated restarts leave several sessions carrying the same requestId +
+    // wallet; only the last owns a live socket. The re-announce must skip the
+    // dead one(s) instead of bailing on the first match, otherwise the linking
+    // peer's `auth` never fires and its `link` hangs forever.
+    const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
+    (gateway as any).authService.findAuthenticatedSessionsByRequestId = jest
+      .fn()
+      .mockResolvedValue([
+        {
+          sessionId: 'stale-session-id',
+          wallet: sessionFixtures.authorized.wallet,
+        },
+        {
+          sessionId: 'live-session-id',
+          wallet: sessionFixtures.authorized.wallet,
+        },
+      ]);
+    // First candidate has no live socket (stale), second is genuinely present.
+    (gateway.server.fetchSockets as jest.Mock)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{}]);
+    await gateway.reannounceIfWalletPresent(requestId);
+    expect(gateway.server.in).toHaveBeenCalledWith('stale-session-id');
+    expect(gateway.server.in).toHaveBeenCalledWith('live-session-id');
+    expect((gateway as any).client.emit).toHaveBeenCalledTimes(1);
+    expect((gateway as any).client.emit).toHaveBeenCalledWith('auth', {
+      requestId,
+      wallet: sessionFixtures.authorized.wallet,
+      sessionId: 'live-session-id',
     });
   });
   it('should kick out stale sessions bound to the same credential', async () => {
@@ -340,21 +374,23 @@ describe('SignalsGateway', () => {
     expect(evictSpy).not.toHaveBeenCalled();
   });
   it('should not re-announce auth on link when no wallet session exists', async () => {
-    (gateway as any).authService.findAuthenticatedSessionByRequestId = jest
+    (gateway as any).authService.findAuthenticatedSessionsByRequestId = jest
       .fn()
-      .mockResolvedValue(null);
+      .mockResolvedValue([]);
     await gateway.reannounceIfWalletPresent(
       '019097ff-bb8c-7d5d-9822-7c9eb2c0d419',
     );
     expect((gateway as any).client.emit).not.toHaveBeenCalled();
   });
   it('should not re-announce auth on link when the wallet is offline', async () => {
-    (gateway as any).authService.findAuthenticatedSessionByRequestId = jest
+    (gateway as any).authService.findAuthenticatedSessionsByRequestId = jest
       .fn()
-      .mockResolvedValue({
-        sessionId: 'wallet-session-id',
-        wallet: sessionFixtures.authorized.wallet,
-      });
+      .mockResolvedValue([
+        {
+          sessionId: 'wallet-session-id',
+          wallet: sessionFixtures.authorized.wallet,
+        },
+      ]);
     // No live socket for the wallet session → not present, must not resolve.
     (gateway.server.fetchSockets as jest.Mock).mockResolvedValueOnce([]);
     await gateway.reannounceIfWalletPresent(
