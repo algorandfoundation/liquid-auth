@@ -189,6 +189,51 @@ export class AuthService {
   }
 
   /**
+   * Find the session ids of ADMIN devices bound to a requestId
+   *
+   * An admin is a device that authenticated with its OWN credential — i.e. its
+   * session carries a `credId` (stamped by attestation/assertion). A non-admin
+   * peer only ever links: it gets the wallet address copied onto its session
+   * (see {@link updateSessionWallet}) but never a `credId`, so `credId`
+   * presence is the reliable marker that separates the one wallet admin from
+   * the one non-admin peer sharing a `requestId` room. Used by the gateway to
+   * classify the current room occupants when enforcing the "one admin + one
+   * peer" admission rule.
+   *
+   * @param requestId - The request identifier peers are connecting for
+   * @returns The set of session ids that are admins for this requestId
+   */
+  async findAdminSessionIdsByRequestId(
+    requestId: string,
+  ): Promise<Set<string>> {
+    const ids = new Set<string>();
+    if (typeof requestId !== 'string' || requestId.length === 0) {
+      return ids;
+    }
+    // The session payload is stored as a JSON string, so narrow the scan with a
+    // substring match on the requestId before parsing each candidate.
+    const sessions = await this.sessionModel
+      .find({ session: { $regex: requestId } })
+      .exec();
+    for (const stored of sessions) {
+      try {
+        const data = JSON.parse(stored.session);
+        if (
+          data &&
+          data.requestId === requestId &&
+          typeof data.credId === 'string' &&
+          data.credId.length > 0
+        ) {
+          ids.add(String(stored._id));
+        }
+      } catch {
+        // Skip sessions whose payload can't be parsed.
+      }
+    }
+    return ids;
+  }
+
+  /**
    * Find other sessions bound to the same credential
    *
    * A credential (`credId`) can only ever belong to a single device, so any

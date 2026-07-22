@@ -7,6 +7,7 @@ import {
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
+  WsException,
 } from '@nestjs/websockets';
 import { Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -17,6 +18,28 @@ import { map } from 'rxjs/operators';
 import { RedisIoAdapter } from '../adapters/redis-io.adapter.js';
 import { AuthService } from '../auth/auth.service.js';
 import { Session } from '../auth/session.schema.js';
+
+/**
+ * The two parties a `requestId` room is meant to hold: the authenticating
+ * wallet (`admin`, a device with its own `credId`) and the requesting
+ * counterpart (`peer`, e.g. a dapp/agent that only ever links).
+ */
+export type PeerRole = 'admin' | 'peer';
+
+/** Why the two-peer room policy refused to admit a device. */
+export type RoomAdmissionReason =
+  | 'room-full'
+  | 'duplicate-admin'
+  | 'duplicate-peer';
+
+/**
+ * The maximum number of DISTINCT devices allowed in a single `requestId` room:
+ * exactly one wallet `admin` and one non-admin `peer`. Additional sockets of an
+ * already-admitted device do not consume a slot (a device is counted once, by
+ * session id — see {@link SignalsGateway.countDevices}).
+ */
+export const ROOM_DEVICE_LIMIT = 2;
+
 export async function reloadSession(session: SessionType) {
   return new Promise((resolve, reject) => {
     session.reload((err) => {
@@ -72,8 +95,24 @@ export class SignalsGateway
               typeof data.requestId === 'string' &&
               data.requestId.length > 0
             ) {
-              server.in(data.sessionId).socketsJoin(data.requestId);
-              await this.updatePresence(data.requestId);
+              // Two-peer lockdown: the wallet is the room `admin`. Refuse to
+              // add it when the room already holds another admin or is full
+              // (e.g. two wallets racing to authenticate for the same
+              // requestId). This is a broadcast-driven join with no client ack,
+              // so skip quietly instead of throwing.
+              const reason = await this.checkRoomAdmission(
+                data.requestId,
+                data.sessionId,
+                'admin',
+              );
+              if (reason) {
+                this.logger.warn(
+                  `(*) Refusing to admit wallet Session ${data.sessionId} to RequestId ${data.requestId}: ${reason}`,
+                );
+              } else {
+                server.in(data.sessionId).socketsJoin(data.requestId);
+                await this.updatePresence(data.requestId);
+              }
             }
             // Device deduplication: a credential (`credId`) can only ever
             // belong to a single device, so any other session carrying the same
@@ -209,6 +248,121 @@ export class SignalsGateway
       devices.add(sessionId);
     }
     return devices.size;
+  }
+
+  /**
+   * Classify the devices currently occupying a requestId room by role
+   *
+   * Collapses the room's sockets to distinct devices (by session id, exactly
+   * like {@link countDevices}) and labels each device `admin` or `peer`. A
+   * device is an `admin` when its session carries a `credId` — the marker that
+   * it authenticated with its OWN credential (see
+   * {@link AuthService.findAdminSessionIdsByRequestId}); every other occupant is
+   * a `peer`. The classification comes from the persisted session store rather
+   * than a per-socket flag, so it stays correct across nodes and across the
+   * gap between a socket connecting and its device later authenticating.
+   *
+   * @param requestId - The request identifier peers are connecting for
+   * @returns A map of device session id -> role for the current occupants
+   */
+  async roomOccupancyRoles(requestId: string): Promise<Map<string, PeerRole>> {
+    const roles = new Map<string, PeerRole>();
+    if (typeof requestId !== 'string' || requestId.length === 0) {
+      return roles;
+    }
+    const sockets = await this.server.in(requestId).fetchSockets();
+    const adminIds =
+      await this.authService.findAdminSessionIdsByRequestId(requestId);
+    for (const socket of sockets) {
+      const sessionId =
+        socket.data && typeof socket.data.sessionId === 'string'
+          ? socket.data.sessionId
+          : socket.id;
+      roles.set(sessionId, adminIds.has(sessionId) ? 'admin' : 'peer');
+    }
+    return roles;
+  }
+
+  /**
+   * Enforce the two-peer room policy before a NEW device joins a room
+   *
+   * A `requestId` room is limited to exactly one wallet `admin` and one
+   * non-admin `peer` ({@link ROOM_DEVICE_LIMIT} distinct devices with distinct
+   * roles). This refuses to admit a third device (`room-full`) or a second
+   * device of an already-present role (`duplicate-admin` / `duplicate-peer`) by
+   * throwing a {@link WsException}, which is delivered to the offending client
+   * only — the two participants already in the room are left untouched, and the
+   * caller MUST NOT join the room when this throws.
+   *
+   * A socket whose DEVICE is already in the room (a reconnected/duplicate socket
+   * of an admitted device) is always admitted: it is the same participant, not a
+   * new one, so it never consumes a fresh slot.
+   *
+   * @param requestId - The request identifier the device wants to join
+   * @param sessionId - The joining device's session id
+   * @param role - The joining device's role (`admin` when it has a `credId`)
+   */
+  async assertRoomAdmission(
+    requestId: string,
+    sessionId: string,
+    role: PeerRole,
+  ): Promise<void> {
+    const reason = await this.checkRoomAdmission(requestId, sessionId, role);
+    if (reason) {
+      throw this.roomAdmissionError(reason, requestId);
+    }
+  }
+
+  /**
+   * Non-throwing variant of {@link assertRoomAdmission}: returns the reason a
+   * device would be refused, or `null` when it may join. Used by broadcast
+   * (fire-and-forget) join paths — e.g. the global `auth` handler admitting a
+   * wallet — where there is no client ack to reject, so the caller simply skips
+   * the join instead of throwing.
+   *
+   * @param requestId - The request identifier the device wants to join
+   * @param sessionId - The joining device's session id
+   * @param role - The joining device's role (`admin` when it has a `credId`)
+   * @returns The refusal reason, or `null` when the device may be admitted
+   */
+  async checkRoomAdmission(
+    requestId: string,
+    sessionId: string,
+    role: PeerRole,
+  ): Promise<RoomAdmissionReason | null> {
+    const occupants = await this.roomOccupancyRoles(requestId);
+    // The same device rejoining (another socket, a reconnect) does not consume
+    // a new slot, so it is always allowed.
+    if (typeof sessionId === 'string' && occupants.has(sessionId)) {
+      return null;
+    }
+    if (occupants.size >= ROOM_DEVICE_LIMIT) {
+      return 'room-full';
+    }
+    for (const existingRole of occupants.values()) {
+      if (existingRole === role) {
+        return role === 'admin' ? 'duplicate-admin' : 'duplicate-peer';
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Build the {@link WsException} raised when the two-peer room policy rejects a
+   * device. The structured payload lets a client distinguish the reasons.
+   */
+  private roomAdmissionError(
+    reason: RoomAdmissionReason,
+    requestId: string,
+  ): WsException {
+    const message =
+      reason === 'room-full'
+        ? `room ${requestId} is full (max ${ROOM_DEVICE_LIMIT} devices: one admin + one peer)`
+        : reason === 'duplicate-admin'
+          ? `room ${requestId} already has an admin (wallet) device`
+          : `room ${requestId} already has a non-admin peer device`;
+    this.logger.warn(`(link): rejected join for RequestId ${requestId}: ${reason}`);
+    return new WsException({ event: 'link-error', reason, requestId, message });
   }
 
   /**
@@ -380,6 +534,23 @@ export class SignalsGateway
       // Presence: join a room scoped to the requestId so we can track how
       // many devices are connected for this connection request.
       if (typeof body.requestId === 'string' && body.requestId.length > 0) {
+        // Two-peer lockdown: a requestId room holds exactly one wallet `admin`
+        // and one non-admin `peer`. Refuse a third device or a duplicate of an
+        // already-present role BEFORE joining, so the two participants already
+        // linked are untouched. A device that only ever links (no `credId` on
+        // its session) is a `peer`; a device that authenticated with its own
+        // credential is an `admin`. This throws a WsException on rejection,
+        // which reaches only the offending client.
+        const reqSession = request.session as Record<string, any>;
+        const role: PeerRole =
+          typeof reqSession.credId === 'string' && reqSession.credId.length > 0
+            ? 'admin'
+            : 'peer';
+        await this.assertRoomAdmission(
+          body.requestId,
+          request.sessionID,
+          role,
+        );
         if (!client.rooms.has(body.requestId)) {
           await client.join(body.requestId);
         }

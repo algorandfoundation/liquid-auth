@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { WsException } from '@nestjs/websockets';
 import { SignalsGateway, reloadSession } from './signals.gateway.js';
 import { Server, Socket } from 'socket.io';
 import mongoose, { Model } from 'mongoose';
@@ -103,10 +104,16 @@ describe('SignalsGateway', () => {
   });
   it('should join an authenticated session to the requestId room on a global auth event', async () => {
     const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
-    (gateway.server.fetchSockets as jest.Mock).mockResolvedValueOnce([
-      { data: { sessionId: 'a' } },
-      { data: { sessionId: 'b' } },
-    ]);
+    // Two-peer lockdown: the wallet admin is admitted only when the room still
+    // has a free slot. First fetch (admission check) shows one non-admin peer
+    // already linked; second fetch (presence recount, after the wallet joins)
+    // shows both devices, so the presence broadcast reports deviceCount 2.
+    (gateway.server.fetchSockets as jest.Mock)
+      .mockResolvedValueOnce([{ data: { sessionId: 'peer-session-id' } }])
+      .mockResolvedValueOnce([
+        { data: { sessionId: 'peer-session-id' } },
+        { data: { sessionId: 'wallet-session-id' } },
+      ]);
     gateway.afterInit(gateway.server);
     await linkEventFn(
       'auth',
@@ -123,6 +130,27 @@ describe('SignalsGateway', () => {
       deviceCount: 2,
       online: true,
     });
+  });
+
+  it('refuses to admit a wallet admin when the requestId room is already full', async () => {
+    const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
+    // The room already holds two OTHER devices, so a fresh wallet admin must
+    // NOT be joined (two-peer lockdown). The join + presence recount are skipped.
+    (gateway.server.fetchSockets as jest.Mock).mockResolvedValueOnce([
+      { data: { sessionId: 'peer-a' } },
+      { data: { sessionId: 'peer-b' } },
+    ]);
+    gateway.afterInit(gateway.server);
+    (gateway.server.socketsJoin as jest.Mock).mockClear();
+    await linkEventFn(
+      'auth',
+      JSON.stringify({
+        sessionId: 'late-wallet-session-id',
+        wallet: sessionFixtures.authorized.wallet,
+        requestId,
+      }),
+    );
+    expect(gateway.server.socketsJoin).not.toHaveBeenCalledWith(requestId);
   });
   it('should handle a authenticated connection', async () => {
     await gateway.handleConnection(clientMock);
@@ -226,10 +254,16 @@ describe('SignalsGateway', () => {
     );
     obs.subscribe();
 
-    (gateway.server.fetchSockets as jest.Mock).mockResolvedValueOnce([
-      { data: { sessionId: 'a' } },
-      { data: { sessionId: 'b' } },
-    ]);
+    // Two-peer lockdown: when the wallet's `auth` arrives it is admitted as the
+    // room admin only if there is a free slot. First fetch (admission check)
+    // shows just the linking peer; second fetch (presence recount, after the
+    // wallet joins) shows both, so the offer session records deviceCount 2.
+    (gateway.server.fetchSockets as jest.Mock)
+      .mockResolvedValueOnce([{ data: { sessionId: 'authorized-session-id' } }])
+      .mockResolvedValueOnce([
+        { data: { sessionId: 'authorized-session-id' } },
+        { data: { sessionId: 'wallet-session-id' } },
+      ]);
     await linkEventFn(
       'auth',
       JSON.stringify({
@@ -490,5 +524,103 @@ describe('SignalsGateway', () => {
     const subscription = obs.subscribe();
     subscription.unsubscribe();
     expect(ioAdapterMock.subClient.off).toHaveBeenCalled();
+  });
+
+  describe('two-peer room admission (one admin + one peer, max 2)', () => {
+    const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
+
+    /** Stub the room's current sockets and which of them are admins. */
+    const seedRoom = (
+      sockets: { data: { sessionId: string } }[],
+      adminSessionIds: string[] = [],
+    ) => {
+      (gateway.server.fetchSockets as jest.Mock).mockResolvedValueOnce(sockets);
+      (gateway as any).authService.findAdminSessionIdsByRequestId = jest
+        .fn()
+        .mockResolvedValue(new Set(adminSessionIds));
+    };
+
+    it('admits a peer into an empty room', async () => {
+      seedRoom([]);
+      await expect(
+        gateway.checkRoomAdmission(requestId, 'peer-1', 'peer'),
+      ).resolves.toBeNull();
+    });
+
+    it('admits a wallet admin alongside an existing non-admin peer', async () => {
+      seedRoom([{ data: { sessionId: 'peer-1' } }]);
+      await expect(
+        gateway.checkRoomAdmission(requestId, 'wallet-1', 'admin'),
+      ).resolves.toBeNull();
+    });
+
+    it('rejects a THIRD device as room-full', async () => {
+      seedRoom(
+        [{ data: { sessionId: 'wallet-1' } }, { data: { sessionId: 'peer-1' } }],
+        ['wallet-1'],
+      );
+      await expect(
+        gateway.checkRoomAdmission(requestId, 'intruder', 'peer'),
+      ).resolves.toBe('room-full');
+    });
+
+    it('rejects a SECOND admin (two wallets) as duplicate-admin', async () => {
+      seedRoom([{ data: { sessionId: 'wallet-1' } }], ['wallet-1']);
+      await expect(
+        gateway.checkRoomAdmission(requestId, 'wallet-2', 'admin'),
+      ).resolves.toBe('duplicate-admin');
+    });
+
+    it('rejects a SECOND non-admin peer as duplicate-peer', async () => {
+      seedRoom([{ data: { sessionId: 'peer-1' } }]);
+      await expect(
+        gateway.checkRoomAdmission(requestId, 'peer-2', 'peer'),
+      ).resolves.toBe('duplicate-peer');
+    });
+
+    it('admits a reconnected/duplicate socket of an already-admitted device', async () => {
+      // The same device (session id) owning a second socket must not be turned
+      // away — it is the same participant, not a new one.
+      seedRoom(
+        [{ data: { sessionId: 'wallet-1' } }, { data: { sessionId: 'peer-1' } }],
+        ['wallet-1'],
+      );
+      await expect(
+        gateway.checkRoomAdmission(requestId, 'wallet-1', 'admin'),
+      ).resolves.toBeNull();
+    });
+
+    it('assertRoomAdmission throws a WsException carrying the refusal reason', async () => {
+      seedRoom(
+        [{ data: { sessionId: 'wallet-1' } }, { data: { sessionId: 'peer-1' } }],
+        ['wallet-1'],
+      );
+      await expect(
+        gateway.assertRoomAdmission(requestId, 'intruder', 'peer'),
+      ).rejects.toBeInstanceOf(WsException);
+    });
+
+    it('link() rejects when the peer cannot be admitted (room already full)', async () => {
+      // Room already holds two OTHER devices, so this linking peer is refused
+      // and must NOT be joined — the two participants are left untouched.
+      seedRoom(
+        [{ data: { sessionId: 'wallet-1' } }, { data: { sessionId: 'peer-1' } }],
+        ['wallet-1'],
+      );
+      const joinSpy = jest.fn();
+      const rejectedClient = {
+        request: {
+          session: { wallet: sessionFixtures.authorized.wallet },
+          sessionID: 'intruder-session-id',
+        },
+        rooms: new Set(),
+        join: joinSpy,
+        data: {},
+      } as unknown as Socket;
+      await expect(
+        gateway.link({ requestId }, rejectedClient),
+      ).rejects.toBeInstanceOf(WsException);
+      expect(joinSpy).not.toHaveBeenCalled();
+    });
   });
 });

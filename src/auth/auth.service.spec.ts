@@ -269,4 +269,34 @@ describe('AuthService', () => {
   it('should return no sessions for an empty credId', async () => {
     await expect(service.findSessionsByCredId('')).resolves.toEqual([]);
   });
+  it('should return only ADMIN (credId-bearing) session ids for a requestId', async () => {
+    // The wallet admin authenticated with its own credential, so its session
+    // carries a credId; a non-admin peer only ever links (wallet copied, no
+    // credId). The lookup must return only the admin so the gateway can enforce
+    // "one admin + one peer" per room.
+    const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
+    mockSessionModel.find = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue([
+        {
+          _id: 'wallet-admin-session',
+          session: JSON.stringify({
+            requestId,
+            wallet: mockUser.wallet,
+            credId: 'wallet-cred',
+          }),
+        },
+        {
+          _id: 'peer-session',
+          session: JSON.stringify({ requestId, wallet: mockUser.wallet }),
+        },
+      ]),
+    });
+    const result = await service.findAdminSessionIdsByRequestId(requestId);
+    expect(result).toEqual(new Set(['wallet-admin-session']));
+  });
+  it('should return an empty admin set for an empty requestId', async () => {
+    await expect(
+      service.findAdminSessionIdsByRequestId(''),
+    ).resolves.toEqual(new Set());
+  });
 });
