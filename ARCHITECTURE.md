@@ -221,9 +221,15 @@ The server will acknowledge the request when the `microservice:auth` event is re
 const response: LinkMessage = await client.link(requestId)
 ```
 
+Both the `wss:link` client and the authenticated wallet are joined to a room named after
+the `requestId`. All signaling below is brokered to that room rather than the wallet
+address, so negotiation works before the peer has authenticated and no longer depends on
+the wallet identity.
+
 #### wss:offer-description | wss:answer-description
 
-Wait for the server to emit an offer or answer description to the client.
+Wait for the server to emit an offer or answer description to the client. Emitted to the
+`requestId` room.
 
 ```typescript
 const response: string = await client.signal('offer' | 'answer')
@@ -231,11 +237,30 @@ const response: string = await client.signal('offer' | 'answer')
 
 #### wss:offer-candidate | wss:answer-candidate
 
-Emits the offer or answer ICE Candidates to connected clients.
+Emits the offer or answer ICE Candidates to the `requestId` room.
 
 ```typescript
 client.peerClient.onicecandidate=(event)=>{
   client.socket.emit('offer-candidate', event.candidate.toJSON())
 }
 
+```
+
+#### wss:presence
+
+Broadcast to the `requestId` room whenever a socket joins or leaves it, and also
+returned as the acknowledgement of an on-demand `presence` request. Lets a peer detect
+whether the other party is available before attempting to (re)negotiate; peers only
+negotiate once both are present (`deviceCount >= 2`).
+
+`deviceCount` counts distinct devices (sockets are collapsed by their session id, so a
+device that briefly owns multiple sockets is only counted once) and `online` is `true`
+when at least one device is present. `GET /auth/session` reports the same live
+`deviceCount`. Because both peers persist the `requestId` and the wallet keeps a valid
+session, a dropped connection is renegotiated over the socket without a fresh passkey
+prompt once presence shows both peers again.
+
+```typescript
+const presence: { requestId: string; deviceCount: number; online: boolean } =
+  await client.socket.emitWithAck('presence', { requestId })
 ```
