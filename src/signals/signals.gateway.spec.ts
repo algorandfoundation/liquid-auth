@@ -254,16 +254,16 @@ describe('SignalsGateway', () => {
     );
     obs.subscribe();
 
-    // Two-peer lockdown: when the wallet's `auth` arrives it is admitted as the
-    // room admin only if there is a free slot. First fetch (admission check)
-    // shows just the linking peer; second fetch (presence recount, after the
-    // wallet joins) shows both, so the offer session records deviceCount 2.
-    (gateway.server.fetchSockets as jest.Mock)
-      .mockResolvedValueOnce([{ data: { sessionId: 'authorized-session-id' } }])
-      .mockResolvedValueOnce([
-        { data: { sessionId: 'authorized-session-id' } },
-        { data: { sessionId: 'wallet-session-id' } },
-      ]);
+    // The linking peer's admission already ran inside `gateway.link()` above
+    // (against the default empty room), so `linkEventFn` here is the link
+    // handler's auth-message callback, which only RECOUNTS presence for the
+    // offer session — a single fetch. By the time the wallet's `auth` arrives it
+    // has joined the requestId room, so that recount sees both devices and the
+    // offer session records deviceCount 2.
+    (gateway.server.fetchSockets as jest.Mock).mockResolvedValueOnce([
+      { data: { sessionId: 'authorized-session-id' } },
+      { data: { sessionId: 'wallet-session-id' } },
+    ]);
     await linkEventFn(
       'auth',
       JSON.stringify({
