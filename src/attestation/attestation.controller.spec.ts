@@ -124,6 +124,9 @@ describe('AttestationController', () => {
       expect(session.wallet).toEqual(
         attestationResponseResponseFixtures[0].wallet,
       );
+      // The session records the credential it authenticated with so the gateway
+      // can kick out any other (stale) session bound to the same credential.
+      expect(session.credId).toEqual(body.id);
       expect(mockAccountLinkService.emit).toHaveBeenCalledWith('auth', {
         requestId: body.clientExtensionResults.liquid.requestId,
         wallet: body.clientExtensionResults.liquid.address,

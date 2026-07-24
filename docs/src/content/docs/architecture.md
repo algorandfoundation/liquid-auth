@@ -38,6 +38,12 @@ sequenceDiagram
 The website and wallet can subscribe to an isolated WebSocket channel to broker [Session Description]() answers and offers.
 [ICE Candidates]() are discovered when any peer has both an offer and answer.
 
+Signaling is keyed on the `requestId` rather than the wallet address. When a client
+subscribes to `wss:link`, and when a wallet authenticates against a `requestId`, the
+server joins that socket to the `requestId` room. Descriptions and candidates are then
+brokered to that room, so negotiation works before the peer has authenticated and no
+longer depends on the wallet address.
+
 ```mermaid
 sequenceDiagram
     participant Website as Answer Client
@@ -98,4 +104,51 @@ sequenceDiagram
     Website-->>Website: On DataChannel, listen for Messages
     Website-->>Wallet: Emit Messages
     Wallet-->>Website: Emit Messages
+```
+
+## Presence
+
+Whenever a socket joins or leaves a `requestId` room the server broadcasts a
+`wss:presence` event to that room. Peers use it to decide whether the other party is
+available before attempting to (re)negotiate, and only negotiate once both peers are
+present (`deviceCount >= 2`).
+
+`deviceCount` counts distinct devices — sockets are collapsed by their session id, so a
+device that briefly owns more than one socket (e.g. a lingering socket plus a fresh
+reconnect) is only counted once. `online` is `true` when at least one device is present.
+`GET /auth/session` reports the same live `deviceCount`.
+
+```mermaid
+sequenceDiagram
+    participant Website as Answer Client
+    participant Server
+    participant Wallet as Offer Client
+    Wallet->>Server: Connect / authenticate for `requestId`
+    Server-->>Server: Join `requestId` room, count distinct devices
+    Server-->>Website: Emit `wss:presence` { requestId, deviceCount, online }
+    Server-->>Wallet: Emit `wss:presence` { requestId, deviceCount, online }
+    Note over Website, Wallet: Negotiate only when deviceCount ≥ 2
+```
+
+## Reconnection
+
+Because both peers persist the `requestId` and the wallet retains a valid session, a
+dropped P2P connection is renegotiated over the existing socket without a fresh passkey
+prompt. The server re-announces `auth` when a bound wallet reconnects (or when the peer
+links while the wallet is already present), and both sides re-run the offer/answer
+exchange in the `requestId` room.
+
+```mermaid
+sequenceDiagram
+    participant Website as Answer Client
+    participant Server
+    participant Wallet as Offer Client
+    Note over Website, Wallet: Previously paired (share requestId + valid session)
+    Wallet--xServer: Connection dropped
+    Server-->>Website: Emit `wss:presence` { deviceCount: 1, online: true }
+    Website-->>Website: Peer offline — tear down transport, keep socket & wait
+    Wallet->>Server: Reconnect socket (no passkey prompt)
+    Server-->>Server: Re-join `requestId` room, re-announce `auth`
+    Server-->>Website: Emit `wss:presence` { deviceCount: 2, online: true }
+    Note over Website, Wallet: Both present — renegotiate and re-establish the Data Channel
 ```
