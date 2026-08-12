@@ -28,6 +28,83 @@ export async function reloadSession(session: SessionType) {
   });
 }
 
+/**
+ * Whether a linking session has already been claimed by a wallet credential.
+ *
+ * A session that authenticated with its own credential (a wallet that
+ * completed a FIDO2 attestation/assertion — those controllers persist the
+ * `credId`; passive peers such as agents never carry one) owns its wallet
+ * binding. The `link` rendezvous must never rewrite such a session's wallet:
+ * the re-announced `auth` event carries the wallet recorded on the OTHER
+ * party's session, which can be stale (e.g. a connection last paired before
+ * the wallet re-onboarded with fresh keys), and overwriting the
+ * credential-authenticated binding with it silently de-authenticates the
+ * wallet at its own origin.
+ *
+ * Checks the live express session first and falls back to the stored session
+ * document, so the answer stays correct whichever copy is fresher.
+ *
+ * @param liveSession - The socket's live express session
+ * @param stored - The stored Session document (serialized JSON payload)
+ * @returns true when the session is claimed by a wallet credential
+ */
+export function sessionOwnsWalletBinding(
+  liveSession: Record<string, any> | undefined,
+  stored: Session | undefined,
+): boolean {
+  if (
+    typeof liveSession?.credId === 'string' &&
+    liveSession.credId.length > 0
+  ) {
+    return true;
+  }
+  try {
+    const data = JSON.parse(stored?.session ?? '');
+    return typeof data?.credId === 'string' && data.credId.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The wallet a session has claimed with its own credential, if any.
+ *
+ * Only a session that completed a FIDO2 ceremony carries a `credId`, so a
+ * `credId` + `wallet` pair is the one wallet identity the server can attribute
+ * to a socket. A wallet address WITHOUT a credential (what the `link`
+ * rendezvous writes onto the peer/agent session) is hearsay and never counts
+ * as a claim.
+ *
+ * Checks the live express session first and falls back to the stored session
+ * document, so the answer stays correct whichever copy is fresher.
+ *
+ * @param liveSession - The socket's live express session
+ * @param stored - The stored Session document (serialized JSON payload)
+ * @returns The claimed wallet address, or null when the session is not
+ *   credential-authenticated
+ */
+export function claimedWalletFromSession(
+  liveSession: Record<string, any> | undefined,
+  stored: Session | undefined,
+): string | null {
+  const claimedFrom = (data: Record<string, any> | undefined) =>
+    typeof data?.credId === 'string' &&
+    data.credId.length > 0 &&
+    typeof data?.wallet === 'string' &&
+    data.wallet.length > 0
+      ? (data.wallet as string)
+      : null;
+  const live = claimedFrom(liveSession);
+  if (live) {
+    return live;
+  }
+  try {
+    return claimedFrom(JSON.parse(stored?.session ?? ''));
+  } catch {
+    return null;
+  }
+}
+
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -361,6 +438,65 @@ export class SignalsGateway
   }
 
   /**
+   * Find a LIVE conflicting wallet claim for a requestId
+   *
+   * A requestId names one pairing between one agent and one wallet. Once a
+   * wallet has claimed it with its own credential, another wallet must not be
+   * able to take it over just by knowing the identifier (requestIds are
+   * long-lived — peers need a stable id to renegotiate over — and they travel
+   * through QR codes, logs and UIs, so they are hints rather than secrets).
+   *
+   * Two properties keep this gate from ever locking out the legitimate wallet:
+   *
+   * - Only CREDENTIAL-claimed sessions count (see
+   *   {@link AuthService.findWalletClaimsByRequestId}). The agent's session
+   *   also stores a wallet address — written by the `link` rendezvous, and
+   *   possibly stale — but it never proved it, so it can't block anyone.
+   * - The conflicting claim must be LIVE (its session still owns a connected
+   *   socket). Persisted sessions outlive the wallet that made them: after a
+   *   re-onboarding the wallet returns to the same, persistent requestId with a
+   *   NEW address and credential, and the abandoned claim must not stand in its
+   *   way.
+   *
+   * @param requestId - The request identifier the caller wants to link for
+   * @param wallet - The wallet the caller itself claimed with its credential
+   * @param excludeSessionId - The caller's own session, never a conflict
+   * @returns The conflicting claim, or null when the requestId is free for this
+   *   wallet
+   */
+  async findLiveWalletClaimConflict(
+    requestId: string,
+    wallet: string,
+    excludeSessionId?: string,
+  ): Promise<{ sessionId: string; wallet: string } | null> {
+    if (typeof requestId !== 'string' || requestId.length === 0) {
+      return null;
+    }
+    try {
+      const claims = await this.authService.findWalletClaimsByRequestId(
+        requestId,
+        excludeSessionId,
+      );
+      for (const claim of claims) {
+        // The same wallet on another device is not a conflict: a key may live
+        // on several devices, and both are the same party.
+        if (claim.wallet === wallet) {
+          continue;
+        }
+        const sockets = await this.server.in(claim.sessionId).fetchSockets();
+        if (sockets.length === 0) {
+          continue;
+        }
+        return { sessionId: claim.sessionId, wallet: claim.wallet };
+      }
+    } catch (e) {
+      // Availability over strictness: a failed lookup must not break linking.
+      this.logger.error('Failed to check wallet claims for requestId', e);
+    }
+    return null;
+  }
+
+  /**
    * On Link Connection, wait for the wallet to connect
    * @param client
    * @param body
@@ -377,6 +513,35 @@ export class SignalsGateway
     // Find the stored session
     const session = await this.authService.findSession(request.sessionID);
     if (session) {
+      // A wallet that authenticated with its own credential has claimed this
+      // session; the auth rendezvous below must not re-claim it (see
+      // sessionOwnsWalletBinding).
+      const ownsWalletBinding = sessionOwnsWalletBinding(
+        request.session,
+        session,
+      );
+      // Claim gate: a requestId already claimed (and still held) by another
+      // wallet is not up for grabs. Only decidable when the caller is itself
+      // credential-authenticated — an anonymous session is the legitimate
+      // agent role, so it cannot be refused here; peer-level authentication
+      // above the signaling layer is what closes that remaining gap.
+      const claimedWallet = claimedWalletFromSession(request.session, session);
+      if (claimedWallet) {
+        const conflict = await this.findLiveWalletClaimConflict(
+          body.requestId,
+          claimedWallet,
+          request.sessionID,
+        );
+        if (conflict) {
+          this.logger.warn(
+            `(link): refusing RequestId: ${body.requestId} for wallet ${claimedWallet}; already claimed by ${conflict.wallet} (Session: ${conflict.sessionId})`,
+          );
+          // Refuse silently: no room join, no presence, no auth rendezvous —
+          // the caller learns nothing about the connection it tried to take
+          // over, and the acknowledgement it is waiting for never arrives.
+          return;
+        }
+      }
       // Presence: join a room scoped to the requestId so we can track how
       // many devices are connected for this connection request.
       if (typeof body.requestId === 'string' && body.requestId.length > 0) {
@@ -398,15 +563,31 @@ export class SignalsGateway
             const parsed = JSON.parse(eventMessage);
             const data = parsed.data || parsed;
             if (data && body.requestId === data.requestId) {
-              this.logger.debug(
-                `(*) Linking Wallet: ${data.wallet} to Session: ${request.sessionID}`,
-              );
-              await this.authService.updateSessionWallet(session, data.wallet);
-              await reloadSession(request.session);
-              this.logger.debug(
-                `(*) Joining Room: ${data.wallet} with Session: ${request.sessionID}`,
-              );
-              await client.join(data.wallet);
+              if (ownsWalletBinding) {
+                // This session is already claimed by a wallet credential, so
+                // linking must not re-bind it to the announced wallet. The
+                // announce can carry a stale address recorded on the other
+                // peer's session (e.g. a connection last paired before the
+                // wallet re-onboarded), and rewriting would silently
+                // de-authenticate the wallet at its own origin — forcing a
+                // passkey prompt on the next connection switch.
+                this.logger.debug(
+                  `(*) Session: ${request.sessionID} already claimed by a wallet credential; not re-linking to ${data.wallet}`,
+                );
+              } else {
+                this.logger.debug(
+                  `(*) Linking Wallet: ${data.wallet} to Session: ${request.sessionID}`,
+                );
+                await this.authService.updateSessionWallet(
+                  session,
+                  data.wallet,
+                );
+                await reloadSession(request.session);
+                this.logger.debug(
+                  `(*) Joining Room: ${data.wallet} with Session: ${request.sessionID}`,
+                );
+                await client.join(data.wallet);
+              }
               // Presence: the wallet has authenticated for this request. Make
               // sure its sockets join the requestId room too, then recount and
               // persist presence to this (offer) session so every connected

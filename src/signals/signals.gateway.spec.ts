@@ -1,5 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SignalsGateway, reloadSession } from './signals.gateway.js';
+import {
+  SignalsGateway,
+  claimedWalletFromSession,
+  reloadSession,
+  sessionOwnsWalletBinding,
+} from './signals.gateway.js';
 import { Server, Socket } from 'socket.io';
 import mongoose, { Model } from 'mongoose';
 import { User, UserSchema } from '../auth/auth.schema.js';
@@ -274,6 +279,208 @@ describe('SignalsGateway', () => {
         wallet: '0.1',
       },
     });
+  });
+  it('should not re-claim a session already claimed by a wallet credential on link', async () => {
+    const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
+    // A wallet session: it authenticated with its own credential (credId), so
+    // the link rendezvous must never re-bind it to the announced wallet — the
+    // announce can carry a stale address recorded on the other peer's session.
+    const walletSession = {
+      wallet: sessionFixtures.authorized.wallet,
+      credId: 'wallet-cred-id',
+      reload: jest.fn(async (fn: any) => fn(null)),
+      save: jest.fn(),
+    };
+    const walletClient = {
+      request: { session: walletSession, sessionID: 'wallet-session-id' },
+      rooms: new Set(),
+      join: jest.fn(),
+      data: {},
+    } as unknown as Socket;
+    const obs = await gateway.link({ requestId }, walletClient);
+    obs.subscribe();
+
+    (gateway.server.fetchSockets as jest.Mock).mockResolvedValueOnce([
+      { data: { sessionId: 'a' } },
+    ]);
+    await linkEventFn(
+      'auth',
+      JSON.stringify({
+        data: {
+          requestId,
+          wallet: 'STALEWALLETFROMTHEOTHERPEERSSESSIONXXXXXXXXXXXXXXXXXXXXXXX',
+          sessionId: 'agent-session-id',
+        },
+      }),
+    );
+    // The wallet binding is left untouched and the stale wallet room is not
+    // joined…
+    expect(
+      (gateway as any).authService.updateSessionWallet,
+    ).not.toHaveBeenCalled();
+    expect(walletClient.join).not.toHaveBeenCalledWith(
+      'STALEWALLETFROMTHEOTHERPEERSSESSIONXXXXXXXXXXXXXXXXXXXXXXX',
+    );
+    // …while presence for the requestId is still refreshed and the link
+    // resolves normally.
+    expect(gateway.server.socketsJoin).toHaveBeenCalledWith(requestId);
+    expect((walletSession as any).deviceCount).toBe(1);
+  });
+  it('should refuse a link for a requestId another wallet is still holding', async () => {
+    const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
+    // A requestId is a hint, not a secret: it is long-lived (peers renegotiate
+    // over it) and travels through QR codes, logs and UIs. A wallet that knows
+    // one must not be able to take over the pairing while another wallet still
+    // holds it.
+    const otherWallet =
+      'OTHERWALLETCLAIMEDTHISREQUESTIDXXXXXXXXXXXXXXXXXXXXXXXXXX';
+    (gateway as any).authService.findWalletClaimsByRequestId = jest
+      .fn()
+      .mockResolvedValue([
+        { sessionId: 'holder-session-id', wallet: otherWallet, credId: 'held' },
+      ]);
+    // The holder is online: its session still owns a socket.
+    (gateway.server.fetchSockets as jest.Mock).mockResolvedValueOnce([
+      { data: { sessionId: 'holder-session-id' } },
+    ]);
+    const intruderSession = {
+      wallet: sessionFixtures.authorized.wallet,
+      credId: 'intruder-cred-id',
+      reload: jest.fn(async (fn: any) => fn(null)),
+      save: jest.fn(),
+    };
+    const intruderClient = {
+      request: { session: intruderSession, sessionID: 'intruder-session-id' },
+      rooms: new Set(),
+      join: jest.fn(),
+      data: {},
+    } as unknown as Socket;
+    const obs = await gateway.link({ requestId }, intruderClient);
+    // Refused silently: no observable to resolve, no room, no presence — the
+    // caller learns nothing about the connection it tried to take over.
+    expect(obs).toBeUndefined();
+    expect(intruderClient.join).not.toHaveBeenCalled();
+    expect(gateway.server.emit).not.toHaveBeenCalled();
+    expect(ioAdapterMock.subClient.subscribe).not.toHaveBeenCalled();
+  });
+  it('should link for a requestId whose other claim is no longer online', async () => {
+    const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
+    // Stored claims outlive the wallet that made them: after a re-onboarding
+    // the wallet comes back to the same (persistent) requestId with a new
+    // address and credential. An abandoned claim must never lock it out.
+    (gateway as any).authService.findWalletClaimsByRequestId = jest
+      .fn()
+      .mockResolvedValue([
+        {
+          sessionId: 'abandoned-session-id',
+          wallet: 'WALLETFROMBEFORETHEREONBOARDINGXXXXXXXXXXXXXXXXXXXXXXXXXX',
+          credId: 'abandoned',
+        },
+      ]);
+    const walletSession = {
+      wallet: sessionFixtures.authorized.wallet,
+      credId: 'fresh-cred-id',
+      reload: jest.fn(async (fn: any) => fn(null)),
+      save: jest.fn(),
+    };
+    const walletClient = {
+      request: { session: walletSession, sessionID: 'wallet-session-id' },
+      rooms: new Set(),
+      join: jest.fn(),
+      data: {},
+    } as unknown as Socket;
+    // fetchSockets defaults to [] — the abandoned claim has no live socket.
+    const obs = await gateway.link({ requestId }, walletClient);
+    expect(obs).toBeDefined();
+    expect(walletClient.join).toHaveBeenCalledWith(requestId);
+  });
+  it('should not gate a link from a session without a credential of its own', async () => {
+    const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
+    // The agent side has no credential — an anonymous session IS the
+    // legitimate peer role here, so the claim gate must not even be consulted
+    // for it.
+    (gateway as any).authService.findWalletClaimsByRequestId = jest.fn();
+    const obs = await gateway.link({ requestId }, clientMock);
+    expect(obs).toBeDefined();
+    expect(
+      (gateway as any).authService.findWalletClaimsByRequestId,
+    ).not.toHaveBeenCalled();
+  });
+  it('should not treat the same wallet on another device as a conflicting claim', async () => {
+    const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
+    // A wallet key may live on several devices; those are the same party.
+    (gateway as any).authService.findWalletClaimsByRequestId = jest
+      .fn()
+      .mockResolvedValue([
+        {
+          sessionId: 'other-device-session-id',
+          wallet: sessionFixtures.authorized.wallet,
+          credId: 'other-device',
+        },
+      ]);
+    (gateway.server.fetchSockets as jest.Mock).mockResolvedValueOnce([
+      { data: { sessionId: 'other-device-session-id' } },
+    ]);
+    await expect(
+      gateway.findLiveWalletClaimConflict(
+        requestId,
+        sessionFixtures.authorized.wallet,
+        'wallet-session-id',
+      ),
+    ).resolves.toBeNull();
+  });
+  it('should tolerate an empty requestId and a failing claim lookup', async () => {
+    await expect(
+      gateway.findLiveWalletClaimConflict('', 'WALLET'),
+    ).resolves.toBeNull();
+    // @ts-expect-error, testing purposes
+    gateway.logger.error = jest.fn();
+    (gateway as any).authService.findWalletClaimsByRequestId = jest
+      .fn()
+      .mockRejectedValue(new Error('mongo is down'));
+    // Availability over strictness: a failed lookup must not break linking.
+    await expect(
+      gateway.findLiveWalletClaimConflict('request-id', 'WALLET'),
+    ).resolves.toBeNull();
+    // @ts-expect-error, testing purposes
+    expect(gateway.logger.error).toHaveBeenCalled();
+  });
+  it('should read the claimed wallet from the live or the stored session', () => {
+    expect(
+      claimedWalletFromSession({ credId: 'cred', wallet: 'WALLET' }, undefined),
+    ).toBe('WALLET');
+    expect(
+      claimedWalletFromSession({}, {
+        session: JSON.stringify({ credId: 'cred', wallet: 'STORED' }),
+      } as any),
+    ).toBe('STORED');
+    // A wallet address without a credential is hearsay (this is what the link
+    // rendezvous writes onto the agent's session), never a claim.
+    expect(
+      claimedWalletFromSession({ wallet: 'WALLET' }, undefined),
+    ).toBeNull();
+    expect(claimedWalletFromSession({ credId: 'cred' }, undefined)).toBeNull();
+    expect(claimedWalletFromSession(undefined, undefined)).toBeNull();
+    expect(
+      claimedWalletFromSession({}, { session: 'not-json' } as any),
+    ).toBeNull();
+  });
+  it('should detect a wallet-claimed session from the stored session document', () => {
+    // Live session lacking the credId (e.g. loaded before the HTTP assertion
+    // completed) still counts as claimed when the stored document carries it.
+    expect(
+      sessionOwnsWalletBinding({}, {
+        session: JSON.stringify({ credId: 'cred', wallet: 'WALLET' }),
+      } as any),
+    ).toBe(true);
+    expect(sessionOwnsWalletBinding({ credId: 'cred' }, undefined)).toBe(true);
+    // Sessions without a credential (agents) are not claimed.
+    expect(sessionOwnsWalletBinding({}, { session: '{}' } as any)).toBe(false);
+    expect(sessionOwnsWalletBinding(undefined, undefined)).toBe(false);
+    // Unparseable stored payloads are tolerated.
+    expect(sessionOwnsWalletBinding({}, { session: 'not-json' } as any)).toBe(
+      false,
+    );
   });
   it('should re-announce auth on link when a wallet is genuinely present', async () => {
     const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
