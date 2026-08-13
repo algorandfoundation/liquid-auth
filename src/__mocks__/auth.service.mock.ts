@@ -13,6 +13,7 @@ export const mockAuthService = {
   removeCredential: jest.fn().mockResolvedValue(dummyUser),
   findAuthenticatedSessionsByRequestId: jest.fn().mockResolvedValue([]),
   findAuthenticatedSessionByRequestId: jest.fn().mockResolvedValue(null),
+  findWalletClaimsByRequestId: jest.fn().mockResolvedValue([]),
   findSessionsByCredId: jest.fn().mockResolvedValue([]),
   all: jest.fn().mockResolvedValue(dummyUsers),
 };

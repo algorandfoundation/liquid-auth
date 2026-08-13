@@ -189,6 +189,58 @@ export class AuthService {
   }
 
   /**
+   * Find every Session that CLAIMED a requestId with its own credential
+   *
+   * Stricter than {@link findAuthenticatedSessionsByRequestId}: a session only
+   * counts when it carries a `credId`, i.e. it completed a FIDO2 ceremony of
+   * its own. That distinction matters because a session can carry a wallet
+   * address without ever having proven it — the `link` rendezvous writes the
+   * announced wallet onto the peer's (agent's) session, and that copy can be
+   * stale. Only credential-bearing sessions represent an actual wallet device
+   * claiming the requestId.
+   *
+   * @param requestId - The request identifier peers are connecting for
+   * @param excludeSessionId - A session id to ignore (e.g. the caller's own)
+   * @returns The wallet + credId + sessionId of every claim (may be empty)
+   */
+  async findWalletClaimsByRequestId(
+    requestId: string,
+    excludeSessionId?: string,
+  ): Promise<{ sessionId: string; wallet: string; credId: string }[]> {
+    if (typeof requestId !== 'string' || requestId.length === 0) {
+      return [];
+    }
+    // The session payload is stored as a JSON string, so narrow the scan with a
+    // substring match on the requestId before parsing each candidate.
+    const sessions = await this.sessionModel
+      .find({ session: { $regex: requestId } })
+      .exec();
+    const claims: { sessionId: string; wallet: string; credId: string }[] = [];
+    for (const stored of sessions) {
+      const sessionId = String(stored._id);
+      if (excludeSessionId && sessionId === excludeSessionId) {
+        continue;
+      }
+      try {
+        const data = JSON.parse(stored.session);
+        if (
+          data &&
+          data.requestId === requestId &&
+          typeof data.wallet === 'string' &&
+          data.wallet.length > 0 &&
+          typeof data.credId === 'string' &&
+          data.credId.length > 0
+        ) {
+          claims.push({ sessionId, wallet: data.wallet, credId: data.credId });
+        }
+      } catch {
+        // Skip sessions whose payload can't be parsed.
+      }
+    }
+    return claims;
+  }
+
+  /**
    * Find other sessions bound to the same credential
    *
    * A credential (`credId`) can only ever belong to a single device, so any

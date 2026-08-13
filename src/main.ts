@@ -57,7 +57,15 @@ async function bootstrap() {
 
   const store = MongoStore.create({
     mongoUrl: uri,
-    ttl: 20000,
+    // connect-mongo's ttl is in SECONDS and — because the session cookie sets
+    // no maxAge — it is the sole session lifetime. Pairings are long-lived
+    // (peers renegotiate over the same requestId for days) and an idle
+    // websocket generates no HTTP traffic to refresh the store entry, so a
+    // short TTL silently expires the session of a connected-but-quiet peer
+    // and strands its parked link rendezvous. Two weeks; the signals gateway
+    // additionally re-touches the sessions of connected sockets so they can
+    // never expire while their socket is alive.
+    ttl: 60 * 60 * 24 * 14,
   });
 
   const sessionHandler = session({

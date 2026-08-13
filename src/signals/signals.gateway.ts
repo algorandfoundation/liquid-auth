@@ -8,7 +8,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Inject, Logger } from '@nestjs/common';
+import { Inject, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import type { Server, Socket } from 'socket.io';
 import { Session as SessionType } from 'express-session';
@@ -28,14 +28,168 @@ export async function reloadSession(session: SessionType) {
   });
 }
 
+/**
+ * Persist the live express session to the store. connect-mongo upserts on
+ * save, so this also RECREATES a session document that has already expired
+ * out of the store — which is what lets a long-idle peer re-establish its
+ * stored session instead of being silently refused.
+ *
+ * @param session - The socket's live express session
+ */
+export async function saveSession(session: SessionType) {
+  return new Promise((resolve, reject) => {
+    session.save((err) => {
+      if (err) {
+        reject(err);
+      }
+      resolve(session);
+    });
+  });
+}
+
+/**
+ * Refresh the store expiry of a connected socket's session.
+ *
+ * Prefers the store's own `touch` (it only bumps `expires`, so it can never
+ * clobber fields another node wrote concurrently); when the document is
+ * already gone — the store refuses to touch a session it cannot find — falls
+ * back to a full `save`, which recreates it.
+ *
+ * @param request - The socket's express request (session, sessionID, store)
+ */
+export async function touchSession(
+  request: Record<string, any>,
+): Promise<void> {
+  const session = request.session as SessionType;
+  const store = request.sessionStore as
+    | {
+        touch?: (
+          sid: string,
+          session: unknown,
+          cb: (err?: unknown) => void,
+        ) => void;
+      }
+    | undefined;
+  if (
+    store &&
+    typeof store.touch === 'function' &&
+    typeof request.sessionID === 'string'
+  ) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        store.touch(request.sessionID, session, (err?: unknown) =>
+          err ? reject(err) : resolve(),
+        );
+      });
+      return;
+    } catch {
+      // The document already expired out of the store — recreate it below.
+    }
+  }
+  await saveSession(session);
+}
+
+/**
+ * Whether a linking session has already been claimed by a wallet credential.
+ *
+ * A session that authenticated with its own credential (a wallet that
+ * completed a FIDO2 attestation/assertion — those controllers persist the
+ * `credId`; passive peers such as agents never carry one) owns its wallet
+ * binding. The `link` rendezvous must never rewrite such a session's wallet:
+ * the re-announced `auth` event carries the wallet recorded on the OTHER
+ * party's session, which can be stale (e.g. a connection last paired before
+ * the wallet re-onboarded with fresh keys), and overwriting the
+ * credential-authenticated binding with it silently de-authenticates the
+ * wallet at its own origin.
+ *
+ * Checks the live express session first and falls back to the stored session
+ * document, so the answer stays correct whichever copy is fresher.
+ *
+ * @param liveSession - The socket's live express session
+ * @param stored - The stored Session document (serialized JSON payload)
+ * @returns true when the session is claimed by a wallet credential
+ */
+export function sessionOwnsWalletBinding(
+  liveSession: Record<string, any> | undefined,
+  stored: Session | undefined,
+): boolean {
+  if (
+    typeof liveSession?.credId === 'string' &&
+    liveSession.credId.length > 0
+  ) {
+    return true;
+  }
+  try {
+    const data = JSON.parse(stored?.session ?? '');
+    return typeof data?.credId === 'string' && data.credId.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The wallet a session has claimed with its own credential, if any.
+ *
+ * Only a session that completed a FIDO2 ceremony carries a `credId`, so a
+ * `credId` + `wallet` pair is the one wallet identity the server can attribute
+ * to a socket. A wallet address WITHOUT a credential (what the `link`
+ * rendezvous writes onto the peer/agent session) is hearsay and never counts
+ * as a claim.
+ *
+ * Checks the live express session first and falls back to the stored session
+ * document, so the answer stays correct whichever copy is fresher.
+ *
+ * @param liveSession - The socket's live express session
+ * @param stored - The stored Session document (serialized JSON payload)
+ * @returns The claimed wallet address, or null when the session is not
+ *   credential-authenticated
+ */
+export function claimedWalletFromSession(
+  liveSession: Record<string, any> | undefined,
+  stored: Session | undefined,
+): string | null {
+  const claimedFrom = (data: Record<string, any> | undefined) =>
+    typeof data?.credId === 'string' &&
+    data.credId.length > 0 &&
+    typeof data?.wallet === 'string' &&
+    data.wallet.length > 0
+      ? (data.wallet as string)
+      : null;
+  const live = claimedFrom(liveSession);
+  if (live) {
+    return live;
+  }
+  try {
+    return claimedFrom(JSON.parse(stored?.session ?? ''));
+  } catch {
+    return null;
+  }
+}
+
 @WebSocketGateway({
   cors: {
     origin: '*',
   },
 })
 export class SignalsGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+  implements
+    OnGatewayInit,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    OnModuleDestroy
 {
+  /**
+   * How often the sessions of connected sockets are re-touched in the store.
+   *
+   * An idle websocket generates no HTTP traffic, so nothing else refreshes
+   * the express session of a quietly waiting peer (e.g. an agent parked on a
+   * `link` overnight). Without this sweep such a session ages out of the
+   * store while its socket is still perfectly alive, after which the parked
+   * rendezvous can never resolve and signaling relays start failing on
+   * session reloads. Any cadence well below the store TTL works.
+   */
+  private static readonly SESSION_KEEPALIVE_INTERVAL_MS = 60 * 60 * 1000;
+  private sessionKeepaliveTimer?: ReturnType<typeof setInterval>;
   @WebSocketServer()
   server: Server;
   private ioAdapter: RedisIoAdapter;
@@ -94,6 +248,88 @@ export class SignalsGateway
         }
       }
     });
+    // Session keep-alive: as long as a socket is connected, its session must
+    // never expire out of the store (see SESSION_KEEPALIVE_INTERVAL_MS).
+    if (this.sessionKeepaliveTimer) {
+      clearInterval(this.sessionKeepaliveTimer);
+    }
+    this.sessionKeepaliveTimer = setInterval(() => {
+      void this.touchConnectedSessions();
+    }, SignalsGateway.SESSION_KEEPALIVE_INTERVAL_MS);
+    // The sweep must never keep a shutting-down process alive on its own.
+    this.sessionKeepaliveTimer.unref?.();
+  }
+
+  onModuleDestroy(): void {
+    if (this.sessionKeepaliveTimer) {
+      clearInterval(this.sessionKeepaliveTimer);
+      this.sessionKeepaliveTimer = undefined;
+    }
+  }
+
+  /**
+   * Touch the session of every LOCALLY connected socket so it stays alive in
+   * the store for as long as the socket does. Only local sockets are swept —
+   * in a multi-node deployment every node runs its own sweep over the sockets
+   * it owns — and each distinct session is touched once per pass even when it
+   * owns several sockets.
+   *
+   * @returns The number of distinct sessions touched
+   */
+  async touchConnectedSessions(): Promise<number> {
+    const sockets = this.server?.sockets?.sockets;
+    if (!sockets) {
+      return 0;
+    }
+    const touched = new Set<string>();
+    for (const socket of sockets.values()) {
+      const request = socket.request as Record<string, any>;
+      const sessionID = request?.sessionID;
+      if (
+        !request?.session ||
+        typeof sessionID !== 'string' ||
+        touched.has(sessionID)
+      ) {
+        continue;
+      }
+      touched.add(sessionID);
+      try {
+        await touchSession(request);
+      } catch (e) {
+        this.logger.warn(
+          `(keepalive): failed to touch Session: ${sessionID}`,
+          e,
+        );
+      }
+    }
+    return touched.size;
+  }
+
+  /**
+   * Best-effort refresh of the live express session from the store.
+   *
+   * A reload only fails when the stored session document is gone — typically
+   * expired after a long idle stretch (a websocket carries no HTTP traffic,
+   * so nothing refreshes the store entry). The in-memory session still holds
+   * everything signaling needs (`requestId`, `wallet`), so the caller must
+   * keep going with it instead of dying on the await and silently dropping
+   * the event it was about to relay.
+   *
+   * @param request - The socket's express request
+   * @param context - Label for the warning log (which handler was reloading)
+   */
+  private async reloadSessionBestEffort(
+    request: Record<string, any>,
+    context: string,
+  ): Promise<void> {
+    try {
+      await reloadSession(request.session);
+    } catch (e) {
+      this.logger.warn(
+        `(${context}): failed to reload Session: ${request.sessionID} (expired?); continuing with the in-memory session`,
+        e,
+      );
+    }
   }
 
   /**
@@ -105,7 +341,7 @@ export class SignalsGateway
    */
   async handleConnection(socket: Socket) {
     const request = socket.request as Record<string, any>;
-    await reloadSession(request.session);
+    await this.reloadSessionBestEffort(request, 'connection');
     const session = request.session as Record<string, any>;
 
     this.logger.debug(
@@ -361,6 +597,65 @@ export class SignalsGateway
   }
 
   /**
+   * Find a LIVE conflicting wallet claim for a requestId
+   *
+   * A requestId names one pairing between one agent and one wallet. Once a
+   * wallet has claimed it with its own credential, another wallet must not be
+   * able to take it over just by knowing the identifier (requestIds are
+   * long-lived — peers need a stable id to renegotiate over — and they travel
+   * through QR codes, logs and UIs, so they are hints rather than secrets).
+   *
+   * Two properties keep this gate from ever locking out the legitimate wallet:
+   *
+   * - Only CREDENTIAL-claimed sessions count (see
+   *   {@link AuthService.findWalletClaimsByRequestId}). The agent's session
+   *   also stores a wallet address — written by the `link` rendezvous, and
+   *   possibly stale — but it never proved it, so it can't block anyone.
+   * - The conflicting claim must be LIVE (its session still owns a connected
+   *   socket). Persisted sessions outlive the wallet that made them: after a
+   *   re-onboarding the wallet returns to the same, persistent requestId with a
+   *   NEW address and credential, and the abandoned claim must not stand in its
+   *   way.
+   *
+   * @param requestId - The request identifier the caller wants to link for
+   * @param wallet - The wallet the caller itself claimed with its credential
+   * @param excludeSessionId - The caller's own session, never a conflict
+   * @returns The conflicting claim, or null when the requestId is free for this
+   *   wallet
+   */
+  async findLiveWalletClaimConflict(
+    requestId: string,
+    wallet: string,
+    excludeSessionId?: string,
+  ): Promise<{ sessionId: string; wallet: string } | null> {
+    if (typeof requestId !== 'string' || requestId.length === 0) {
+      return null;
+    }
+    try {
+      const claims = await this.authService.findWalletClaimsByRequestId(
+        requestId,
+        excludeSessionId,
+      );
+      for (const claim of claims) {
+        // The same wallet on another device is not a conflict: a key may live
+        // on several devices, and both are the same party.
+        if (claim.wallet === wallet) {
+          continue;
+        }
+        const sockets = await this.server.in(claim.sessionId).fetchSockets();
+        if (sockets.length === 0) {
+          continue;
+        }
+        return { sessionId: claim.sessionId, wallet: claim.wallet };
+      }
+    } catch (e) {
+      // Availability over strictness: a failed lookup must not break linking.
+      this.logger.error('Failed to check wallet claims for requestId', e);
+    }
+    return null;
+  }
+
+  /**
    * On Link Connection, wait for the wallet to connect
    * @param client
    * @param body
@@ -374,9 +669,57 @@ export class SignalsGateway
     this.logger.debug(
       `(link): link for Session: ${request.sessionID} with RequestId: ${body.requestId}`,
     );
-    // Find the stored session
-    const session = await this.authService.findSession(request.sessionID);
+    // Find the stored session. It may have EXPIRED while this socket sat
+    // idle — a websocket carries no HTTP traffic, so nothing refreshes the
+    // store entry of a quietly waiting peer. Bailing out here would refuse
+    // the link SILENTLY (the acknowledgement the caller is parked on never
+    // arrives), so re-save the live express session instead (connect-mongo
+    // upserts, recreating the document) and look it up again.
+    let session = await this.authService.findSession(request.sessionID);
+    if (!session) {
+      this.logger.warn(
+        `(link): no stored session for Session: ${request.sessionID} (expired?); recreating it from the live session`,
+      );
+      try {
+        await saveSession(request.session as SessionType);
+        session = await this.authService.findSession(request.sessionID);
+      } catch (e) {
+        this.logger.error(
+          `(link): failed to recreate the stored session for Session: ${request.sessionID}`,
+          e,
+        );
+      }
+    }
     if (session) {
+      // A wallet that authenticated with its own credential has claimed this
+      // session; the auth rendezvous below must not re-claim it (see
+      // sessionOwnsWalletBinding).
+      const ownsWalletBinding = sessionOwnsWalletBinding(
+        request.session,
+        session,
+      );
+      // Claim gate: a requestId already claimed (and still held) by another
+      // wallet is not up for grabs. Only decidable when the caller is itself
+      // credential-authenticated — an anonymous session is the legitimate
+      // agent role, so it cannot be refused here; peer-level authentication
+      // above the signaling layer is what closes that remaining gap.
+      const claimedWallet = claimedWalletFromSession(request.session, session);
+      if (claimedWallet) {
+        const conflict = await this.findLiveWalletClaimConflict(
+          body.requestId,
+          claimedWallet,
+          request.sessionID,
+        );
+        if (conflict) {
+          this.logger.warn(
+            `(link): refusing RequestId: ${body.requestId} for wallet ${claimedWallet}; already claimed by ${conflict.wallet} (Session: ${conflict.sessionId})`,
+          );
+          // Refuse silently: no room join, no presence, no auth rendezvous —
+          // the caller learns nothing about the connection it tried to take
+          // over, and the acknowledgement it is waiting for never arrives.
+          return;
+        }
+      }
       // Presence: join a room scoped to the requestId so we can track how
       // many devices are connected for this connection request.
       if (typeof body.requestId === 'string' && body.requestId.length > 0) {
@@ -398,27 +741,67 @@ export class SignalsGateway
             const parsed = JSON.parse(eventMessage);
             const data = parsed.data || parsed;
             if (data && body.requestId === data.requestId) {
-              this.logger.debug(
-                `(*) Linking Wallet: ${data.wallet} to Session: ${request.sessionID}`,
-              );
-              await this.authService.updateSessionWallet(session, data.wallet);
-              await reloadSession(request.session);
-              this.logger.debug(
-                `(*) Joining Room: ${data.wallet} with Session: ${request.sessionID}`,
-              );
-              await client.join(data.wallet);
+              // Re-bind the announced wallet onto this session. STRICTLY
+              // best-effort: the stored session can expire while the link is
+              // parked (an idle websocket carries no HTTP traffic to refresh
+              // it), and a failure here must not kill the rendezvous — the
+              // peer would never receive the acknowledgement it is parked on,
+              // never arm its offer listener, and every offer the returning
+              // wallet sends would be relayed into the void while both sides
+              // log nothing. The wallet binding is a reconnect optimization;
+              // the acknowledgement is the contract.
+              try {
+                if (ownsWalletBinding) {
+                  // This session is already claimed by a wallet credential, so
+                  // linking must not re-bind it to the announced wallet. The
+                  // announce can carry a stale address recorded on the other
+                  // peer's session (e.g. a connection last paired before the
+                  // wallet re-onboarded), and rewriting would silently
+                  // de-authenticate the wallet at its own origin — forcing a
+                  // passkey prompt on the next connection switch.
+                  this.logger.debug(
+                    `(*) Session: ${request.sessionID} already claimed by a wallet credential; not re-linking to ${data.wallet}`,
+                  );
+                } else {
+                  this.logger.debug(
+                    `(*) Linking Wallet: ${data.wallet} to Session: ${request.sessionID}`,
+                  );
+                  await this.authService.updateSessionWallet(
+                    session,
+                    data.wallet,
+                  );
+                  await reloadSession(request.session);
+                  this.logger.debug(
+                    `(*) Joining Room: ${data.wallet} with Session: ${request.sessionID}`,
+                  );
+                  await client.join(data.wallet);
+                }
+              } catch (e) {
+                this.logger.warn(
+                  `(link): failed to re-bind wallet ${data.wallet} to Session: ${request.sessionID} (expired session?); acknowledging the link anyway`,
+                  e,
+                );
+              }
               // Presence: the wallet has authenticated for this request. Make
               // sure its sockets join the requestId room too, then recount and
               // persist presence to this (offer) session so every connected
               // device is reflected in its session information (/auth/session).
-              if (
-                typeof body.requestId === 'string' &&
-                body.requestId.length > 0
-              ) {
-                if (typeof data.sessionId === 'string') {
-                  this.server.in(data.sessionId).socketsJoin(body.requestId);
+              // Best-effort for the same reason as the re-bind above.
+              try {
+                if (
+                  typeof body.requestId === 'string' &&
+                  body.requestId.length > 0
+                ) {
+                  if (typeof data.sessionId === 'string') {
+                    this.server.in(data.sessionId).socketsJoin(body.requestId);
+                  }
+                  await this.updatePresence(body.requestId, request.session);
                 }
-                await this.updatePresence(body.requestId, request.session);
+              } catch (e) {
+                this.logger.warn(
+                  `(link): failed to refresh presence for RequestId: ${body.requestId}; acknowledging the link anyway`,
+                  e,
+                );
               }
               this.ioAdapter.subClient.off('message', handleAuthMessage);
               observer.next(data);
@@ -510,7 +893,7 @@ export class SignalsGateway
   ) {
     this.logger.debug(`(offer-candidate): ${JSON.stringify(data)}`);
     const request = client.request as Record<string, any>;
-    await reloadSession(request.session);
+    await this.reloadSessionBestEffort(request, 'offer-candidate');
     const session = request.session as Session & Record<string, any>;
     // Signaling is scoped to the requestId room (the identifier that names the
     // pairing and drives presence) rather than the wallet address, so SDP/ICE
@@ -531,7 +914,7 @@ export class SignalsGateway
     this.logger.log(`(offer-description): ${data}`);
     // Session from the initial Handshake
     const request = client.request as Record<string, any>;
-    await reloadSession(request.session);
+    await this.reloadSessionBestEffort(request, 'offer-description');
     const session = request.session as Record<string, any>;
 
     if (typeof session.requestId === 'string') {
@@ -549,7 +932,7 @@ export class SignalsGateway
   ) {
     this.logger.log(`(answer-description): ${data}`);
     const request = client.request as Record<string, any>;
-    await reloadSession(request.session);
+    await this.reloadSessionBestEffort(request, 'answer-description');
 
     const session = request.session as Record<string, any>;
     if (typeof session.requestId === 'string') {
@@ -567,7 +950,7 @@ export class SignalsGateway
   ) {
     this.logger.debug(`(answer-candidate): ${JSON.stringify(data)}`);
     const request = client.request as Record<string, any>;
-    await reloadSession(request.session);
+    await this.reloadSessionBestEffort(request, 'answer-candidate');
 
     const session = request.session as Record<string, any>;
     if (typeof session.requestId === 'string') {

@@ -242,6 +242,69 @@ describe('AuthService', () => {
       service.findAuthenticatedSessionsByRequestId(''),
     ).resolves.toEqual([]);
   });
+  it('should only report credential-bearing sessions as wallet claims', async () => {
+    // A session can carry a wallet address it never proved: the link
+    // rendezvous writes the announced wallet onto the peer (agent) session.
+    // Only a session with a credId of its own actually CLAIMED the requestId.
+    const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
+    mockSessionModel.find = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue([
+        {
+          _id: 'wallet-session-id',
+          session: JSON.stringify({
+            requestId,
+            wallet: mockUser.wallet,
+            credId: 'a-credential-id',
+          }),
+        },
+        {
+          _id: 'agent-session-id',
+          session: JSON.stringify({ requestId, wallet: mockUser.wallet }),
+        },
+        {
+          _id: 'other-request-session-id',
+          session: JSON.stringify({
+            requestId: 'another-request-id',
+            wallet: mockUser.wallet,
+            credId: 'a-credential-id',
+          }),
+        },
+        {
+          _id: 'own-session-id',
+          session: JSON.stringify({
+            requestId,
+            wallet: mockUser.wallet,
+            credId: 'own-credential-id',
+          }),
+        },
+      ]),
+    });
+    const result = await service.findWalletClaimsByRequestId(
+      requestId,
+      'own-session-id',
+    );
+    expect(result).toEqual([
+      {
+        sessionId: 'wallet-session-id',
+        wallet: mockUser.wallet,
+        credId: 'a-credential-id',
+      },
+    ]);
+  });
+  it('should return no wallet claims for an empty requestId', async () => {
+    await expect(service.findWalletClaimsByRequestId('')).resolves.toEqual([]);
+  });
+  it('should skip wallet claims whose payload cannot be parsed', async () => {
+    const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
+    mockSessionModel.find = jest.fn().mockReturnValue({
+      exec: jest
+        .fn()
+        .mockResolvedValue([{ _id: 'broken-session-id', session: 'not-json' }]),
+    });
+    await expect(
+      service.findWalletClaimsByRequestId(requestId),
+    ).resolves.toEqual([]);
+  });
   it('should find other sessions bound to the same credential, excluding the kept one', async () => {
     const credId = 'a-credential-id';
     mockSessionModel.find = jest.fn().mockReturnValue({
