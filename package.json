@@ -129,5 +129,8 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "overrides": {
+    "js-yaml@>=5.0.0 <5.2.2": ">=5.2.2"
   }
 }
