@@ -3,7 +3,9 @@ import {
   SignalsGateway,
   claimedWalletFromSession,
   reloadSession,
+  saveSession,
   sessionOwnsWalletBinding,
+  touchSession,
 } from './signals.gateway.js';
 import { Server, Socket } from 'socket.io';
 import mongoose, { Model } from 'mongoose';
@@ -688,6 +690,200 @@ describe('SignalsGateway', () => {
     await expect(
       reloadSession(sessionFixtures.authorized as unknown as Session),
     ).rejects.toThrow('failed');
+  });
+  it('should reject a failed session save', async () => {
+    const session = {
+      save: jest.fn((fn: any) => fn(new Error('failed'))),
+    };
+    await expect(saveSession(session as unknown as Session)).rejects.toThrow(
+      'failed',
+    );
+  });
+  it('should still acknowledge a link when the stored session expired mid-wait', async () => {
+    const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
+    const obs = await gateway.link({ requestId }, clientMock);
+    const next = jest.fn();
+    const complete = jest.fn();
+    obs.subscribe({ next, complete });
+    // The stored session document aged out of the store while the link was
+    // parked (an idle websocket carries no HTTP traffic to refresh it), so
+    // the wallet re-bind path fails on the session reload…
+    (sessionFixtures.authorized as any).reload = jest.fn(async (fn: any) =>
+      fn(new Error('failed to load session')),
+    );
+    // @ts-expect-error, testing purposes
+    gateway.logger.warn = jest.fn();
+    (gateway.server.fetchSockets as jest.Mock).mockResolvedValueOnce([
+      { data: { sessionId: 'a' } },
+      { data: { sessionId: 'b' } },
+    ]);
+    await linkEventFn(
+      'auth',
+      JSON.stringify({
+        data: {
+          requestId,
+          wallet: sessionFixtures.authorized.wallet,
+          sessionId: 'wallet-session-id',
+        },
+      }),
+    );
+    // …but the rendezvous must not die silently: the peer still receives its
+    // acknowledgement (so it can arm its offer listener and answer the
+    // returning wallet) and the failure is only logged.
+    expect(next).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        requestId,
+        wallet: sessionFixtures.authorized.wallet,
+      }),
+    });
+    expect(complete).toHaveBeenCalled();
+    expect(ioAdapterMock.subClient.off).toHaveBeenCalled();
+    // @ts-expect-error, testing purposes
+    expect(gateway.logger.warn).toHaveBeenCalled();
+  });
+  it('should recreate a missing stored session on link instead of refusing silently', async () => {
+    const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
+    // The linking peer's stored session expired while it sat idle. The live
+    // express session is still on the socket, so link must re-save it (the
+    // store upserts, recreating the document) and carry on — bailing out
+    // would leave the caller parked on an acknowledgement that never comes.
+    const liveSession = {
+      reload: jest.fn(async (fn: any) => fn(null)),
+      save: jest.fn((fn?: any) => fn && fn(null)),
+    };
+    const client = {
+      request: { session: liveSession, sessionID: 'expired-session-id' },
+      rooms: new Set(),
+      join: jest.fn(),
+      data: {},
+    } as unknown as Socket;
+    (gateway as any).authService.findSession = jest
+      .fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(sessionFixtures.authorized);
+    // @ts-expect-error, testing purposes
+    gateway.logger.warn = jest.fn();
+    const obs = await gateway.link({ requestId }, client);
+    expect(liveSession.save).toHaveBeenCalled();
+    expect((gateway as any).authService.findSession).toHaveBeenCalledTimes(2);
+    expect(obs).toBeDefined();
+    expect(client.join).toHaveBeenCalledWith(requestId);
+  });
+  it('should still relay an offer-description when the session reload fails', async () => {
+    const requestId = '019097ff-bb8c-7d5d-9822-7c9eb2c0d419';
+    (clientMock.request as any).session.requestId = requestId;
+    // The sender's stored session expired; the in-memory session still knows
+    // the requestId, so the relay must go on instead of dying on the reload
+    // and silently swallowing the offer.
+    (sessionFixtures.authorized as any).reload = jest.fn(async (fn: any) =>
+      fn(new Error('failed to load session')),
+    );
+    // @ts-expect-error, testing purposes
+    gateway.logger.warn = jest.fn();
+    await gateway.onOfferDescription(sdpFixtures.call, clientMock);
+    expect(gateway.server.in).toHaveBeenCalledWith(requestId);
+    expect(gateway.server.emit).toHaveBeenCalledWith(
+      'offer-description',
+      sdpFixtures.call,
+    );
+    // @ts-expect-error, testing purposes
+    expect(gateway.logger.warn).toHaveBeenCalled();
+  });
+  describe('session keep-alive', () => {
+    it('should touch each connected session once via the store', async () => {
+      const touch = jest.fn((sid: string, session: unknown, cb: any) =>
+        cb(null),
+      );
+      const makeSocket = (sessionID: string) => ({
+        request: {
+          sessionID,
+          session: { save: jest.fn((fn?: any) => fn && fn(null)) },
+          sessionStore: { touch },
+        },
+      });
+      (gateway.server as any).sockets.sockets = new Map([
+        ['socket-1', makeSocket('session-a')],
+        // Same device, second socket: touched once.
+        ['socket-2', makeSocket('session-a')],
+        ['socket-3', makeSocket('session-b')],
+      ]);
+      await expect(gateway.touchConnectedSessions()).resolves.toBe(2);
+      expect(touch).toHaveBeenCalledTimes(2);
+    });
+    it('should recreate a session the store can no longer touch', async () => {
+      // The store refuses to touch a document it cannot find (it already
+      // expired) — the fallback save upserts, recreating it.
+      const save = jest.fn((fn?: any) => fn && fn(null));
+      (gateway.server as any).sockets.sockets = new Map([
+        [
+          'socket-1',
+          {
+            request: {
+              sessionID: 'expired-session-id',
+              session: { save },
+              sessionStore: {
+                touch: jest.fn((sid: string, session: unknown, cb: any) =>
+                  cb(new Error('Unable to find the session to touch')),
+                ),
+              },
+            },
+          },
+        ],
+      ]);
+      await expect(gateway.touchConnectedSessions()).resolves.toBe(1);
+      expect(save).toHaveBeenCalled();
+    });
+    it('should tolerate a socket without a session and a failing touch', async () => {
+      // @ts-expect-error, testing purposes
+      gateway.logger.warn = jest.fn();
+      (gateway.server as any).sockets.sockets = new Map([
+        ['socket-1', { request: {} }],
+        [
+          'socket-2',
+          {
+            request: {
+              sessionID: 'broken-session-id',
+              session: {
+                save: jest.fn(
+                  (fn?: any) => fn && fn(new Error('mongo is down')),
+                ),
+              },
+              sessionStore: {
+                touch: jest.fn((sid: string, session: unknown, cb: any) =>
+                  cb(new Error('mongo is down')),
+                ),
+              },
+            },
+          },
+        ],
+      ]);
+      // The broken session is counted as attempted but never throws out of
+      // the sweep — the remaining sockets must still be touched next time.
+      await expect(gateway.touchConnectedSessions()).resolves.toBe(1);
+      // @ts-expect-error, testing purposes
+      expect(gateway.logger.warn).toHaveBeenCalled();
+    });
+    it('should fall back to save when the request has no store', async () => {
+      const save = jest.fn((fn?: any) => fn && fn(null));
+      await touchSession({ sessionID: 'no-store', session: { save } });
+      expect(save).toHaveBeenCalled();
+    });
+    it('should arm the sweep on init and disarm it on module destroy', () => {
+      jest.useFakeTimers();
+      try {
+        const touchSpy = jest
+          .spyOn(gateway, 'touchConnectedSessions')
+          .mockResolvedValue(0);
+        gateway.afterInit(gateway.server);
+        jest.advanceTimersByTime(60 * 60 * 1000);
+        expect(touchSpy).toHaveBeenCalledTimes(1);
+        gateway.onModuleDestroy();
+        jest.advanceTimersByTime(60 * 60 * 1000);
+        expect(touchSpy).toHaveBeenCalledTimes(1);
+      } finally {
+        jest.useRealTimers();
+      }
+    });
   });
   it('should remove the listener on unsubscription', async () => {
     const obs = await gateway.link(
