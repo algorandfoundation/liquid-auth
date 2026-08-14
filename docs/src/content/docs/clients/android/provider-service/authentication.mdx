@@ -1,0 +1,117 @@
+---
+title: "Android 14: Authentication Service"
+---
+
+import {Steps, TabItem, Tabs} from '@astrojs/starlight/components';
+import CodeUri from "@/components/CodeUri.astro";
+
+To handle sign in requests in your credential provider service, complete the steps shown in the following sections.
+
+## Query
+
+User sign-in is handled with the following steps:
+
+<Steps>
+1. When a device tries to sign in a user, it prepares a [GetCredentialRequest](https://developer.android.com/reference/androidx/credentials/GetCredentialRequest) instance.
+2. The Android framework propagates this request to all applicable credential providers by binding to these services.
+3. The provider service then receives a `BeginGetCredentialRequest` that contains a list of `BeginGetCredentialOption`,
+   each of which contains parameters that can be used to retrieve matching credentials.
+</Steps>
+
+To handle this request in your credential provider service,
+you can override the `onBeginGetCredentialRequest()` method as shown in the following example:
+
+```kotlin
+package foundation.algorand.demo
+
+class CustomProviderService: CredentialProviderService() {
+  companion object {
+      const val GET_PASSKEY_INTENT = 1
+      const val GET_PASSKEY_ACTION = "foundation.algorand.demo.GET_PASSKEY"
+  }
+
+  /**
+   * Handle Get Credential Requests
+   */
+  @RequiresApi(Build.VERSION_CODES.S)
+  override fun onBeginGetCredentialRequest(
+      request: BeginGetCredentialRequest,
+      cancellationSignal: CancellationSignal,
+      callback: OutcomeReceiver<BeginGetCredentialResponse, GetCredentialException>,
+  ) {
+      try {
+          callback.onResult(processGetCredentialRequest(request))
+      } catch (e: GetCredentialException) {
+          callback.onError(GetCredentialUnknownException())
+      }
+  }
+
+  /**
+   * Get a list of available PublicKeyCredential Entries
+   */
+  private fun processGetCredentialRequest(request: BeginGetCredentialRequest): BeginGetCredentialResponse{
+      Log.v(TAG, "processing GetCredentialRequest")
+      val deferredCredentials: Deferred<List<Credential>> = scope.async {
+          credentialRepository.getDatabase(this@LiquidCredentialProviderService).credentialDao().getAllRegular()
+      }
+      val credentials = runBlocking {
+          deferredCredentials.await()
+      }
+      return BeginGetCredentialResponse(credentials.map {
+          val data = Bundle()
+          data.putString("credentialId", it.credentialId)
+          data.putString("userHandle", it.userHandle)
+          PublicKeyCredentialEntry.Builder(
+              this@LiquidCredentialProviderService,
+              it.userHandle,
+              createNewPendingIntent(GET_PASSKEY_ACTION, GET_PASSKEY_INTENT, data),
+              request.beginGetCredentialOptions[0] as BeginGetPublicKeyCredentialOption
+          )
+              .setIcon(Icon.createWithResource(this@LiquidCredentialProviderService, R.mipmap.ic_launcher))
+              .build()
+      })
+  }
+
+ /**
+  * This method creates a new PendingIntent for the given action and request code.
+  */
+  private fun createNewPendingIntent(action: String, requestCode: Int, extra: Bundle?): PendingIntent {
+      val intent = Intent(action).setPackage(PACKAGE_NAME)
+
+      if (extra != null) {
+          intent.putExtra("CREDENTIAL_DATA", extra)
+      }
+      return PendingIntent.getActivity(
+          applicationContext, requestCode,
+          intent, (PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+      )
+  }
+}
+```
+
+## Selection
+
+Once you query and populate the credentials,
+now you need to handle the selection phase for the credentials being selected by the user.
+
+<Steps>
+1. In the `onCreate` method of the corresponding Activity, retrieve the associated intent, and pass to [PendingIntentHandler.retrieveProviderGetCredentialRequest()](https://developer.android.com/reference/androidx/credentials/provider/ProviderGetCredentialRequest).
+2. Extract the [GetPublicKeyCredentialOption](https://developer.android.com/reference/androidx/credentials/GetPublicKeyCredentialOption) from the request retrieved above. Subsequently, extract the `requestJson` and `clientDataHash` from this option.
+3. Extract the `credentialId` from the intent extra, which was populated by the credential provider when the corresponding `PendingIntent` was set up.
+4. Extract the passkey from your local database using the request parameters accessed above.
+5. Assert that the passkey is valid with extracted metadata, and user verification.
+6. Construct a JSON response based on the W3 Web Authentication Assertion spec.
+7. Construct a PublicKeyCredential using the JSON generated above and set it on a final GetCredentialResponse.
+</Steps>
+
+The following example illustrates how these steps can be implemented:
+
+
+<Tabs>
+  <TabItem label="GetPasskeyActivity.kt">
+    <CodeUri lang="kotlin" uri="https://raw.githubusercontent.com/algorandfoundation/liquid-auth-android/develop/demo/src/main/java/foundation/algorand/demo/headless/GetPasskeyActivity.kt"/>
+  </TabItem>
+  <TabItem label="GetPasskeyViewModel.kt">
+    <CodeUri lines="1-68,71-101,104-142" lang="kotlin" uri="https://raw.githubusercontent.com/algorandfoundation/liquid-auth-android/develop/demo/src/main/java/foundation/algorand/demo/headless/GetPasskeyViewModel.kt"/>
+  </TabItem>
+</Tabs>

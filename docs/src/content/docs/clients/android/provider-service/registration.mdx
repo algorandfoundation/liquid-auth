@@ -1,0 +1,174 @@
+---
+title: "Android 14: Registration Service"
+---
+
+import { Steps, Aside, Tabs, TabItem, Code, LinkCard } from "@astrojs/starlight/components";
+import CodeUri from "@/components/CodeUri.astro";
+
+To handle this request in your credential provider service such that the passkey is actually stored in your storage,
+complete the steps shown in the following sections.
+
+## Query
+
+<Steps>
+1. Override the `onBeginCreateCredentialRequest()` method in your service extended from [CredentialProviderService](https://developer.android.com/reference/android/service/credentials/CredentialProviderService).
+2. Handle the [BeginCreateCredentialRequest](https://developer.android.com/reference/android/service/credentials/BeginCreateCredentialRequest) by constructing a corresponding [BeginCreateCredentialResponse](https://developer.android.com/reference/android/service/credentials/BeginCreateCredentialResponse) and passing it through the callback.
+3. While constructing the [BeginCreateCredentialResponse](https://developer.android.com/reference/android/service/credentials/BeginCreateCredentialResponse), add the required `CreateEntries`.
+   Each [CreateEntry](https://developer.android.com/reference/android/service/credentials/CreateEntry) should correspond to an account where the credential can be saved, and must have a [PendingIntent](https://developer.android.com/reference/android/app/PendingIntent) set along with other required metadata.
+</Steps>
+
+  The following example illustrates how to implement these steps.
+
+```kotlin
+package foundation.algorand.demo
+
+class CustomProviderService: CredentialProviderService() {
+  companion object {
+      const val CREATE_PASSKEY_INTENT = 2
+      const val CREATE_PASSKEY_ACTION = "foundation.algorand.demo.CREATE_PASSKEY"
+  }
+
+ /**
+  * This method is called when the system requests
+  * the provider to create a new credential.
+  */
+  override fun onBeginCreateCredentialRequest(
+      request: BeginCreateCredentialRequest,
+      cancellationSignal: CancellationSignal,
+      callback: OutcomeReceiver<BeginCreateCredentialResponse, CreateCredentialException>,
+  ) {
+      val response: BeginCreateCredentialResponse? = processCreateCredentialRequest(request)
+      if (response != null) {
+          callback.onResult(response)
+      } else {
+          callback.onError(CreateCredentialUnknownException())
+      }
+  }
+
+ /**
+  * This method processes the BeginCreateCredentialRequest
+  * and returns the BeginCreateCredentialResponse to be shown to the user.
+  */
+  fun processCreateCredentialRequest(request: BeginCreateCredentialRequest): BeginCreateCredentialResponse? {
+      when (request) {
+          is BeginCreatePublicKeyCredentialRequest -> {
+              // Request is passkey type
+              return handleCreatePasskeyQuery(request)
+          }
+      }
+      // Request not supported
+      return null
+  }
+
+ /**
+  * This method handles the BeginCreatePublicKeyCredentialRequest
+  */
+  private fun handleCreatePasskeyQuery(
+      request: BeginCreatePublicKeyCredentialRequest
+  ): BeginCreateCredentialResponse {
+      val createEntries: MutableList<CreateEntry> = mutableListOf()
+
+      // Get the name from the Request JSON
+      val name =  JSONObject(request.requestJson).getJSONObject("user").get("name").toString()
+
+      // Handle any additional data required for the creation of the passkey
+      // This could be custom extensions or looking in a local database for the account ID
+
+      // Add the CreateEntry to the list, this example just shows the name that was requested
+      createEntries.add(
+          CreateEntry(
+              name,
+              createNewPendingIntent(CREATE_PASSKEY_ACTION, CREATE_PASSKEY_INTENT, null)
+          )
+      )
+
+      return BeginCreateCredentialResponse(createEntries)
+  }
+
+ /**
+  * This method creates a new PendingIntent for the given action and request code.
+  */
+  private fun createNewPendingIntent(action: String, requestCode: Int, extra: Bundle?): PendingIntent {
+      val intent = Intent(action).setPackage(PACKAGE_NAME)
+
+      if (extra != null) {
+          intent.putExtra("CREDENTIAL_DATA", extra)
+      }
+      return PendingIntent.getActivity(
+          applicationContext, requestCode,
+          intent, (PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+      )
+  }
+}
+```
+<Aside>See more details about the PendingIntent in the [official documentation](https://developer.android.com/identity/sign-in/credential-provider#handle-queries-passkey-creation)</Aside>
+
+
+## Selection
+
+<Steps>
+1. When the user selects a previously populated `CreateEntry`, the corresponding `PendingIntent` is invoked and the associated provider `Activity` is created.
+2. After the `onCreate` method of your `Activity` is invoked, access the associated intent and pass it into the `PendingIntentHandler` class to get the
+   [ProviderCreateCredentialRequest](https://developer.android.com/reference/kotlin/androidx/credentials/provider/ProviderCreateCredentialRequest).
+3. Extract the `requestJson`, `callingAppInfo` and `clientDataHash` from the request.
+4. Validate the `requestJson`.
+   The example below uses `PublicKeyCredentialCreationOptions` in `handleCreatePasskey` to convert the
+   input JSON to a structured class as per the WebAuthn spec.
+7. Generate a credentialId and a key pair.
+   <Aside>We recommend using the [Deterministic P256 library](https://github.com/algorandfoundation/deterministic-P256-kt) using BIP39 mnemonics</Aside>
+8. Save the private key in your local database.
+9. Construct a [Web Authentication API JSON](https://www.w3.org/TR/webauthn-2/#sctn-api) response that consists of the [public key](https://www.w3.org/TR/webauthn-2/#credential-public-key) and the `credentialId`.
+   The example below uses local utility classes like `AuthenticatorAttestationResponse` and `FidoPublicKeyCredential`
+   that help construct a JSON based on the earlier mentioned spec.
+10. Construct a `CreatePublicKeyCredentialResponse` with the JSON generated above.
+11. Set `CreatePublicKeyCredentialResponse` as an extra on an Intent through [PendingIntentHandler.setCreateCredentialResponse()](https://developer.android.com/reference/kotlin/androidx/credentials/provider/PendingIntentHandler#setCreateCredentialResponse(android.content.Intent,androidx.credentials.CreateCredentialResponse)),
+    and set that intent to the result of the Activity.
+12. Finish the Activity.
+</Steps>
+
+The code example below illustrates these steps in two classes: `CreatePasskeyActivity` and `CreatePasskeyViewModel`.
+
+<Tabs>
+  <TabItem label="CreatePasskeyActivity.kt">
+    <CodeUri lang="kotlin" uri="https://raw.githubusercontent.com/algorandfoundation/liquid-auth-android/develop/demo/src/main/java/foundation/algorand/demo/headless/CreatePasskeyActivity.kt"/>
+  </TabItem>
+  <TabItem label="CreatePasskeyViewModel.kt">
+    <CodeUri lang="kotlin" uri="https://raw.githubusercontent.com/algorandfoundation/liquid-auth-android/develop/demo/src/main/java/foundation/algorand/demo/headless/CreatePasskeyViewModel.kt"/>
+  </TabItem>
+</Tabs>
+
+
+## BIP39
+
+Acting as a Credential Provider allows wallets to use a BIP39-compliant mnemonic, ran through a PBKDF2,
+to produce a derived main key that can then be used to generate other passkeys.
+
+<LinkCard
+  title="Deterministic P256 Library"
+  description="A library to generate deterministic P256 key pairs."
+  href="https://github.com/algorandfoundation/deterministic-P256-kt"
+/>
+
+### Mnemonic
+
+First start with a BIP39 mnemonic to generate the main key:
+
+```kotlin
+import foundation.algorand.deterministicP256.DeterministicP256
+
+val dP256 = DeterministicP256()
+
+// Generate the derived main key by passing along a BIP39 mnemonic:
+val derivedMainKey = dP256.genDerivedMainKeyWithBIP39("salon zoo engage submit smile frost later decide wing sight chaos renew lizard rely canal coral scene hobby scare step bus leaf tobacco slice")
+```
+
+### Key Pair
+
+```kotlin
+// Example values taken from: https://webauthn.guide/#registration
+val origin = "https://webauthn.guide"
+val userId = "a2bd8bf7-2145-4a5a-910f-8fdc9ef421d3"
+
+val keyPair = dP256.genDomainSpecificKeypair(derivedMainKey, origin, userId)
+```
+

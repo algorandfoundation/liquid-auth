@@ -1,16 +1,26 @@
-import { defineConfig } from 'astro/config';
-import starlight from '@astrojs/starlight';
-import rehypeMermaid from 'rehype-mermaid';
-import tailwind from '@astrojs/tailwind';
-import starlightOpenAPI, { openAPISidebarGroups } from 'starlight-openapi';
+import { defineConfig } from "astro/config";
+import starlight from "@astrojs/starlight";
+import rehypeMermaid from "rehype-mermaid";
+import tailwind from "@astrojs/tailwind";
+import starlightOpenAPI, { openAPISidebarGroups } from "starlight-openapi";
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 // import starlightTypeDoc, { typeDocSidebarGroup } from "starlight-typedoc";
-import react from '@astrojs/react';
-
-import mdx from '@astrojs/mdx';
-import basicSsl from '@vitejs/plugin-basic-ssl';
+import react from "@astrojs/react";
+import mdx from "@astrojs/mdx";
+import basicSsl from '@vitejs/plugin-basic-ssl'
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 // https://astro.build/config
 export default defineConfig({
   vite: {
+    resolve: {
+      alias: {
+        '@/lib': path.resolve(__dirname, './src/lib'),
+        '@/assets': path.resolve(__dirname, './src/assets'),
+        '@/components': path.resolve(__dirname, './src/components'),
+      },
+    },
     plugins: [basicSsl()],
     server: {
       https: true,
@@ -34,9 +44,58 @@ export default defineConfig({
       head: [
         // GTM Script
         {
-          tag: 'script',
-          attrs: {
-            'is:inline': true,
+        label: "Integrations",
+        link: "/server/integrations",
+      },
+        ...openAPISidebarGroups,
+      ]
+    }, {
+      label: "Clients",
+      collapsed: true,
+      items: [{
+        label: "Android",
+        collapsed: true,
+        items: [
+          {
+            label: "Introduction",
+            link: "/clients/android/introduction",
+          },
+          {
+            label: "Registration",
+            link: "/clients/android/registration",
+          },
+          {
+            label: "Authentication",
+            link: "/clients/android/authentication",
+          },
+          {
+            label: "Peer Offer",
+            link: "/clients/android/offer",
+          },
+          {
+            label: "Peer Answer",
+            link: "/clients/android/answer",
+          },
+          {
+            label: "Provider Service",
+            badge: {
+              text: "^14",
+              variant: "danger"
+            },
+            items: [
+              {
+                label: "Introduction",
+                link: "/clients/android/provider-service/introduction",
+              },
+              {
+                label: "Registration",
+                link: "/clients/android/provider-service/registration",
+              },
+              {
+                label: "Authentication",
+                link: "/clients/android/provider-service/authentication",
+              }
+            ]
           },
           content: `
             (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':

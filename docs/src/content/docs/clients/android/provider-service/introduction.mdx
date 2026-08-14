@@ -1,8 +1,8 @@
 ---
-title: "Android: Provider Service"
+title: "Android 14: Provider Service"
 ---
 
-import {Aside} from '@astrojs/starlight/components';
+import { Aside, Code, Steps } from "@astrojs/starlight/components";
 
 <Aside type="danger">
   The API is relatively unstable and not all features are available.
@@ -15,142 +15,103 @@ This allows applications to store and manage credentials outside Google Password
 It opens the doors to a new world of possibilities for developers to create secure and private authentication experiences using
 just their Android devices.
 
+This guide is a duplicate of the [official guide](https://developer.android.com/identity/sign-in/credential-provider) with some additional context and a focus on Passkeys.
 
 ### Who is this for?
 
 - **Mobile Wallets** that want to act as a roaming authenticator for non-crypto sites
 
+## Get Started
 
-## Provider Service
+During the discovery of the Credential Provider Service,
+[this blog post](https://developers.kddi.com/blog/2esxXGTcSBSaGLTJO0dC67) by [ko-koiwai](https://github.com/ko-koiwai) outlines some of the
+difficulties in implementing the service.
+There are still outstanding issues and experimental interfaces as of this writing.
 
-```kotlin
-@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-class LiquidCredentialProviderService: CredentialProviderService() {
-    private val credentialRepository = CredentialRepository()
-    private val job = SupervisorJob()
-    private val scope = CoroutineScope(Dispatchers.IO + job)
+### Setup
+Before you implement functionality in your credential provider,
+complete the setup steps shown in the following sections.
 
-    companion object {
-        const val TAG = "LiquidCredentialProviderService"
-        //TODO: App Lock Intents
-        const val GET_PASSKEY_INTENT = 1
-        const val CREATE_PASSKEY_INTENT = 2
-        const val GET_PASSKEY_ACTION = "foundation.algorand.demo.GET_PASSKEY"
-        const val CREATE_PASSKEY_ACTION = "foundation.algorand.demo.CREATE_PASSKEY"
-    }
-    /**
-     * Handle Create Credential Requests
-     */
-    override fun onBeginCreateCredentialRequest(
-        request: BeginCreateCredentialRequest,
-        cancellationSignal: CancellationSignal,
-        callback: OutcomeReceiver<BeginCreateCredentialResponse, CreateCredentialException>
-    ) {
-        val response: BeginCreateCredentialResponse? = processCreateCredentialRequest(request)
-        if (response != null) {
-            callback.onResult(response)
-        } else {
-            callback.onError(CreateCredentialUnknownException())
-        }
-    }
+#### Dependencies
 
-    /**
-     * Process incoming Create Credential Requests
-     */
-    private fun processCreateCredentialRequest(request: BeginCreateCredentialRequest): BeginCreateCredentialResponse? {
-        when (request) {
-            is BeginCreatePublicKeyCredentialRequest -> {
-                return handleCreatePasskeyQuery(request)
-            }
-        }
-        return null
-    }
+In your module's `build.gradle` file,
+declare a dependency
+using the [latest](https://developer.android.com/jetpack/androidx/releases/credentials) version
+of the Credential Manager library:
 
-    /**
-     * Create a new PassKey Entry
-     *
-     * This returns an Entry list for the user to interact with.
-     * A PendingIntent must be configured to receive the data from the WebAuthn client
-     */
-    private fun handleCreatePasskeyQuery(
-        request: BeginCreatePublicKeyCredentialRequest
-    ): BeginCreateCredentialResponse {
-        Log.d(TAG, request.requestJson)
-
-
-        val createEntries: MutableList<CreateEntry> = mutableListOf()
-        val name =  JSONObject(request.requestJson).getJSONObject("user").get("name").toString()
-
-        createEntries.add( CreateEntry(
-            name,
-            createNewPendingIntent(CREATE_PASSKEY_ACTION, CREATE_PASSKEY_INTENT, null)
-        )
-        )
-        return BeginCreateCredentialResponse(createEntries)
-    }
-    /**
-     * Handle Get Credential Requests
-     */
-    override fun onBeginGetCredentialRequest(
-        request: BeginGetCredentialRequest,
-        cancellationSignal: CancellationSignal,
-        callback: OutcomeReceiver<BeginGetCredentialResponse, GetCredentialException>,
-    ) {
-        try {
-            callback.onResult(processGetCredentialRequest(request))
-        } catch (e: GetCredentialException) {
-            callback.onError(GetCredentialUnknownException())
-        }
-    }
-
-    /**
-     * Fake a list of available PublicKeyCredential Entries
-     */
-    private fun processGetCredentialRequest(request: BeginGetCredentialRequest): BeginGetCredentialResponse{
-        Log.v(TAG, "processing GetCredentialRequest")
-        val deferredCredentials: Deferred<List<Credential>> = scope.async {
-            credentialRepository.getDatabase(this@LiquidCredentialProviderService).credentialDao().getAllRegular()
-        }
-        val credentials = runBlocking {
-            deferredCredentials.await()
-        }
-        return BeginGetCredentialResponse(credentials.map {
-            val data = Bundle()
-            data.putString("credentialId", it.credentialId)
-            data.putString("userHandle", it.userHandle)
-            PublicKeyCredentialEntry.Builder(
-                this@LiquidCredentialProviderService,
-                it.userHandle,
-                createNewPendingIntent(GET_PASSKEY_ACTION, GET_PASSKEY_INTENT, data),
-                // TODO: filter the request for PublicKeyCredentialOptions
-                request.beginGetCredentialOptions[0] as BeginGetPublicKeyCredentialOption
-            )
-                .setIcon(Icon.createWithResource(this@LiquidCredentialProviderService, R.mipmap.ic_launcher))
-                .build()
-        })
-    }
-    override fun onClearCredentialStateRequest(
-        request: ProviderClearCredentialStateRequest,
-        cancellationSignal: CancellationSignal,
-        callback: OutcomeReceiver<Void?, ClearCredentialException>
-    ) {
-        Log.d(TAG, "onClearCredentialStateRequest")
-        TODO("Not yet implemented")
-    }
-
-    private fun createNewPendingIntent(action: String, requestCode: Int, extra: Bundle?): PendingIntent{
-        val intent = Intent(action).setPackage("foundation.algorand.demo")
-        if (extra != null) {
-            intent.putExtra("CREDENTIAL_DATA", extra)
-        }
-        return PendingIntent.getActivity(
-            applicationContext, requestCode,
-            intent, (PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        )
-    }
-    override fun onDestroy() {
-        super.onDestroy()
-        job.cancel()
-    }
-}
 ```
+# build.gradle
+implementation "androidx.credentials:credentials:1.2.0-{latest}"
+```
+
+#### Manifest
+
+In your app's manifest file `AndroidManifest.xml`,
+include a `<service>` declaration for a service class
+that extends the [CredentialProviderService](https://developer.android.com/reference/androidx/credentials/provider/CredentialProviderService) class
+from the androidx.credentials library, as shown in the example below.
+
+<Code lang="xml" title="AndroidManifest.xml" code={
+`
+<service android:name=".MyCredentialProviderService"
+         android:enabled="true"
+         android:exported="true"
+         android:label="My Credential Provider"
+         android:icon="<any drawable icon>"
+         android:permission="android.permission.BIND_CREDENTIAL_PROVIDER_SERVICE">
+  <intent-filter>
+    <action android:name="android.service.credentials.CredentialProviderService"/>
+  </intent-filter>
+  <meta-data
+    android:name="android.credentials.provider"
+    android:resource="@xml/provider"/>
+</service>
+`}/>
+
+The permission and the intent filter shown above are integral for the Credential Manager flow to work as expected. The permission is needed so that only the Android system can bind to this service. The intent filter is used for discoverability of this service as a credential provider to be used by Credential Manager.
+
+<Aside>
+  The credential service is combined with any autofill service that's defined in the same package, so if there's an autofill icon already defined, the system re-uses the autofill icon to display on the Settings page.
+</Aside>
+
+### Provider
+
+In your res/xml directory, create a new file called `provider.xml`.
+In this file, declare the credential types your service supports,
+through constants defined for each credential type in the library.
+In the following example, the service supports passkeys defined by the [TYPE_PUBLIC_KEY_CREDENTIAL](https://developer.android.com/reference/kotlin/androidx/credentials/PublicKeyCredential#TYPE_PUBLIC_KEY_CREDENTIAL()) constant.
+
+<Code lang="xml" title="res/xml/provider.xml"  code={
+`
+<?xml version="1.0" encoding="utf-8"?>
+<credential-provider xmlns:android="http://schemas.android.com/apk/res/android">
+  <capabilities>
+    <capability name="androidx.credentials.TYPE_PUBLIC_KEY_CREDENTIAL" />
+  </capabilities>
+</credential-provider>
+`
+}/>
+
+On previous API levels, credential providers integrate with APIs like autofill for passwords and other data.
+These providers can use the same internal infrastructure to store the existing credential types,
+while expanding it to support others, including passkeys.
+
+<Aside>For passkeys, private keys must be encrypted.</Aside>
+
+### Phases
+
+Credential Manager interacts with credential providers in two phases:
+
+<Steps>
+  1. The first phase is the begin/query phase whereby the system binds to credential provider services and invokes
+     [onBeginGetCredentialRequest()](https://developer.android.com/reference/kotlin/androidx/credentials/provider/CredentialProviderService#onBeginGetCredentialRequest(androidx.credentials.provider.BeginGetCredentialRequest,android.os.CancellationSignal,android.os.OutcomeReceiver)),
+     [onBeginCreateCredentialRequest()](https://developer.android.com/reference/kotlin/androidx/credentials/provider/CredentialProviderService#onBeginCreateCredentialRequest(androidx.credentials.provider.BeginCreateCredentialRequest,android.os.CancellationSignal,android.os.OutcomeReceiver)),
+     or [onClearCredentialStateRequest()](https://developer.android.com/reference/kotlin/androidx/credentials/provider/CredentialProviderService#onClearCredentialStateRequest(androidx.credentials.provider.ProviderClearCredentialStateRequest,android.os.CancellationSignal,android.os.OutcomeReceiver))
+     methods with `Begin…` requests.
+
+     Providers must process these requests and respond with `Begin…` responses, populating them with entries that represent visual options to be shown on the account selector.
+     Each entry must have a [PendingIntent](https://developer.android.com/reference/android/app/PendingIntent) set.
+  2. Once the user selects an entry, the *selection phase* commences and the [PendingIntent](https://developer.android.com/reference/android/app/PendingIntent) associated with the entry gets fired, bringing up the corresponding provider activity.
+
+     Once the user is done interacting with this activity, the credential provider must set the response to the result of the activity before ending it. This response is then sent to the client app that invoked Credential Manager.
+</Steps>
